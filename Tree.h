@@ -65,7 +65,7 @@ namespace PhyloPop_Tree
                           */
 
                          virtual inline double get_dist_to_root(iterator<NODEDATA>);
-
+                         virtual inline void flip_sons(iterator<NODEDATA>, gsl_rng* );
 
         };//Tree
 
