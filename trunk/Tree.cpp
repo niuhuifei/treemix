@@ -72,5 +72,20 @@ namespace PhyloPop_Tree
         	}
         	return toreturn;
         }
+        template<class NODEDATA>
+         void Tree<NODEDATA>::flip_sons(iterator<NODEDATA> root_it, gsl_rng* r){
+         	if (root_it.hasChildNodes()== true){
+         		//cout << "here\n"; cout.flush();
+         		double ran = gsl_rng_uniform(r);
+         		//cout << ran <<"\n"; cout.flush();
+         		if (ran <0.5){
+         			iterator<NODEDATA> tmp = root_it.getFirstChild();
+         			root_it.setFirstChild(root_it.getLastChild());
+         			root_it.setLastChild(tmp);
+         		}
+         		flip_sons(root_it.getFirstChild(), r);
+         		flip_sons(root_it.getLastChild(), r);
+         	}
+         }
 }
 
