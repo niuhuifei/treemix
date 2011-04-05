@@ -20,7 +20,9 @@ int main(){
 	string testnewick = "(YRI:0.8,(CEU:0.4,(JPT:0.2,CHB:0.3):0.2):0.5);";
 
 	CountData counts("testin.gz");
-	State teststate(testnewick, &counts);
+	ofstream tmp("tmp");
+	MCMC_params p;
+	State teststate(testnewick, &counts, &p);
 	vector<PhyloPop_Tree::iterator< PhyloPop_Tree::NodeData> > vec = teststate.tree->get_inorder_traversal(counts.npop);
 	for (int i = 0; i < vec.size(); i++){
 		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
@@ -32,13 +34,26 @@ int main(){
 		}
 	cout <<"\n";
 
-	for(int i = 0; i < 10000; i++){
-	teststate.propose_tree(r);
+	//for(int i = 0; i < 10; i++){
+	//	teststate.propose_tree(r);
+	//}
+	//vec = teststate.tree->get_inorder_traversal(counts.npop);
+	//for (int i = 0; i < vec.size(); i++){
+	//	cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
+	//}
+	cout << "\n";
+	teststate.compute_sigma();
+	for (int i = 0 ; i < 10000; i++){
+	teststate.update(r);
+	tmp << gsl_vector_get(teststate.means, 0) << "\n";
 	}
+	cout << "\n";
 	vec = teststate.tree->get_inorder_traversal(counts.npop);
 	for (int i = 0; i < vec.size(); i++){
-		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-	}
+			cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
+		}
+
+	cout << "llik: "<< teststate.llik() << "\n";
 	/*
 	map<int, PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > tmp = teststate.tree->get_tips(teststate.tree->getRoot());
 	for (map<int, PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> >::iterator it = tmp.begin(); it != tmp.end(); it++){

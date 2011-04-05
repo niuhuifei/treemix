@@ -12,6 +12,7 @@
 #include "BinaryTree.h"
 #include "Settings.hpp"
 #include "CountData.h"
+#include "MCMC_params.h"
 
 class State{
 public:
@@ -19,7 +20,7 @@ public:
 	/*
 	 *  Initializes tree to newick string, count data)
 	 */
-	State(string, CountData*);
+	State(string, CountData*, MCMC_params*);
 
 	/*
 	 * Copy constructor
@@ -29,17 +30,25 @@ public:
 
 
 	PhyloPop_Tree::Tree<PhyloPop_Tree::NodeData>* tree;
-	//vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > traversal;
 
 	gsl_matrix* thetas;
-	gsl_matrix* means;
+	gsl_vector* means;
 	gsl_matrix* sigma;
 	CountData* countdata;
+	MCMC_params* params;
+
+	void update(gsl_rng*);
 	void compute_sigma();
 	void print_sigma();
 	double llik();
-	void propose_tree(gsl_rng*);
-	double epsilon; //for proposal of new trees
+	double llik_snp(int);
+	void update_tree(gsl_rng*);
+	vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > propose_tree(gsl_rng*);
+	void update_means(gsl_rng*);
+	void update_mean(gsl_rng*, int);
+
+	//double epsilon; //for proposal of new trees
+	//double lambda; //parameter for beta prior on ancestral allele frequences
 
 };
 #endif /* STATE_H_ */

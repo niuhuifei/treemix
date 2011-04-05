@@ -175,7 +175,7 @@ namespace PhyloPop_Tree
         	setRoot(newroot);
 
         	build_tree_helper(&trav, minpos);
-        	// now
+
         }
 
         template<class NODEDATA>
