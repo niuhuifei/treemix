@@ -11,8 +11,9 @@
 #include "State.h"
 class MCMC{
 	MCMC(State*, MCMC_params*);
-	State* s;
+	State* state;
 	MCMC_params* param;
+	void run(gsl_rng*);
 };
 
 #endif /* MCMC_H_ */

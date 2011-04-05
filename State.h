@@ -29,23 +29,30 @@ public:
 	State(const State&);
 
 
+	// pointer to the tree data structure
 	PhyloPop_Tree::Tree<PhyloPop_Tree::NodeData>* tree;
 
 	gsl_matrix* thetas;
 	gsl_vector* means;
 	gsl_matrix* sigma;
-	CountData* countdata;
-	MCMC_params* params;
+	CountData* countdata; //pointer to the data
+	MCMC_params* params; //pointer to the parameters for updates
 
+	// workhorse function is update(), does all the Metropolis updates using the functions that follow it
 	void update(gsl_rng*);
-	void compute_sigma();
-	void print_sigma();
-	double llik();
-	double llik_snp(int);
 	void update_tree(gsl_rng*);
 	vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > propose_tree(gsl_rng*);
 	void update_means(gsl_rng*);
 	void update_mean(gsl_rng*, int);
+
+	// compute the covariance matrix from the tree
+	void compute_sigma();
+	void print_sigma();
+
+	//compute the log-likelihood of the data given the tree
+	double llik();
+	double llik_snp(int);
+
 
 	//double epsilon; //for proposal of new trees
 	//double lambda; //parameter for beta prior on ancestral allele frequences
