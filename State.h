@@ -38,6 +38,8 @@ public:
 	void compute_sigma();
 	void print_sigma();
 	double llik();
+	void propose_tree(gsl_rng*);
+	double epsilon; //for proposal of new trees
 
 };
 #endif /* STATE_H_ */

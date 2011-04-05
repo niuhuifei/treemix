@@ -30,18 +30,12 @@ int main(){
 	for (int i = 0; i < vec.size(); i++){
 			cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
 		}
+	cout <<"\n";
 
-	teststate.tree->perturb_node_heights(vec, 0.7, r);
-	cout << "\n";
-	for (int i = 0; i < vec.size(); i++){
-			cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-		}
-
-	cout << "\n";
-	teststate.tree->build_tree(vec);
+	for(int i = 0; i < 10000; i++){
+	teststate.propose_tree(r);
+	}
 	vec = teststate.tree->get_inorder_traversal(counts.npop);
-	teststate.tree->update_branch_lengths(teststate.tree->getRoot());
-	teststate.tree->set_node_heights(vec);
 	for (int i = 0; i < vec.size(); i++){
 		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
 	}
