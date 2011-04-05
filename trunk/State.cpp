@@ -16,12 +16,14 @@ State::State(string newick, CountData* counts){
 	gsl_matrix_set_zero(thetas);
 	gsl_matrix_set_zero(means);
 	gsl_matrix_set_zero(sigma);
+	epsilon = 0.1;
 	//traversal = tree.get_inorder_traversal(countdata->npop);
 }
 
 State::State(const State& oldstate){
 	tree = oldstate.tree->copy();
 	countdata = oldstate.countdata;
+	epsilon = oldstate.epsilon;
 	//traversal = oldstate.traversal;
 	thetas = gsl_matrix_alloc(oldstate.countdata->nsnp, oldstate.countdata->npop);
 	gsl_matrix_memcpy(thetas, oldstate.thetas);
@@ -78,4 +80,29 @@ double State::llik(){
 		toreturn+= log(tmp);
 	}
 	return toreturn;
+}
+
+void State::propose_tree(gsl_rng* r){
+	//1. flip nodes
+	//cout << "flipping\n"; cout.flush();
+	tree->flip_sons(tree->getRoot(), r);
+	//2. get the traversal
+	//cout << "get traversal 1\n"; cout.flush();
+	vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > trav = tree->get_inorder_traversal(countdata->npop);
+	//3. fiddle with read depths
+	//cout << "perturb\n"; cout.flush();
+	tree->perturb_node_heights(trav, epsilon, r);
+	//4. rebuild the tree
+	//cout << "rebild\n"; cout.flush();
+	tree->build_tree(trav);
+	//5. update the branch lengths
+	//cout << "update branch lengths\n"; cout.flush();
+	tree->update_branch_lengths(tree->getRoot());
+	//6. get the new traversal
+	//cout << "traverse 2\n"; cout.flush();
+	trav = tree->get_inorder_traversal(countdata->npop);
+	//7. reset the heights
+	//cout << "reset heights\n"; cout.flush();
+	tree->set_node_heights(trav);
+	//cout << "done\n"; cout.flush();
 }

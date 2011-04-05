@@ -67,6 +67,7 @@ namespace PhyloPop_Tree
         double Tree<NODEDATA>::get_dist_to_root(iterator<NODEDATA> input_it){
         	double toreturn = 0;
         	while (input_it.hasFather()){
+        		//cout << input_it->m_id << " "<< input_it->m_len << "\n";
         		toreturn += input_it->m_len;
         		input_it = input_it.getFather();
         	}
@@ -170,7 +171,9 @@ namespace PhyloPop_Tree
         			minpos =i;
         		}
         	}
+        	newroot.setFather(0);
         	setRoot(newroot);
+
         	build_tree_helper(&trav, minpos);
         	// now
         }
