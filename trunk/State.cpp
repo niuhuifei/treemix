@@ -16,11 +16,13 @@ State::State(string newick, CountData* counts){
 	gsl_matrix_set_zero(thetas);
 	gsl_matrix_set_zero(means);
 	gsl_matrix_set_zero(sigma);
+	//traversal = tree.get_inorder_traversal(countdata->npop);
 }
 
 State::State(const State& oldstate){
 	tree = oldstate.tree->copy();
 	countdata = oldstate.countdata;
+	//traversal = oldstate.traversal;
 	thetas = gsl_matrix_alloc(oldstate.countdata->nsnp, oldstate.countdata->npop);
 	gsl_matrix_memcpy(thetas, oldstate.thetas);
 	means = gsl_matrix_alloc(oldstate.countdata->nsnp, oldstate.countdata->npop);
