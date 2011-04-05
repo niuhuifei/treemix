@@ -151,6 +151,10 @@ namespace PhyloPop_Tree
                  */
                 inline void  deleteNode();
 
+                /*
+                 *  jiggles the height of the node from a U(currentheight-epsilon, currentheight+epsilon), reflecting excess
+                 */
+                //inline void jiggleheight(double, gsl_rng*);
         //private:
         	/**
         	 * The Constructor expects a Pointer to a Node

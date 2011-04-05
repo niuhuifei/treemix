@@ -29,6 +29,7 @@ namespace PhyloPop_Tree
         {
                 public:
                         /**
+
                          * Copys a Tree
                          * @return Pointer to the new allocated Tree
                          */
@@ -65,8 +66,42 @@ namespace PhyloPop_Tree
                           */
 
                          virtual inline double get_dist_to_root(iterator<NODEDATA>);
+
+                         /*
+                          * flip order of child nodes with probability 0.5
+                          */
                          virtual inline void flip_sons(iterator<NODEDATA>, gsl_rng* );
 
+                         /*
+                          * make a vector of pointers to the nodes in order of traversal (input the number of populations)
+                          */
+                         virtual inline vector<iterator<NODEDATA> > get_inorder_traversal( int);
+
+                         /*
+                          * helper function does the inorder traversal
+                          */
+
+                         virtual inline void inorder_traverse(iterator<NODEDATA>, int*, vector<iterator<NODEDATA> >*);
+                         /*
+                          *  set heights of nodes
+                          */
+                         virtual inline void set_node_heights(vector<iterator<NODEDATA> >);
+                         /*
+                          * perturb node heights by adding a U(-epsilon, epsilon) to each (reflecting excess if necessary)
+                          */
+                         virtual inline void perturb_node_heights(vector<iterator<NODEDATA> >, double, gsl_rng*);
+                         /*
+                          *  reconstruct a tree from a traversal order and heights
+                          */
+                         virtual inline void build_tree(vector<iterator<NODEDATA> >);
+                         /*
+                          * recursive function to build trees
+                          */
+                         virtual inline void build_tree_helper(vector<iterator<NODEDATA> >*, int);
+                         /*
+                          * reset branch length from new tree
+                          */
+                         virtual inline void update_branch_lengths(iterator<NODEDATA>);
         };//Tree
 
 }//PhyloPop_Tree

@@ -29,6 +29,8 @@ public:
 
 
 	PhyloPop_Tree::Tree<PhyloPop_Tree::NodeData>* tree;
+	//vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > traversal;
+
 	gsl_matrix* thetas;
 	gsl_matrix* means;
 	gsl_matrix* sigma;
