@@ -272,10 +272,43 @@ namespace PhyloPop_Tree
         	for(int i = 1; i < trav.size(); i+=2){
         		trav[i]->m_time = gsl_rng_uniform(r)*tipheight;
         	}
+
         	build_tree(trav);
         	update_branch_lengths(getRoot());
         	trav = get_inorder_traversal(tmp.size());
         	set_node_heights(trav);
+        }
+        template<class NODEDATA>
+        string Tree<NODEDATA>::get_newick_format(){
+        	string toreturn = "";
+        	newick_helper(getRoot(), &toreturn);
+        	return toreturn;
+        }
+        template<class NODEDATA>
+        void Tree<NODEDATA>::newick_helper(iterator<NODEDATA> node, string* s){
+        	if (node != NULL){
+        		if (node.hasChildNodes()){
+        			s->append("(");
+        			newick_helper(node.getFirstChild(), s);
+        			s->append(",");
+        			newick_helper(node.getLastChild(), s);
+        			s->append(")");
+        			if (node.hasFather()){
+        				s->append(":");
+        				stringstream ss;
+        				ss<< node->m_len;
+        				s->append(ss.str());
+        			}
+        			else s->append(";");
+        		}
+        		else{
+        			stringstream ss;
+        			ss << node->m_id;
+        			ss << ":";
+        			ss << node->m_len;
+        			s->append(ss.str());
+        		}
+        	}
         }
 }
 

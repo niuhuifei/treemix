@@ -107,6 +107,11 @@ namespace PhyloPop_Tree
                           * randomize a tree
                           */
                          virtual inline void randomize_tree(gsl_rng*);
+                         /*
+                          * get newick format
+                          */
+                         virtual inline string get_newick_format();
+                         virtual inline void newick_helper(iterator<NODEDATA>, string*);
         };//Tree
 
 }//PhyloPop_Tree

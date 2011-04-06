@@ -28,6 +28,11 @@ public:
 
 	State(const State&);
 
+	/*
+	 * read in thetas instead of estimating them (for testing from simulations)
+	 */
+	void read_thetas(string, int, int);
+
 
 	// pointer to the tree data structure
 	PhyloPop_Tree::Tree<PhyloPop_Tree::NodeData>* tree;
@@ -52,10 +57,7 @@ public:
 	//compute the log-likelihood of the data given the tree
 	double llik();
 	double llik_snp(int);
-
-
-	//double epsilon; //for proposal of new trees
-	//double lambda; //parameter for beta prior on ancestral allele frequences
+	void print_state(ogzstream&, ogzstream&);
 
 };
 #endif /* STATE_H_ */
