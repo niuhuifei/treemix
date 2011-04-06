@@ -258,5 +258,24 @@ namespace PhyloPop_Tree
         		update_branch_lengths(rootIterator.getLastChild());
         	}
         }
+
+        template<class NODEDATA>
+        void Tree<NODEDATA>::randomize_tree(gsl_rng* r){
+        	map<int, iterator<NODEDATA> > tmp = get_tips(getRoot());
+        	vector<iterator<NODEDATA> > trav = get_inorder_traversal(tmp.size());
+        	double tipheight = gsl_rng_uniform(r)*4+1;
+
+        	// set the tip heights
+        	for(int i = 0 ; i < trav.size(); i+=2){
+        		trav[i]->m_time = tipheight;
+        	}
+        	for(int i = 1; i < trav.size(); i+=2){
+        		trav[i]->m_time = gsl_rng_uniform(r)*tipheight;
+        	}
+        	build_tree(trav);
+        	update_branch_lengths(getRoot());
+        	trav = get_inorder_traversal(tmp.size());
+        	set_node_heights(trav);
+        }
 }
 

@@ -102,6 +102,11 @@ namespace PhyloPop_Tree
                           * reset branch length from new tree
                           */
                          virtual inline void update_branch_lengths(iterator<NODEDATA>);
+
+                         /*
+                          * randomize a tree
+                          */
+                         virtual inline void randomize_tree(gsl_rng*);
         };//Tree
 
 }//PhyloPop_Tree

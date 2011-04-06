@@ -33,14 +33,12 @@ int main(){
 			cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
 		}
 	cout <<"\n";
-
-	//for(int i = 0; i < 10; i++){
-	//	teststate.propose_tree(r);
-	//}
-	//vec = teststate.tree->get_inorder_traversal(counts.npop);
-	//for (int i = 0; i < vec.size(); i++){
-	//	cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-	//}
+	teststate.tree->randomize_tree(r);
+	vec = teststate.tree->get_inorder_traversal(counts.npop);
+	for (int i = 0; i < vec.size(); i++){
+		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
+	}
+/*
 	cout << "\n";
 	teststate.compute_sigma();
 	for (int i = 0 ; i < 10000; i++){
@@ -54,19 +52,5 @@ int main(){
 		}
 
 	cout << "llik: "<< teststate.llik() << "\n";
-	/*
-	map<int, PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > tmp = teststate.tree->get_tips(teststate.tree->getRoot());
-	for (map<int, PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> >::iterator it = tmp.begin(); it != tmp.end(); it++){
-		cout << it->first << " "<< it->second->m_len<< "\n";
-	}
-	cout << "\n";
-	State teststate2(teststate);
-	teststate2.tree->print_inorder(teststate2.tree->getRoot());
-	cout <<"\n";
-	teststate.compute_sigma();
-	cout << "here\n"; cout.flush();
-	teststate.print_sigma();
-	double tmplik = teststate.llik();
-	cout << "llik: "<< tmplik << "\n";
-	*/
+*/
 };
