@@ -49,6 +49,8 @@ using std::pair;
 using std::iterator;
 using std::pair;
 using std::make_pair;
+using std::fstream;
+using std::ifstream;
 
 typedef vector<vector<double> >                         vector2d;
 typedef vector<vector<vector<double> > >        vector3d;

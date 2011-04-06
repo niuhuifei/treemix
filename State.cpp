@@ -20,6 +20,7 @@ State::State(string newick, CountData* counts, MCMC_params* p){
 	//traversal = tree.get_inorder_traversal(countdata->npop);
 }
 
+
 State::State(const State& oldstate){
 	tree = oldstate.tree->copy();
 	countdata = oldstate.countdata;
@@ -32,6 +33,8 @@ State::State(const State& oldstate){
 	sigma = gsl_matrix_alloc(oldstate.countdata->npop, oldstate.countdata->npop);
 	gsl_matrix_memcpy(sigma, oldstate.sigma);
 }
+
+
 
 void State::compute_sigma(){
 	map<int, PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > id2node = tree->get_tips(tree->getRoot());
@@ -104,6 +107,8 @@ double State::llik_snp(int i){
 	}
 	*/
 	toreturn = log(dmvnorm(countdata->npop, theta_snp, m, sigma));
+	gsl_vector_free(m);
+	gsl_vector_free(theta_snp);
 	return toreturn;
 }
 
@@ -125,12 +130,11 @@ void State::update_tree(gsl_rng* r){
 	for(int i = 0; i < trav.size(); i++){
 		if (trav[i]->m_time > maxdist) maxdist = trav[i]->m_time;
 	}
-	//cout << "max dist "<< maxdist << "\n";
 	//if it's ok, do a metropolis update
 	if (maxdist < params->B){
 		double newlik = llik();
 		double ratio = exp(newlik-oldlik);
-		cout << oldlik  << " "<< newlik << " "<< ratio << "\n";
+		//cout << oldlik  << " "<< newlik << " "<< ratio << "\n";
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
 			if (acc > ratio){
@@ -138,7 +142,9 @@ void State::update_tree(gsl_rng* r){
 				tree = oldtree;
 				compute_sigma();
 			}
+			else delete oldtree;
 		}
+		else delete oldtree;
 	}
 	else{
 		delete tree;
@@ -203,4 +209,54 @@ void State::update_mean(gsl_rng* r, int i){
 		}
 		//cout << oldm << " "<< newm << " "<< oldpost << " "<< newpost <<  " "<< ratio<<"\n";
 	}
+}
+
+
+
+void State::print_state(ogzstream& treefile, ogzstream& mfile){
+	string t = tree->get_newick_format();
+	//cout <<t << "\n";
+	treefile << t << "\n";
+	//cout << "printed tree\n"; cout.flush();
+	for (int i = 0; i < countdata->nsnp; i++){
+		mfile << gsl_vector_get(means, i) << " ";
+	}
+	mfile << "\n";
+	//cout << llik() << "\n";
+
+}
+
+void State::read_thetas(string thetafile, int npop, int nsnp){
+	countdata->npop = npop;
+	countdata->nsnp = nsnp;
+	gsl_vector_free(means);
+	gsl_matrix_free(sigma);
+	gsl_matrix_free(thetas);
+	thetas = gsl_matrix_alloc(countdata->nsnp, countdata->npop);
+	means = gsl_vector_alloc(countdata->nsnp);
+	sigma = gsl_matrix_alloc(countdata->npop, countdata->npop);
+	gsl_matrix_set_zero(thetas);
+	gsl_vector_set_zero(means);
+	gsl_matrix_set_zero(sigma);
+
+	ifstream in(thetafile.c_str());
+	struct stat stFileInfo;
+	int intStat;
+	string st, buf;
+    intStat = stat(thetafile.c_str(), &stFileInfo);
+    if (intStat !=0){
+    	std::cerr<< "ERROR: cannot open file " << in << "\n";
+    	exit(1);
+	}
+    int i = 0;
+    while(getline(in, st)){
+			vector<string> line;
+            string buf;
+            stringstream ss(st);
+            while (ss>> buf){
+                    line.push_back(buf);
+            }
+            for(int j = 0; j < line.size(); j++)	gsl_matrix_set(thetas, i, j, atof(line[j].c_str()));
+            i++;
+    }
 }

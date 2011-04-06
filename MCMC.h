@@ -10,10 +10,11 @@
 #include "Settings.hpp"
 #include "State.h"
 class MCMC{
+public:
 	MCMC(State*, MCMC_params*);
 	State* state;
 	MCMC_params* param;
-	void run(gsl_rng*);
+	void run(gsl_rng*, ogzstream&, ogzstream&);
 };
 
 #endif /* MCMC_H_ */

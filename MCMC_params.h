@@ -7,6 +7,7 @@
 
 #ifndef MCMC_PARAMS_H_
 #define MCMC_PARAMS_H_
+#include "Settings.hpp"
 
 class MCMC_params{
 public:
@@ -18,6 +19,7 @@ public:
 	int burnin; //number of iterations to burn in
 	int total; //total number of iterations
 	int samp; //sample from the chain every samp iterations
+	int psamp; //print the likelihood every psamp iterations
 };
 
 #endif /* MCMC_PARAMS_H_ */
