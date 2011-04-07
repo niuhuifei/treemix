@@ -188,7 +188,7 @@ namespace PhyloPop_Tree
         	bool rightborder = false;
         	double leftmin = 10000;
         	double rightmin = 10000;
-        	double minindex = 0;
+        	int minindex = 0;
         	int i = index-1;
         	bool foundleft = false;
         	while (i >= 0 && leftborder ==false){
@@ -263,7 +263,7 @@ namespace PhyloPop_Tree
         void Tree<NODEDATA>::randomize_tree(gsl_rng* r){
         	map<int, iterator<NODEDATA> > tmp = get_tips(getRoot());
         	vector<iterator<NODEDATA> > trav = get_inorder_traversal(tmp.size());
-        	double tipheight = gsl_rng_uniform(r)*4+1;
+        	double tipheight = gsl_rng_uniform(r)*0.5+0.5;
 
         	// set the tip heights
         	for(int i = 0 ; i < trav.size(); i+=2){

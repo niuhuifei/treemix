@@ -23,10 +23,11 @@ int main(){
 	CountData counts("testin.gz");
 	MCMC_params p;
 	State teststate(testnewick, &counts, &p);
-	teststate.read_thetas("testin_thetas", 5, 1000);
+	teststate.read_thetas("testin_thetas", 5, 10000);
 	teststate.tree->randomize_tree(r);
 	teststate.compute_sigma();
-	cout << teststate.countdata->npop << " "<< teststate.countdata->nsnp << "\n";
+	teststate.init_liks();
+	cout << teststate.countdata->npop << " "<< teststate.countdata->nsnp << " "<< teststate.current_lik<< "\n";
 	MCMC testmcmc(&teststate, &p);
 	testmcmc.run(r, treeout, mout);
 /*

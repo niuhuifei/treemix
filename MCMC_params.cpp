@@ -9,7 +9,7 @@
 MCMC_params::MCMC_params(){
 	lambda = 1;
 	s2 = 0.05;
-	epsilon = 0.01;
+	epsilon = 0.005;
 	B = 10;
 	burnin = 10000;
 	total = 20000;

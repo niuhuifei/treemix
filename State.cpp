@@ -14,9 +14,14 @@ State::State(string newick, CountData* counts, MCMC_params* p){
 	thetas = gsl_matrix_alloc(counts->nsnp, counts->npop);
 	means = gsl_vector_alloc(counts->nsnp);
 	sigma = gsl_matrix_alloc(counts->npop, counts->npop);
+	snp_liks = gsl_vector_alloc(counts->nsnp);
+	winv = gsl_matrix_alloc(counts->npop, counts->npop);
+	ax =0;
 	gsl_matrix_set_zero(thetas);
 	gsl_vector_set_zero(means);
 	gsl_matrix_set_zero(sigma);
+	gsl_matrix_set_zero(winv);
+	gsl_vector_set_zero(snp_liks);
 	//traversal = tree.get_inorder_traversal(countdata->npop);
 }
 
@@ -25,6 +30,9 @@ State::State(const State& oldstate){
 	tree = oldstate.tree->copy();
 	countdata = oldstate.countdata;
 	params = oldstate.params;
+	winv = gsl_matrix_alloc(oldstate.countdata->npop, oldstate.countdata->npop);
+	gsl_matrix_memcpy(winv, oldstate.winv);
+	ax =oldstate.ax;
 	//traversal = oldstate.traversal;
 	thetas = gsl_matrix_alloc(oldstate.countdata->nsnp, oldstate.countdata->npop);
 	gsl_matrix_memcpy(thetas, oldstate.thetas);
@@ -32,6 +40,8 @@ State::State(const State& oldstate){
 	gsl_vector_memcpy(means, oldstate.means);
 	sigma = gsl_matrix_alloc(oldstate.countdata->npop, oldstate.countdata->npop);
 	gsl_matrix_memcpy(sigma, oldstate.sigma);
+	snp_liks = gsl_vector_alloc(oldstate.countdata->nsnp);
+	gsl_vector_memcpy(snp_liks, oldstate.snp_liks);
 }
 
 
@@ -57,6 +67,8 @@ void State::compute_sigma(){
 			}
 		}
 	}
+	set_sigma_inv();
+
 }
 
 void State::print_sigma(){
@@ -106,7 +118,7 @@ double State::llik_snp(int i){
 		cout << "\n";
 	}
 	*/
-	toreturn = log(dmvnorm(countdata->npop, theta_snp, m, sigma));
+	toreturn = log(dens_mvnorm(theta_snp, m));
 	gsl_vector_free(m);
 	gsl_vector_free(theta_snp);
 	return toreturn;
@@ -118,8 +130,12 @@ void State::update(gsl_rng* r){
 }
 
 void State::update_tree(gsl_rng* r){
-	//cout << "updating tree \n"; cout.flush();
-	double oldlik = llik();
+	double oldlik = current_lik;
+
+	//flip the nodes
+	tree->flip_sons(tree->getRoot(), r);
+
+	//copy the old tree
 	PhyloPop_Tree::Tree<PhyloPop_Tree::NodeData>* oldtree = tree->copy();
 
 	//propose new tree
@@ -130,11 +146,11 @@ void State::update_tree(gsl_rng* r){
 	for(int i = 0; i < trav.size(); i++){
 		if (trav[i]->m_time > maxdist) maxdist = trav[i]->m_time;
 	}
+
 	//if it's ok, do a metropolis update
 	if (maxdist < params->B){
 		double newlik = llik();
 		double ratio = exp(newlik-oldlik);
-		//cout << oldlik  << " "<< newlik << " "<< ratio << "\n";
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
 			if (acc > ratio){
@@ -142,23 +158,39 @@ void State::update_tree(gsl_rng* r){
 				tree = oldtree;
 				compute_sigma();
 			}
-			else delete oldtree;
+			else{
+				delete oldtree;
+				current_lik = newlik;
+			}
 		}
-		else delete oldtree;
+		else{
+			delete oldtree;
+			current_lik = newlik;
+		}
 	}
+
+	//if not, switch back to the old tre
 	else{
 		delete tree;
 		tree = oldtree;
 		compute_sigma();
 	}
-	//cout << "updated \n"; cout.flush();
+}
 
+void State::init_liks(){
+	double total;
+	for(int i = 0; i < countdata->nsnp; i++){
+		double tmp = llik_snp(i);
+		gsl_vector_set(snp_liks, i, tmp);
+		total+= tmp;
+	}
+	current_lik = total;
 }
 
 vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > State::propose_tree(gsl_rng* r){
 	//1. flip nodes
 	//cout << "flipping\n"; cout.flush();
-	tree->flip_sons(tree->getRoot(), r);
+	//tree->flip_sons(tree->getRoot(), r);
 	//2. get the traversal
 	//cout << "get traversal 1\n"; cout.flush();
 	vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > trav = tree->get_inorder_traversal(countdata->npop);
@@ -185,30 +217,41 @@ vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > State::propose_tree(gs
 }
 
 void State::update_means(gsl_rng* r){
-	//cout << "nsnps: "<< countdata->nsnp << "\n";
+	double total= 0;
 	for(int i = 0; i < countdata->nsnp; i++){
-		update_mean(r, i);
+		total+= update_mean(r, i);
 	}
+	current_lik = total;
 }
 
-void State::update_mean(gsl_rng* r, int i){
+double State::update_mean(gsl_rng* r, int i){
 	/*
 	 * Metropolis update of ancestral allele frequency parameters. Prior is Beta(lambda, lambda) (symmetric)
 	 *  proposal is oldparameter+ N(0, s^2), constrained to fall within [0,1]
 	 */
 	double oldm = gsl_vector_get(means, i);
 	double newm = oldm + gsl_ran_gaussian(r, params->s2);
+	double toreturn = gsl_vector_get(snp_liks, i);
 	if (newm > 0 && newm < 1){
-		double oldpost = llik_snp(i) * gsl_ran_beta_pdf(oldm, params->lambda, params->lambda);
+		double oldpost = toreturn * gsl_ran_beta_pdf(oldm, params->lambda, params->lambda);
 		gsl_vector_set(means, i, newm);
-		double newpost = llik_snp(i) *gsl_ran_beta_pdf(newm, params->lambda, params->lambda);
+		double newlik = llik_snp(i);
+		double newpost = newlik *gsl_ran_beta_pdf(newm, params->lambda, params->lambda);
 		double ratio = exp(newpost-oldpost);
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
 			if (acc > ratio) gsl_vector_set(means, i, oldm);
+			else {
+				gsl_vector_set(snp_liks, i, newlik);
+				toreturn = newlik;
+			}
 		}
-		//cout << oldm << " "<< newm << " "<< oldpost << " "<< newpost <<  " "<< ratio<<"\n";
+		else{
+			gsl_vector_set(snp_liks, i, newlik);
+			toreturn = newlik;
+		}
 	}
+	return toreturn;
 }
 
 
@@ -232,11 +275,14 @@ void State::read_thetas(string thetafile, int npop, int nsnp){
 	gsl_vector_free(means);
 	gsl_matrix_free(sigma);
 	gsl_matrix_free(thetas);
+	gsl_vector_free(snp_liks);
 	thetas = gsl_matrix_alloc(countdata->nsnp, countdata->npop);
 	means = gsl_vector_alloc(countdata->nsnp);
+	snp_liks = gsl_vector_alloc(countdata->nsnp);
 	sigma = gsl_matrix_alloc(countdata->npop, countdata->npop);
 	gsl_matrix_set_zero(thetas);
 	gsl_vector_set_zero(means);
+	gsl_vector_set_zero(snp_liks);
 	gsl_matrix_set_zero(sigma);
 
 	ifstream in(thetafile.c_str());
@@ -259,4 +305,41 @@ void State::read_thetas(string thetafile, int npop, int nsnp){
             for(int j = 0; j < line.size(); j++)	gsl_matrix_set(thetas, i, j, atof(line[j].c_str()));
             i++;
     }
+}
+
+void State::set_sigma_inv(){
+	ax = 0;
+	size_t pop = countdata->npop;
+	int s;
+	gsl_matrix * work = gsl_matrix_alloc(pop,pop);
+	gsl_matrix * newinv = gsl_matrix_alloc(pop,pop);
+	gsl_matrix_memcpy( work, sigma );
+
+	gsl_permutation * p = gsl_permutation_alloc(countdata->npop);
+	gsl_linalg_LU_decomp( work, p, &s );
+	gsl_linalg_LU_invert( work, p, newinv );
+	ax = gsl_linalg_LU_det( work, s );
+	gsl_matrix_free( work );
+	gsl_permutation_free( p );
+	gsl_matrix_memcpy( winv, newinv);
+	gsl_matrix_free(newinv);
+}
+
+double State::dens_mvnorm(const gsl_vector* x, const gsl_vector* mean){
+	// x are the thetas, mean are the ancestral allele frequencies. assume we've already done the inversion of sigma
+	double ay;
+	gsl_vector *ym, *xm;
+
+	xm = gsl_vector_alloc(countdata->npop);
+	gsl_vector_memcpy( xm, x);
+	gsl_vector_sub( xm, mean );
+	ym = gsl_vector_alloc(countdata->npop);
+
+
+	gsl_blas_dsymv(CblasUpper,1.0,winv,xm,0.0,ym);
+	gsl_blas_ddot( xm, ym, &ay);
+	gsl_vector_free(xm);
+	gsl_vector_free(ym);
+	ay = exp(-0.5*ay)/sqrt( pow((2*M_PI),countdata->npop)*ax );
+	return ay;
 }
