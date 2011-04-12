@@ -118,7 +118,7 @@ namespace PhyloPop_Tree
         template<class NODEDATA>
         void Tree<NODEDATA>::perturb_node_heights(vector<iterator<NODEDATA> > trav, double epsilon, gsl_rng *r){
 
-        	// perturb the node heights, they're in even positions
+        	// perturb the tip heights, they're in even positions
         	for(int i = 0 ; i < trav.size(); i+=2){
         		double d1 = 0;
         		double d2 = 0;
@@ -151,9 +151,9 @@ namespace PhyloPop_Tree
           		min = d1;
           		if (d2 < min ) min = d2;
           		double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
-          		double newheight = trav[i]->m_time + toadd;
+          		double newheight = fabs(trav[i]->m_time + toadd);
           		if (newheight > min) newheight = min - (newheight-min);
-          		trav[i]->m_time = newheight;
+          		if(newheight > 0) trav[i]->m_time = newheight;
         	}
         }
         template<class NODEDATA>

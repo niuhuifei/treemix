@@ -47,6 +47,8 @@ public:
 
 	//initialize the likelihood
 	void init_liks();
+	void init_thetas();
+	void init_means();
 
 	// workhorse function is update(), does all the Metropolis updates using the functions that follow it
 	void update(gsl_rng*);
@@ -54,6 +56,8 @@ public:
 	vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > propose_tree(gsl_rng*);
 	void update_means(gsl_rng*);
 	double update_mean(gsl_rng*, int);
+	void update_thetas(gsl_rng*);
+	double update_theta_snp(gsl_rng*, int);
 
 	// compute the covariance matrix from the tree
 	void compute_sigma();
@@ -63,6 +67,7 @@ public:
 	//compute the log-likelihood of the data given the tree
 	double llik();
 	double llik_snp(int);
+	double llik_snp_old(int);
 	double dens_mvnorm(const gsl_vector*, const gsl_vector*);
 
 	void print_state(ogzstream&, ogzstream&);

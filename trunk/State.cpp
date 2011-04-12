@@ -78,15 +78,26 @@ void State::print_sigma(){
 		}
 		cout << "\n";
 	}
+}
 
+void State::init_means(){
+	for (int i = 0; i < countdata->nsnp; i++){
+		double total = 0;
+		for (int j = 0; j < countdata->npop; j++)	total+= gsl_matrix_get(thetas, i, j);
+		total = total/ (double) countdata->npop;
+		gsl_vector_set(means, i, total);
+	}
 
 }
 
 double State::llik(){
 	double toreturn = 0;
+	double tmp;
+    omp_set_num_threads(params->nthread);
+	#pragma omp parallel for private(tmp)
 	for (int i = 0; i < countdata->nsnp; i++){
-		double tmp = llik_snp(i);
-		//cout << tmp << "\n";
+		tmp = llik_snp(i);
+		#pragma omp atomic
 		toreturn+= tmp;
 	}
 	return toreturn;
@@ -94,6 +105,36 @@ double State::llik(){
 
 
 double State::llik_snp(int i){
+
+	/*
+	 * the log-likelihood at a SNP is MVN(theta | m, sigma), where m is the ancestral allele frequency (shared by all the populations)
+	 *  and sigma is the covariance matrix determined by the shape of the tree
+	 */
+	double toreturn = 0;
+	size_t r = i;
+	gsl_vector* m = gsl_vector_alloc(countdata->npop);
+	gsl_vector* theta_snp = gsl_vector_alloc(countdata->npop);
+	gsl_vector_set_all(m, gsl_vector_get(means, r));
+	gsl_matrix_get_row(theta_snp, thetas, r);
+
+	toreturn = log(dens_mvnorm(theta_snp, m));
+	for (int j  = 0 ; j < countdata->npop; j++){
+		double alf = gsl_vector_get(theta_snp, j);
+		if (alf < 0) alf = 0;
+		if (alf > 1) alf = 1;
+		int s = countdata->allele_counts[i][j].first+countdata->allele_counts[i][j].second;
+		double toadd = gsl_ran_binomial_pdf(countdata->allele_counts[i][j].first, alf, s);
+		//cout << countdata->allele_counts[i][j].first  << " "<< countdata->allele_counts[i][j].second << " "<< alf << " "<< log(toadd) << "\n";
+		toreturn+= log(toadd);
+	}
+	gsl_vector_free(m);
+	gsl_vector_free(theta_snp);
+	return toreturn;
+}
+
+
+
+double State::llik_snp_old(int i){
 
 	/*
 	 * the log-likelihood at a SNP is MVN(theta | m, sigma), where m is the ancestral allele frequency (shared by all the populations)
@@ -118,15 +159,17 @@ double State::llik_snp(int i){
 		cout << "\n";
 	}
 	*/
-	toreturn = log(dens_mvnorm(theta_snp, m));
+	toreturn = log(dmvnorm(countdata->npop, theta_snp, m, sigma));
 	gsl_vector_free(m);
 	gsl_vector_free(theta_snp);
 	return toreturn;
 }
 
+
 void State::update(gsl_rng* r){
 	update_means(r);
 	update_tree(r);
+	update_thetas(r);
 }
 
 void State::update_tree(gsl_rng* r){
@@ -185,6 +228,17 @@ void State::init_liks(){
 		total+= tmp;
 	}
 	current_lik = total;
+}
+
+void State::init_thetas(){
+	for (int i = 0; i < countdata->nsnp; i++){
+		for (int j = 0; j < countdata->npop; j++){
+			int c1 = countdata->allele_counts[i][j].first;
+			int c2 = countdata->allele_counts[i][j].second;
+			double f = (double) c1/ ( (double) c1+ (double) c2);
+			gsl_matrix_set(thetas, i, j, f);
+		}
+	}
 }
 
 vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > State::propose_tree(gsl_rng* r){
@@ -254,6 +308,42 @@ double State::update_mean(gsl_rng* r, int i){
 	return toreturn;
 }
 
+void State::update_thetas(gsl_rng* r){
+	double total = 0;
+	for (int i = 0; i < countdata->nsnp; i++){
+		total+= update_theta_snp(r, i);
+	}
+	current_lik = total;
+}
+
+double State::update_theta_snp(gsl_rng* r, int i){
+	/*
+	 * Metropolis update of thetas. Update all thetas by adding a N(0, s^2) to each (paramter in HM_params is s3). Priors on sigma and means cancel out.
+	 */
+	double toreturn = gsl_vector_get(snp_liks, i);
+	gsl_vector* theta_old = gsl_vector_alloc(countdata->npop);
+	gsl_matrix_get_row(theta_old, thetas, i);
+	for (int j = 0; j < countdata->npop; j++) {
+		double newt = gsl_matrix_get(thetas, i, j) + gsl_ran_gaussian(r, params->s3);
+		gsl_matrix_set(thetas, i, j, newt);
+	}
+	double newlik = llik_snp(i);
+	double ratio = exp(newlik-toreturn);
+	if (ratio < 1){
+		double acc = gsl_rng_uniform(r);
+		if (acc > ratio) gsl_matrix_set_row(thetas, i, theta_old);
+		else{
+			gsl_vector_set(snp_liks, i, newlik);
+			toreturn = newlik;
+		}
+	}
+	else{
+		gsl_vector_set(snp_liks, i, newlik);
+		toreturn = newlik;
+	}
+	gsl_vector_free(theta_old);
+	return toreturn;
+}
 
 
 void State::print_state(ogzstream& treefile, ogzstream& mfile){

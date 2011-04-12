@@ -10,6 +10,26 @@ CountData::CountData(string infile){
 	read_counts(infile);
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 }
+
+string CountData::get_pops(){
+	string toreturn = "(";
+	map<string , int>::iterator it = pop2id.begin();
+	map<string , int>::iterator it2 = pop2id.end();
+	it2--;
+	toreturn+= it->first +":0.1";
+	it++;
+	while (it != it2){
+		toreturn+=",("+it->first+":0.1";
+		it++;
+	}
+	toreturn+=","+it->first +":0.1";
+	for (int i = 0; i < npop; i++)	toreturn+= "):0.1";
+
+
+	toreturn = toreturn.substr(0, toreturn.size()-4);
+	toreturn+= ";";
+	return toreturn;
+}
 void CountData::read_counts(string infile){
     allele_counts.clear();
     pop2id.clear();
