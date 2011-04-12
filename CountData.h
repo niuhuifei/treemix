@@ -17,6 +17,7 @@ public:
 	map<string, int> pop2id;
 	vector<vector<pair<int, int> > > allele_counts;
 	int npop, nsnp;
+	string get_pops();
 };
 
 #endif /* COUNTDATA_H_ */

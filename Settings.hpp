@@ -35,7 +35,7 @@
 #include <math.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_randist.h>
-
+#include <omp.h>
 
 
 using std::string;

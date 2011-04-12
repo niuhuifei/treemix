@@ -6,6 +6,7 @@
  */
 
 #include "MCMC.h"
+#include "mvnorm.h"
 
 MCMC::MCMC(State* s, MCMC_params* p){
 	state = s;
