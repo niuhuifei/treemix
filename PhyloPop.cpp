@@ -5,7 +5,6 @@
  *      Author: pickrell
  */
 
-#include "CmdLine.h"
 #include "Settings.hpp"
 #include "MCMC.h"
 
@@ -19,7 +18,6 @@ void printopts(){
 	cout << "Options:\n";
 	cout << "-i input file\n";
 	cout << "-o output stem (will be [stem].treeout.gz and [stem].meanout.gz)\n";
-	cout << "-t number of threads\n\n";
 }
 
 
@@ -35,7 +33,6 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
-    if (cmdline.HasSwitch("-t"))	nthread = atoi(cmdline.GetArgument("-t", 0).c_str());
 
     string treefile = outstem+".treeout.gz";
     string mfile = outstem+".mout.gz";
@@ -50,6 +47,8 @@ int main(int argc, char *argv[]){
     MCMC_params p;
     p.nthread = nthread;
     State initstate(pops,  &counts, &p);
+
+
     //start random number generator
     const gsl_rng_type * T;
     gsl_rng * r;

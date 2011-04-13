@@ -93,11 +93,8 @@ void State::init_means(){
 double State::llik(){
 	double toreturn = 0;
 	double tmp;
-    omp_set_num_threads(params->nthread);
-	#pragma omp parallel for private(tmp)
 	for (int i = 0; i < countdata->nsnp; i++){
 		tmp = llik_snp(i);
-		#pragma omp atomic
 		toreturn+= tmp;
 	}
 	return toreturn;
@@ -272,8 +269,10 @@ vector<PhyloPop_Tree::iterator<PhyloPop_Tree::NodeData> > State::propose_tree(gs
 
 void State::update_means(gsl_rng* r){
 	double total= 0;
+	double tmp;
 	for(int i = 0; i < countdata->nsnp; i++){
-		total+= update_mean(r, i);
+		tmp = update_mean(r, i);
+		total+= tmp;
 	}
 	current_lik = total;
 }
@@ -310,8 +309,10 @@ double State::update_mean(gsl_rng* r, int i){
 
 void State::update_thetas(gsl_rng* r){
 	double total = 0;
-	for (int i = 0; i < countdata->nsnp; i++){
-		total+= update_theta_snp(r, i);
+	double tmp;
+ 	for (int i = 0; i < countdata->nsnp; i++){
+		tmp = update_theta_snp(r, i);
+		total+= tmp;
 	}
 	current_lik = total;
 }
