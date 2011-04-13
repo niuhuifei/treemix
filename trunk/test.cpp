@@ -20,12 +20,14 @@ int main(){
 	string testnewick = "((YRI:0.8,LWD:0.4):0.1,(CEU:0.4,(JPT:0.2,CHB:0.3):0.2):0.5);";
 	ogzstream treeout("treeout.gz");
 	ogzstream mout("meanout.gz");
-	CountData counts("testin.gz");
+	CountData counts("testin_counts.gz");
 	MCMC_params p;
 	State teststate(testnewick, &counts, &p);
-	teststate.read_thetas("testin_thetas", 5, 10000);
+	//teststate.read_thetas("testin_thetas", 5, 1000);
 	teststate.tree->randomize_tree(r);
 	teststate.compute_sigma();
+	teststate.init_thetas();
+	teststate.init_means();
 	teststate.init_liks();
 	cout << teststate.countdata->npop << " "<< teststate.countdata->nsnp << " "<< teststate.current_lik<< "\n";
 	MCMC testmcmc(&teststate, &p);
