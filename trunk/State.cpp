@@ -143,22 +143,27 @@ double State::llik_snp_old(int i){
 	gsl_vector* theta_snp = gsl_vector_alloc(countdata->npop);
 	gsl_vector_set_all(m, gsl_vector_get(means, r));
 	gsl_matrix_get_row(theta_snp, thetas, r);
-	/*
-	  for(int i = 0; i < countdata->npop; i++){
-		cout << gsl_vector_get(m, i) << " "<< gsl_vector_get(theta_snp, i) <<"\n";
-	}
 
-	cout << "\n";
-	for (int j = 0; j < countdata->npop; j++){
-		for (int k = 0; k < countdata->npop; k++){
-			cout << gsl_matrix_get(sigma, j, k)<< " ";
-		}
-		cout << "\n";
+	double scale = gsl_vector_get(m, 0);
+	scale = scale*(1-scale);
+	gsl_matrix* sigma_scaled;
+	sigma_scaled = gsl_matrix_alloc(countdata->npop, countdata->npop);
+	gsl_matrix_memcpy(sigma_scaled, sigma);
+	gsl_matrix_scale(sigma_scaled, scale);
+
+	toreturn = log(dmvnorm(countdata->npop, theta_snp, m, sigma_scaled));
+	for (int j  = 0 ; j < countdata->npop; j++){
+		double alf = gsl_vector_get(theta_snp, j);
+		if (alf < 0) alf = 0;
+		if (alf > 1) alf = 1;
+		int s = countdata->allele_counts[i][j].first+countdata->allele_counts[i][j].second;
+		double toadd = gsl_ran_binomial_pdf(countdata->allele_counts[i][j].first, alf, s);
+		//cout << countdata->allele_counts[i][j].first  << " "<< countdata->allele_counts[i][j].second << " "<< alf << " "<< log(toadd) << "\n";
+		toreturn+= log(toadd);
 	}
-	*/
-	toreturn = log(dmvnorm(countdata->npop, theta_snp, m, sigma));
 	gsl_vector_free(m);
 	gsl_vector_free(theta_snp);
+	gsl_matrix_free(sigma_scaled);
 	return toreturn;
 }
 
@@ -418,19 +423,32 @@ void State::set_sigma_inv(){
 
 double State::dens_mvnorm(const gsl_vector* x, const gsl_vector* mean){
 	// x are the thetas, mean are the ancestral allele frequencies. assume we've already done the inversion of sigma
-	double ay;
+	double ay, det_scaled;
 	gsl_vector *ym, *xm;
+	gsl_matrix *inv_scaled;
 
 	xm = gsl_vector_alloc(countdata->npop);
 	gsl_vector_memcpy( xm, x);
 	gsl_vector_sub( xm, mean );
 	ym = gsl_vector_alloc(countdata->npop);
 
+	//scale according to the mean
+	double scale = gsl_vector_get(mean, 0);
+	scale = scale * (1-scale);
 
-	gsl_blas_dsymv(CblasUpper,1.0,winv,xm,0.0,ym);
+	inv_scaled = gsl_matrix_alloc(countdata->npop, countdata->npop);
+	gsl_matrix_memcpy(inv_scaled, winv);
+	gsl_matrix_scale(inv_scaled, 1/scale);
+	det_scaled = pow(scale, countdata->npop)* ax;
+	//cout << "\nin dens_mvnorm "<< ax << " "<< det_scaled << "\n";
+
+	gsl_blas_dsymv(CblasUpper,1.0,inv_scaled,xm,0.0,ym);
 	gsl_blas_ddot( xm, ym, &ay);
+
+	ay = exp(-0.5*ay)/sqrt( pow((2*M_PI),countdata->npop)*det_scaled);
+
 	gsl_vector_free(xm);
 	gsl_vector_free(ym);
-	ay = exp(-0.5*ay)/sqrt( pow((2*M_PI),countdata->npop)*ax );
+	gsl_matrix_free(inv_scaled);
 	return ay;
 }

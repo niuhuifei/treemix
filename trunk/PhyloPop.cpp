@@ -10,7 +10,7 @@
 
 string infile;
 string outstem = "PhyloPop";
-int seed = 100;
+int seed = 200;
 int nthread = 1;
 
 void printopts(){

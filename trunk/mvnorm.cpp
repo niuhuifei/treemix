@@ -54,6 +54,7 @@ gsl_matrix_memcpy( work, var );
 gsl_linalg_LU_decomp( work, p, &s );
 gsl_linalg_LU_invert( work, p, winv );
 ax = gsl_linalg_LU_det( work, s );
+//std::cout << "in dmvnorm "<< ax << "\n";
 gsl_matrix_free( work );
 gsl_permutation_free( p );
 
