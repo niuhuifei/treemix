@@ -22,6 +22,7 @@ void MCMC::run(gsl_rng* r, ogzstream& treefile, ogzstream& mfile){
 		if (i % param->psamp == 0) cout <<  "Burn-in step "<< i << " llik: "<< state->current_lik << "\n";
 		state->update(r);
 	}
+	param->epsilon = param->epsilon/5;
 	cout << "Sampling\n";
 	for (int i = 0; i < param->total; i++){
 		if (i % param->samp == 0) state->print_state(treefile, mfile);
