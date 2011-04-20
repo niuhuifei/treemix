@@ -9,6 +9,11 @@
 CountData::CountData(string infile){
 	read_counts(infile);
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
+	alfreqs = gsl_matrix_alloc(nsnp, npop);
+	cov = gsl_matrix_alloc(npop, npop);
+	set_alfreqs();
+	scale_alfreqs();
+	set_cov();
 }
 
 string CountData::get_pops(){
@@ -102,3 +107,45 @@ void CountData::read_counts(string infile){
     }
 }
 
+void CountData::set_alfreqs(){
+	for (int i = 0; i < nsnp; i++){
+		for (int j = 0; j < npop; j++){
+			int c1 = allele_counts[i][j].first;
+			int c2 = allele_counts[i][j].second;
+			double f = (double) c1 / ( (double) c1 + (double) c2 );
+			gsl_matrix_set(alfreqs, i, j, f);
+		}
+	}
+}
+
+void CountData::scale_alfreqs(){
+	for (int i = 0; i < nsnp; i++){
+		double total = 0;
+		for (int j = 0; j < npop; j++){
+			double f = gsl_matrix_get(alfreqs, i, j);
+			double scaled = asin(sqrt(f));
+			total = total+scaled;
+			gsl_matrix_set(alfreqs, i, j, scaled);
+		}
+		double m = total/ (double) npop;
+		for (int j = 0; j < npop; j++){
+			double f = gsl_matrix_get(alfreqs, i, j);
+			gsl_matrix_set(alfreqs, i, j, f-m);
+		}
+	}
+}
+
+void CountData::set_cov(){
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double c = 0;
+			for (int k = 0; k < nsnp; k++){
+				double toadd = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
+				c += toadd;
+			}
+			c = c/nsnp;
+			gsl_matrix_set(cov, i, j, c);
+			gsl_matrix_set(cov, j, i, c);
+		}
+	}
+}
