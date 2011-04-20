@@ -10,6 +10,7 @@
 #include "Settings.hpp"
 
 
+
 class CountData{
 public:
 	CountData(string);
@@ -18,6 +19,10 @@ public:
 	vector<vector<pair<int, int> > > allele_counts;
 	int npop, nsnp;
 	string get_pops();
+	gsl_matrix *alfreqs, *cov;
+	void set_alfreqs();
+	void scale_alfreqs();
+	void set_cov();
 };
 
 #endif /* COUNTDATA_H_ */

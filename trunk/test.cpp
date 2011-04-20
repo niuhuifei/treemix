@@ -21,7 +21,23 @@ int main(){
 	ogzstream treeout("treeout.gz");
 	ogzstream mout("meanout.gz");
 	CountData counts("testin_counts.gz");
-	MCMC_params p;
+	//vector<vector<double> > freqs = counts.get_alfreqs();
+	for (int i = 0; i < counts.nsnp ; i++){
+		for (int j = 0; j < counts.npop; j++){
+			std::cerr << gsl_matrix_get(counts.alfreqs, i, j) << " ";
+		}
+		std::cerr << "\n";
+	}
+
+	counts.set_cov();
+	cout <<  "\n";
+	for (int i = 0; i < counts.npop ; i++){
+		for (int j = 0; j < counts.npop; j++){
+			cout << gsl_matrix_get(counts.cov, i, j) << " ";
+		}
+		cout << "\n";
+	}
+/*	MCMC_params p;
 	State teststate(testnewick, &counts, &p);
 	//teststate.read_thetas("testin_thetas", 5, 1000);
 	teststate.tree->randomize_tree(r);
@@ -32,7 +48,7 @@ int main(){
 	cout << teststate.countdata->npop << " "<< teststate.countdata->nsnp << " "<< teststate.current_lik<< "\n";
 	MCMC testmcmc(&teststate, &p);
 	testmcmc.run(r, treeout, mout);
-/*
+
 	vector<PhyloPop_Tree::iterator< PhyloPop_Tree::NodeData> > vec = teststate.tree->get_inorder_traversal(counts.npop);
 	for (int i = 0; i < vec.size(); i++){
 		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
