@@ -9,6 +9,7 @@
 //#include "BinaryTree.h"
 #include "MCMC.h"
 #include "CountData.h"
+#include "WishartState.h"
 
 int main(){
 	const gsl_rng_type * T;
@@ -21,25 +22,25 @@ int main(){
 	ogzstream treeout("treeout.gz");
 	ogzstream mout("meanout.gz");
 	CountData counts("testin_counts.gz");
-	//vector<vector<double> > freqs = counts.get_alfreqs();
-	for (int i = 0; i < counts.nsnp ; i++){
-		for (int j = 0; j < counts.npop; j++){
-			std::cerr << gsl_matrix_get(counts.alfreqs, i, j) << " ";
-		}
-		std::cerr << "\n";
-	}
+	MCMC_params p;
 
-	counts.set_cov();
-	cout <<  "\n";
-	for (int i = 0; i < counts.npop ; i++){
-		for (int j = 0; j < counts.npop; j++){
-			cout << gsl_matrix_get(counts.cov, i, j) << " ";
-		}
-		cout << "\n";
-	}
-/*	MCMC_params p;
-	State teststate(testnewick, &counts, &p);
-	//teststate.read_thetas("testin_thetas", 5, 1000);
+	WishartState teststate(testnewick, &counts, &p);
+
+	teststate.tree->randomize_tree(r);
+	teststate.compute_sigma();
+	cout << "llik: "<< teststate.llik() << "\n";
+
+	//vector<vector<double> > freqs = counts.get_alfreqs();
+	//for (int i = 0; i < counts.nsnp ; i++){
+	//	for (int j = 0; j < counts.npop; j++){
+	//		std::cerr << gsl_matrix_get(counts.alfreqs, i, j) << " ";
+	//	}
+	//	std::cerr << "\n";
+	//}
+
+
+/*
+
 	teststate.tree->randomize_tree(r);
 	teststate.compute_sigma();
 	teststate.init_thetas();

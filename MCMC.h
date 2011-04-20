@@ -8,13 +8,13 @@
 #ifndef MCMC_H_
 #define MCMC_H_
 #include "Settings.hpp"
-#include "State.h"
+#include "WishartState.h"
 class MCMC{
 public:
-	MCMC(State*, MCMC_params*);
-	State* state;
+	MCMC(WishartState*, MCMC_params*);
+	WishartState* state;
 	MCMC_params* param;
-	void run(gsl_rng*, ogzstream&, ogzstream&);
+	void run(gsl_rng*, ogzstream&);
 };
 
 #endif /* MCMC_H_ */
