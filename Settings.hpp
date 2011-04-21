@@ -38,6 +38,10 @@
 #include <omp.h>
 #include <cmath>
 #include "CmdLine.h"
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
 
 
 using std::string;
@@ -60,6 +64,10 @@ using std::pair;
 using std::make_pair;
 using std::fstream;
 using std::ifstream;
+using boost::adjacency_list;
+using boost::vecS;
+using boost::listS;
+using boost::graph_traits;
 
 typedef vector<vector<double> >                         vector2d;
 typedef vector<vector<vector<double> > >        vector3d;
