@@ -44,15 +44,39 @@ public:
 
 	vector<Graph::vertex_descriptor> index2father;
 	map<string, Graph::vertex_descriptor> popname2tip;
+	vector<string> popnames;
 	Graph::vertex_descriptor root;
+	void set_root(Graph::vertex_descriptor);
 
-	inline double get_dist_to_root(Graph::vertex_descriptor);
-	inline void flip_sons(Graph::vertex_descriptor, gsl_rng* );
+	double get_height(Graph::vertex_descriptor);
+	double get_dist_to_root(Graph::vertex_descriptor); //get the distance to the root for any node in the tree
+	void flip_sons(Graph::vertex_descriptor, gsl_rng* ); //flip the inorder traversal from a node
 
 	//get the inorder traversal
-	inline vector< Graph::vertex_descriptor > get_inorder_traversal( int);
+	vector< Graph::vertex_descriptor > get_inorder_traversal( int);
+	void inorder_traverse(Graph::vertex_descriptor, int*, vector<Graph::vertex_descriptor >*);
 
-	//helper functions for inorder traversal
-	inline void inorder_traverse(Graph::vertex_descriptor, int*, vector<Graph::vertex_descriptor >*);
+	//get the LCA of two tips in the tree
+	Graph::vertex_descriptor get_LCA(Graph::vertex_descriptor, Graph::vertex_descriptor, Graph::vertex_descriptor);
+
+	//set the heights of the vertices
+	void set_node_heights(vector<Graph::vertex_descriptor>);
+
+	//and perturb them
+	void perturb_node_heights(vector< Graph::vertex_descriptor>, double, gsl_rng*);
+
+	//build a tree from a traversal order and heights
+	void build_tree(vector< Graph::vertex_descriptor >);
+	void build_tree_helper(vector< Graph::vertex_descriptor >*, int);
+	void update_branch_lengths(Graph::vertex_descriptor);
+
+	//randomize the tree
+	void randomize_tree(gsl_rng*);
+
+	//Newick format
+	string get_newick_format();
+	void newick_helper( Graph::vertex_descriptor, string*);
+
 };
+
 #endif /* POPGRAPH_H_ */
