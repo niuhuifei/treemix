@@ -108,6 +108,7 @@ PopGraph::PopGraph(string p_newickString){
               g[v2].name = name;
               g[v2].is_tip = true;
               popname2tip.insert(make_pair(name, v2));
+              popnames.push_back(name);
       }
      }
 }
@@ -124,17 +125,15 @@ double PopGraph::get_dist_to_root(Graph::vertex_descriptor v){
 
 void PopGraph::flip_sons(Graph::vertex_descriptor v, gsl_rng* r){
 	if (g[v].is_tip == false){
-		//cout << "here\n"; cout.flush();
 		double ran = gsl_rng_uniform(r);
-		//cout << ran <<"\n"; cout.flush();
 		if (ran <0.5){
 			if (g[v].rev == true) g[v].rev = false;
-			else g[v].rev = true;
+			else if (g[v].rev == false) g[v].rev = true;
 		}
 		graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
-		//flip_sons(dest(g[*out_i]), r);
+		flip_sons(target(*out_i, g), r);
 		++out_i;
-		//flip_sons(destination(g[*out_i]), r);
+		flip_sons(target(*out_i, g), r);
 	}
 }
 
@@ -146,17 +145,241 @@ vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal(int nodes){
 }
 
 void PopGraph::inorder_traverse(Graph::vertex_descriptor rootIterator, int* i, vector<Graph::vertex_descriptor >* v){
-	graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
+	graph_traits<Graph>::out_edge_iterator out_i = out_edges(rootIterator, g).first;
 	if (g[rootIterator].is_tip == false){
-		if (g[v].rev == true) out_i++;
- 		//inorder_traverse(*out_i,i , v);
+		if (g[rootIterator].rev == true) out_i++;
+ 		inorder_traverse(target(*out_i, g), i , v);
  	}
  	v->at(*i) = rootIterator;
  	*i = *i+1;
 
  	if (g[rootIterator].is_tip == false){
- 		if (g[v].rev ==true) out_i--;
+ 		if (g[rootIterator].rev ==true) out_i--;
  		else ++out_i;
- 		//inorder_traverse(*out_i, i, v);
+ 		inorder_traverse(target(*out_i, g), i, v);
  	}
+}
+
+Graph::vertex_descriptor PopGraph::get_LCA(Graph::vertex_descriptor root_v,
+		Graph::vertex_descriptor tip1_v, Graph::vertex_descriptor tip2_v){
+		if (g[root_v].is_tip == true) return NULL;
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(root_v, g).first;
+		bool found = false;
+       	if (g[target(*out_i, g)].index == g[tip1_v].index || g[target(*out_i, g)].index == g[tip2_v].index) found = true;
+       	++out_i;
+       	if (g[target(*out_i, g)].index == g[tip1_v].index || g[target(*out_i, g)].index == g[tip2_v].index) found = true;
+       	if (found)  return root_v;
+       	else{
+       		Graph::vertex_descriptor firstit = get_LCA(target(*out_i, g), tip1_v, tip2_v);
+       		--out_i;
+       		Graph::vertex_descriptor lastit = get_LCA(target(*out_i, g), tip1_v, tip2_v);
+       		if (firstit && lastit) return root_v;
+       		else if (firstit) return firstit;
+       		else return lastit;
+       	}
+}
+
+void PopGraph::set_node_heights(vector<Graph::vertex_descriptor> trav){
+        	for (int i = 0; i < trav.size(); i++){
+        		g[trav[i]].height = get_dist_to_root(trav[i]);
+        	}
+}
+
+
+void PopGraph::perturb_node_heights(vector< Graph::vertex_descriptor > trav, double epsilon, gsl_rng *r){
+
+  	// perturb the tip heights, they're in even positions
+  	for(int i = 0 ; i < trav.size(); i+=2){
+  		double d1 = 0;
+  		double d2 = 0;
+  		double max = 0;
+  		if (i-1 >=0)	d1 = g[trav[i-1]].height;
+  		if (i+1 < trav.size())	d2 = g[trav[i+1]].height;
+
+  		max = d1;
+  		if (d2 > max ) max = d2;
+  		double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
+  		double newheight = g[trav[i]].height + toadd;
+  		if (newheight < max) newheight = max+ (max-newheight);
+  		g[trav[i]].height = newheight;
+  	}
+
+  	//perturb the heights of the interior nodes
+  	for (int i = 1 ; i < trav.size(); i+=2){
+     		double d1 = 10000;
+     		double d2 = 10000;
+     		double min = 0;
+     		if (i-1 >=0)	d1 = g[trav[i-1]].height;
+      		if (i+1 < trav.size())	d2 = g[trav[i+1]].height;
+
+    		min = d1;
+    		if (d2 < min ) min = d2;
+    		double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
+    		double newheight = fabs(g[trav[i]].height + toadd);
+    		if (newheight > min) newheight = min - (newheight-min);
+    		if(newheight > 0) g[trav[i]].height = newheight;
+  	}
+  }
+
+
+
+void PopGraph::build_tree(vector< Graph::vertex_descriptor > trav){
+ 	//
+ 	//first find the new root (the minimum height)
+ 	//
+
+ 	Graph::vertex_descriptor newroot = trav[0];
+ 	double minheight = g[trav[0]].height;
+ 	int minpos = 0;
+ 	for(int i = 0 ; i < trav.size(); i ++){
+ 		if (g[trav[i]].height < minheight) {
+ 			newroot = trav[i];
+ 			minheight = g[trav[i]].height;
+ 			minpos =i;
+ 		}
+ 	}
+ 	set_root(newroot);
+
+ 	build_tree_helper(&trav, minpos);
+
+
+ }
+
+void PopGraph::set_root(Graph::vertex_descriptor v){
+	g[root].is_root = false;
+	g[v].is_root = true;
+	root = v;
+}
+void PopGraph::build_tree_helper(vector< Graph::vertex_descriptor >* trav, int index){
+ 	//
+ 	// look left
+ 	//
+ 	bool leftborder = false;
+ 	bool rightborder = false;
+ 	double leftmin = 10000;
+ 	double rightmin = 10000;
+ 	int minindex = 0;
+ 	int i = index-1;
+ 	bool foundleft = false;
+ 	while (i >= 0 && leftborder ==false){
+ 		if (g[trav->at(i)].height < g[trav->at(index)].height){
+ 			leftborder = true;
+ 			continue;
+ 		}
+ 		if (g[trav->at(i)].height < leftmin){
+ 			minindex = i;
+ 			leftmin = g[trav->at(i)].height;
+ 			foundleft = true;
+ 		}
+ 		i--;
+ 	}
+  	//
+ 	// fiddle with the adjacency list if necessary
+ 	//
+ 	if (foundleft){
+ 		clear_out_edges(trav->at(index), g);
+ 		add_edge(trav->at(index), trav->at(minindex), g);
+ 		build_tree_helper(trav, minindex);
+ 	}
+
+ 	//
+ 	// look right
+ 	//
+ 	minindex = 0;
+ 	i = index+1;
+ 	bool foundright = 0;
+   	while (i < trav->size() && rightborder ==false){
+     		if (g[trav->at(i)].height < g[trav->at(index)].height){
+     			rightborder = true;
+     			continue;
+     		}
+     		if (g[trav->at(i)].height < rightmin){
+     			minindex = i;
+     			rightmin = g[trav->at(i)].height;
+     			foundright = true;
+     		}
+     		i++;
+   	}
+   	//
+   	// fiddle with the adjacency list if necessary
+   	//
+   	if (foundright){
+		add_edge(trav->at(index), trav->at(minindex), g);
+ 		build_tree_helper(trav, minindex);
+   	}
+ }
+
+
+void PopGraph::update_branch_lengths(Graph::vertex_descriptor root_v){
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(root_v, g).first;
+		graph_traits<Graph>::out_edge_iterator out_end = out_edges(root_v, g).second;
+		graph_traits<Graph>::in_edge_iterator in_i = in_edges(root_v, g).first;
+		if (out_i != out_end) update_branch_lengths(target(*out_i, g));
+		if (g[root_v].is_root == false) {
+			g[*in_i].len = g[root_v].height - g[source(*in_i, g)].height;
+		}
+ 		if (out_i != out_end) {
+ 			++out_i;
+ 			update_branch_lengths(target(*out_i, g));
+ 		}
+  }
+
+
+void PopGraph::randomize_tree(gsl_rng* r){
+  	vector< Graph::vertex_descriptor > trav = get_inorder_traversal( popname2tip.size());
+ 	double tipheight = gsl_rng_uniform(r)*0.5+0.5;
+
+ 	// set the tip heights
+ 	for(int i = 0 ; i < trav.size(); i+=2){
+ 		g[trav[i]].height = tipheight;
+ 	}
+ 	for(int i = 1; i < trav.size(); i+=2){
+ 		g[trav[i]].height = gsl_rng_uniform(r)*tipheight;
+ 	}
+
+ 	build_tree(trav);
+ 	update_branch_lengths(root);
+ 	trav = get_inorder_traversal(popname2tip.size());
+ 	set_node_heights(trav);
+ }
+
+string PopGraph::get_newick_format(){
+ 	string toreturn = "";
+ 	newick_helper(root, &toreturn);
+ 	return toreturn;
+ }
+
+void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
+	if (node != NULL){
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(node, g).first;
+		graph_traits<Graph>::out_edge_iterator out_end = out_edges(node, g).second;
+		if (out_i != out_end){
+			s->append("(");
+			newick_helper(target(*out_i, g), s);
+			s->append(",");
+			++out_i;
+			newick_helper(target(*out_i, g), s);
+			s->append(")");
+			if (g[node].is_root == false){
+				graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
+				s->append(":");
+				stringstream ss;
+				ss<< g[*in_i].len;
+				s->append(ss.str());
+			}
+			else s->append(";");
+		}
+		else{
+			graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
+			stringstream ss;
+			ss << g[node].name;
+			ss << ":";
+			ss<< g[*in_i].len;
+			s->append(ss.str());
+		}
+	}
+}
+
+double PopGraph::get_height(Graph::vertex_descriptor v){
+	return g[v].height;
 }
