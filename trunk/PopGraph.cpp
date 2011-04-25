@@ -22,6 +22,7 @@ PopGraph::PopGraph(string p_newickString){
 	g = Graph(1);
 	index2father.clear();
 	int i = 0;
+	istree = true;
 	Graph::vertex_descriptor v = *vertices(g).first;
 	Graph::vertex_descriptor v2 = *vertices(g).first;
 	Graph::edge_descriptor e;
@@ -31,6 +32,8 @@ PopGraph::PopGraph(string p_newickString){
 	index2father.push_back(NULL);
 	g[v].is_tip = false;
 	g[v].is_root = true;
+	g[v].rev = false;
+	root = v;
 	for(string::const_iterator I = p_newickString.begin();
 		I != p_newickString.end(); ++I)
       {
@@ -45,6 +48,7 @@ PopGraph::PopGraph(string p_newickString){
 			index2father.push_back(v);
 			g[v2].is_tip = false;
 			g[v2].is_root = false;
+			g[v2].rev = false;
 			e = add_edge( v, v2, g).first;
 			v = v2;
 		}
@@ -66,6 +70,7 @@ PopGraph::PopGraph(string p_newickString){
 			index2father.push_back(v);
 			g[v2].is_tip = false;
 			g[v2].is_root = false;
+			g[v2].rev = false;
 			e = add_edge( v, v2, g).first;
 			v = v2;
       }
@@ -102,6 +107,56 @@ PopGraph::PopGraph(string p_newickString){
               --I;
               g[v2].name = name;
               g[v2].is_tip = true;
+              popname2tip.insert(make_pair(name, v2));
       }
      }
+}
+
+double PopGraph::get_dist_to_root(Graph::vertex_descriptor v){
+	double toreturn = 0;
+	while (g[v].is_root == false){
+		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
+		toreturn += g[*in_i].len;
+		v = source(*in_i, g);
+	}
+	return toreturn;
+}
+
+void PopGraph::flip_sons(Graph::vertex_descriptor v, gsl_rng* r){
+	if (g[v].is_tip == false){
+		//cout << "here\n"; cout.flush();
+		double ran = gsl_rng_uniform(r);
+		//cout << ran <<"\n"; cout.flush();
+		if (ran <0.5){
+			if (g[v].rev == true) g[v].rev = false;
+			else g[v].rev = true;
+		}
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
+		//flip_sons(dest(g[*out_i]), r);
+		++out_i;
+		//flip_sons(destination(g[*out_i]), r);
+	}
+}
+
+vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal(int nodes){
+        	vector<Graph::vertex_descriptor> toreturn(2*nodes-1);
+        	int count = 0;
+        	inorder_traverse(root, &count, &toreturn);
+        	return toreturn;
+}
+
+void PopGraph::inorder_traverse(Graph::vertex_descriptor rootIterator, int* i, vector<Graph::vertex_descriptor >* v){
+	graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
+	if (g[rootIterator].is_tip == false){
+		if (g[v].rev == true) out_i++;
+ 		//inorder_traverse(*out_i,i , v);
+ 	}
+ 	v->at(*i) = rootIterator;
+ 	*i = *i+1;
+
+ 	if (g[rootIterator].is_tip == false){
+ 		if (g[v].rev ==true) out_i--;
+ 		else ++out_i;
+ 		//inorder_traverse(*out_i, i, v);
+ 	}
 }

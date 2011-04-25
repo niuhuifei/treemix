@@ -17,6 +17,7 @@ struct Node
 	double height;
 	bool is_tip;
 	bool is_root;
+	bool rev;
 };
 
 struct Dist
@@ -32,9 +33,26 @@ typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
 
 class PopGraph{
 public:
+
+	// initialize the graph
 	PopGraph();
+
+	// initialize from a Newick string
 	PopGraph(string);
 	Graph g;
+	bool istree; // is this a tree? if so, allow shortcuts
+
 	vector<Graph::vertex_descriptor> index2father;
+	map<string, Graph::vertex_descriptor> popname2tip;
+	Graph::vertex_descriptor root;
+
+	inline double get_dist_to_root(Graph::vertex_descriptor);
+	inline void flip_sons(Graph::vertex_descriptor, gsl_rng* );
+
+	//get the inorder traversal
+	inline vector< Graph::vertex_descriptor > get_inorder_traversal( int);
+
+	//helper functions for inorder traversal
+	inline void inorder_traverse(Graph::vertex_descriptor, int*, vector<Graph::vertex_descriptor >*);
 };
 #endif /* POPGRAPH_H_ */
