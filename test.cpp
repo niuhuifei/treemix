@@ -10,6 +10,7 @@
 #include "MCMC.h"
 #include "CountData.h"
 #include "WishartState.h"
+#include "GraphState.h"
 
 int main(){
 	const gsl_rng_type * T;
@@ -24,10 +25,17 @@ int main(){
 	CountData counts("testin_counts.gz");
 	MCMC_params p;
 
-	WishartState teststate(testnewick, &counts, &p);
-
-	teststate.tree->randomize_tree(r);
+	GraphState teststate(testnewick, &counts, &p);
+	teststate.tree->print();
+	//teststate.tree->randomize_tree(r);
 	teststate.compute_sigma();
+
+	for(int i = 0; i < counts.npop; i++){
+		for (int j = 0; j < counts.npop; j++){
+			cout << gsl_matrix_get(teststate.sigma, i, j) << " ";
+		}
+		cout << "\n";
+	}
 	cout << "llik: "<< teststate.llik() << "\n";
 
 	//vector<vector<double> > freqs = counts.get_alfreqs();
@@ -39,47 +47,4 @@ int main(){
 	//}
 
 
-/*
-
-	teststate.tree->randomize_tree(r);
-	teststate.compute_sigma();
-	teststate.init_thetas();
-	teststate.init_means();
-	teststate.init_liks();
-	cout << teststate.countdata->npop << " "<< teststate.countdata->nsnp << " "<< teststate.current_lik<< "\n";
-	MCMC testmcmc(&teststate, &p);
-	testmcmc.run(r, treeout, mout);
-
-	vector<PhyloPop_Tree::iterator< PhyloPop_Tree::NodeData> > vec = teststate.tree->get_inorder_traversal(counts.npop);
-	for (int i = 0; i < vec.size(); i++){
-		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-	}
-	teststate.tree->set_node_heights(vec);
-	cout << "\n";
-	for (int i = 0; i < vec.size(); i++){
-			cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-		}
-	cout <<"\n";
-	teststate.tree->randomize_tree(r);
-	vec = teststate.tree->get_inorder_traversal(counts.npop);
-	for (int i = 0; i < vec.size(); i++){
-		cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-	}
-	cout << teststate.tree->get_newick_format() << "\n";
-*/
-/*
-	cout << "\n";
-	teststate.compute_sigma();
-	for (int i = 0 ; i < 10000; i++){
-	teststate.update(r);
-	tmp << gsl_vector_get(teststate.means, 0) << "\n";
-	}
-	cout << "\n";
-	vec = teststate.tree->get_inorder_traversal(counts.npop);
-	for (int i = 0; i < vec.size(); i++){
-			cout << vec[i]->m_id << " "<< vec[i]->m_len << " "<< vec[i]->m_time<< "\n";
-		}
-
-	cout << "llik: "<< teststate.llik() << "\n";
-*/
 };

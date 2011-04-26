@@ -43,10 +43,12 @@ public:
 	bool istree; // is this a tree? if so, allow shortcuts
 
 	vector<Graph::vertex_descriptor> index2father;
-	map<string, Graph::vertex_descriptor> popname2tip;
+	//map<string, Graph::vertex_descriptor> popname2tip;
 	vector<string> popnames;
 	Graph::vertex_descriptor root;
 	void set_root(Graph::vertex_descriptor);
+	void print();
+	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);
 
 	double get_height(Graph::vertex_descriptor);
 	double get_dist_to_root(Graph::vertex_descriptor); //get the distance to the root for any node in the tree

@@ -7,6 +7,7 @@
 
 #ifndef MCMC_H_
 #define MCMC_H_
+
 #include "Settings.hpp"
 #include "WishartState.h"
 class MCMC{
