@@ -21,8 +21,9 @@ public:
 	GraphState(string, CountData*, MCMC_params*);
 
 
-	// pointer to the tree data structure
+	// pointer to the tree data structure (and a copy of it)
 	PopGraph* tree;
+	PopGraph* tree_bk;
 
 	gsl_matrix *sigma;
 	double current_lik; //store the current likelihood

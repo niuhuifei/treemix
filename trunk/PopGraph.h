@@ -37,15 +37,22 @@ public:
 	// initialize the graph
 	PopGraph();
 
+
+
 	// initialize from a Newick string
 	PopGraph(string);
+
+	//copy from another location
+	void copy(PopGraph*);
+	//void copy_helper(Graph::vertex_descriptor, Graph::vertex_descriptor, PopGraph *);
+
 	Graph g;
 	bool istree; // is this a tree? if so, allow shortcuts
 
 	vector<Graph::vertex_descriptor> index2father;
-	//map<string, Graph::vertex_descriptor> popname2tip;
 	vector<string> popnames;
 	Graph::vertex_descriptor root;
+
 	void set_root(Graph::vertex_descriptor);
 	void print();
 	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);

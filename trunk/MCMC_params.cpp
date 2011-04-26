@@ -15,7 +15,7 @@ MCMC_params::MCMC_params(){
 	burnin = 10000;
 	total = 20000;
 	samp = 10;
-	psamp = 200;
+	psamp = 500;
 	nthread = 1;
 }
 /*

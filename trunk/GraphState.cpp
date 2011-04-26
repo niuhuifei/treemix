@@ -13,6 +13,7 @@ GraphState::GraphState(string newick, CountData* counts, MCMC_params* p){
 	countdata = counts;
 	params =p;
 	tree = new PopGraph(newick);
+	tree_bk = new PopGraph(newick);
 	sigma = gsl_matrix_alloc(counts->npop, counts->npop);
 	gsl_matrix_set_zero(sigma);
 }
@@ -105,7 +106,9 @@ void GraphState::update_tree(gsl_rng* r){
 	tree->flip_sons(tree->root, r);
 
 	//copy the old tree
-	Graph oldtree(tree.g);
+
+	tree_bk->copy(tree);
+	//cout <<"nope!\n";
 
 	//propose new tree
 	vector<Graph::vertex_descriptor> trav = propose_tree(r);
@@ -115,34 +118,36 @@ void GraphState::update_tree(gsl_rng* r){
 		if ( tree->get_height(trav[i]) > maxdist) maxdist = tree->get_height(trav[i]);
 	}
 
-	tree->print();
+	//tree->print();
 	//if it's ok, do a metropolis update
 	if (maxdist < params->B){
 		double newlik = llik();
 		double ratio = exp(newlik-oldlik);
-		cout << newlik << " "<< oldlik << " " << ratio << "\n";
+		//cout << newlik << " "<< oldlik << " " << ratio << "\n";
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
-			cout << "acc "<< acc << "\n";
+			//cout << "acc "<< acc << "\n";
 			if (acc > ratio){
-				*tree = oldtree;
+				PopGraph * tmptree = tree;
+				tree = tree_bk;
+				tree_bk = tmptree;
 				//tree->print();
 				compute_sigma();
 			}
 			else{
-				//delete oldtree;
 				current_lik = newlik;
 			}
 		}
 		else{
-			//delete oldtree;
 			current_lik = newlik;
 		}
 	}
 
-	//if not, switch back to the old tre
+	//if not, switch back to the old tree
 	else{
-		*tree = oldtree;
+		PopGraph * tmptree = tree;
+		tree = tree_bk;
+		tree_bk = tmptree;
 		compute_sigma();
 	}
 }
