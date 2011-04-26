@@ -23,7 +23,7 @@ void MCMC_graph::run(gsl_rng* r, ogzstream& treefile){
 		if (i % param->psamp == 0) cout <<  "Burn-in step "<< i << " llik: "<< state->current_lik << "\n";
 		state->update_tree(r);
 	}
-	param->epsilon = param->epsilon/5;
+	param->epsilon = param->epsilon/10;
 	cout << "Sampling\n";
 	for (int i = 0; i < param->total; i++){
 		if (i % param->samp == 0) state->print_state(treefile);

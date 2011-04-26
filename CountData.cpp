@@ -184,6 +184,18 @@ void CountData::set_scatter(){
 	}
 }
 
+void CountData::print_scatter(string outfile){
+	ogzstream out(outfile.c_str());
+	for(map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++)	out << it->first << " ";
+	out << "\n";
+	for(map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++){
+		out << it->first;
+		for(map<string, int>::iterator it2 = pop2id.begin(); it2 != pop2id.end(); it2++)	 out << " "<< gsl_matrix_get(scatter, it->second, it2->second);
+		out << "\n";
+	}
+
+}
+
 void CountData::process_scatter(){
 	// get the log of the determinant of the covariance matrix
 	// also calculate the log of the multivariate gamma function
