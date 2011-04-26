@@ -34,14 +34,19 @@ void GraphState::init(){
 
 
 void GraphState::compute_sigma(){
-	for( int i = 0; i < countdata->npop; i++){
-		for (int j = i; j < countdata->npop; j++){
-				if (i == j){
-				double dist = tree->get_dist_to_root(tree->popname2tip[tree->popnames[i]]);
+	map<string, Graph::vertex_descriptor > popname2tip = tree->get_tips(tree->root);
+	for( map<string, int>::iterator it1 = countdata->pop2id.begin(); it1 != countdata->pop2id.end(); it1++){
+		for (map<string, int>::iterator it2 = countdata->pop2id.begin(); it2 != countdata->pop2id.end(); it2++){
+			string p1 = it1->first;
+			string p2 = it2->first;
+			int i = it1->second;
+			int j = it2->second;
+			if (i == j){
+				double dist = tree->get_dist_to_root(popname2tip[p1]);
 				gsl_matrix_set(sigma, i, j, dist);
 			}
 			else{
-				Graph::vertex_descriptor lca = tree->get_LCA(tree->root, tree->popname2tip[tree->popnames[i]], tree->popname2tip[tree->popnames[j]]);
+				Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p1], popname2tip[p2]);
 				double dist = tree->get_dist_to_root(lca);
 				gsl_matrix_set(sigma, i, j, dist);
 				gsl_matrix_set(sigma, j, i, dist);
@@ -49,7 +54,6 @@ void GraphState::compute_sigma(){
 		}
 	}
 }
-
 
 void GraphState::read_sigma(string infile){
 	gsl_matrix_free(sigma);
@@ -101,43 +105,44 @@ void GraphState::update_tree(gsl_rng* r){
 	tree->flip_sons(tree->root, r);
 
 	//copy the old tree
-	PopGraph* oldtree(tree);
+	Graph oldtree(tree.g);
 
 	//propose new tree
 	vector<Graph::vertex_descriptor> trav = propose_tree(r);
-
 	//check to make sure the maximum distance to the root is not greater than B
 	double maxdist = 0;
 	for(int i = 0; i < trav.size(); i++){
 		if ( tree->get_height(trav[i]) > maxdist) maxdist = tree->get_height(trav[i]);
 	}
 
+	tree->print();
 	//if it's ok, do a metropolis update
 	if (maxdist < params->B){
 		double newlik = llik();
 		double ratio = exp(newlik-oldlik);
+		cout << newlik << " "<< oldlik << " " << ratio << "\n";
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
+			cout << "acc "<< acc << "\n";
 			if (acc > ratio){
-				delete tree;
-				tree = oldtree;
+				*tree = oldtree;
+				//tree->print();
 				compute_sigma();
 			}
 			else{
-				delete oldtree;
+				//delete oldtree;
 				current_lik = newlik;
 			}
 		}
 		else{
-			delete oldtree;
+			//delete oldtree;
 			current_lik = newlik;
 		}
 	}
 
 	//if not, switch back to the old tre
 	else{
-		delete tree;
-		tree = oldtree;
+		*tree = oldtree;
 		compute_sigma();
 	}
 }

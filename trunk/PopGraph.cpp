@@ -107,11 +107,11 @@ PopGraph::PopGraph(string p_newickString){
               --I;
               g[v2].name = name;
               g[v2].is_tip = true;
-              popname2tip.insert(make_pair(name, v2));
               popnames.push_back(name);
       }
-     }
+      }
 }
+
 
 double PopGraph::get_dist_to_root(Graph::vertex_descriptor v){
 	double toreturn = 0;
@@ -183,6 +183,29 @@ void PopGraph::set_node_heights(vector<Graph::vertex_descriptor> trav){
         	for (int i = 0; i < trav.size(); i++){
         		g[trav[i]].height = get_dist_to_root(trav[i]);
         	}
+}
+
+map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descriptor p_rootIterator){
+	map<string, Graph::vertex_descriptor> toreturn;
+  	if (out_degree(p_rootIterator, g) ==0){
+ 		toreturn.insert(make_pair(g[p_rootIterator].name, p_rootIterator));
+ 	}
+ 	else{
+ 		graph_traits<Graph>::out_edge_iterator out_i = out_edges(p_rootIterator, g).first;
+ 		map<string, Graph::vertex_descriptor> t1 = get_tips(target(*out_i, g));
+
+
+ 		++out_i;
+ 		map<string, Graph::vertex_descriptor> t2 = get_tips(target(*out_i, g));
+ 		for (map<string, Graph::vertex_descriptor >::iterator it1 = t1.begin(); it1 != t1.end(); it1++){
+ 			//pair<int, iterator<NODEDATA> > = std::make_pair(it1->first, it1->second);
+ 			toreturn.insert(make_pair(it1->first, it1->second));
+ 		}
+ 		for (map<string, Graph::vertex_descriptor>::iterator it2 = t2.begin(); it2 != t2.end(); it2++){
+ 			toreturn.insert(make_pair(it2->first, it2->second));
+ 		}
+ 	}
+ 	return toreturn;
 }
 
 
@@ -326,6 +349,7 @@ void PopGraph::update_branch_lengths(Graph::vertex_descriptor root_v){
 
 
 void PopGraph::randomize_tree(gsl_rng* r){
+	map<string, Graph::vertex_descriptor> popname2tip = get_tips(root);
   	vector< Graph::vertex_descriptor > trav = get_inorder_traversal( popname2tip.size());
  	double tipheight = gsl_rng_uniform(r)*0.5+0.5;
 
@@ -348,6 +372,27 @@ string PopGraph::get_newick_format(){
  	newick_helper(root, &toreturn);
  	return toreturn;
  }
+
+
+
+void PopGraph::print(){
+	IndexMap index = get(&Node::index, g);
+
+	cout << "vertices(g) = ";
+	pair<vertex_iter, vertex_iter> vp;
+	for (vp = vertices(g); vp.first != vp.second; ++vp.first)
+		std::cout << index[*vp.first] <<  ":"<< g[*vp.first].name << ":"<< get_dist_to_root(*vp.first)<< " ";
+	cout << "\n";
+
+    std::cout << "edges(g) = ";
+    graph_traits<Graph>::edge_iterator ei, ei_end;
+    for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
+        std::cout << "(" << index[source(*ei, g)]
+                  << "," << index[target(*ei, g)] << ","<< g[*ei].len <<  ") ";
+    std::cout << std::endl;
+
+}
+
 
 void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
 	if (node != NULL){
