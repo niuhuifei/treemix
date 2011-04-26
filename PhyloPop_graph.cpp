@@ -37,7 +37,11 @@ int main(int argc, char *argv[]){
 
     string treefile = outstem+".treeout.gz";
     ogzstream treeout(treefile.c_str());
+
+    cout << "Reading data and calculating scatter matrix.."; cout.flush();
     CountData counts(infile);
+    cout << "done\n"; cout.flush();
+
     string pops = counts.get_pops();
     cout << pops << "\n";
 

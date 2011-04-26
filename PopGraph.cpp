@@ -18,6 +18,40 @@ PopGraph::PopGraph(){
 	//for (int i = 0; i < num_edges; ++i) add_edge(edge_array[i].first, edge_array[i].second, g);
 }
 
+
+void PopGraph::copy(PopGraph * s){
+	istree = s->istree;
+	popnames = s->popnames;
+
+
+	//cout << "copying graph\n"; cout.flush();
+	g.clear();
+	map<int, Graph::vertex_descriptor> tmpmap;
+	Graph::vertex_descriptor vd;
+	pair<Graph::vertex_iterator, Graph::vertex_iterator> v = vertices(s->g);
+	pair<Graph::edge_iterator, Graph::edge_iterator> e = edges(s->g);
+	for (Graph::vertex_iterator it = v.first; it != v.second; ++it){
+		vd = add_vertex(g);
+		g[vd].index = s->g[*it].index;
+		g[vd].name = s->g[*it].name;
+		g[vd].height = s->g[*it].height;
+		g[vd].rev = s->g[*it].rev;
+		g[vd].is_root = s->g[*it].is_root;
+		g[vd].is_tip = s->g[*it].is_tip;
+		tmpmap.insert(make_pair( g[vd].index, vd));
+		if (s->g[*it].is_root == true) root = vd;
+	}
+
+	for (Graph::edge_iterator it = e.first; it != e.second; ++it){
+		Graph::vertex_descriptor tmpsource = source(*it, s->g);
+		Graph::vertex_descriptor tmptarget = target(*it, s->g);
+		Graph::edge_descriptor ed = add_edge( tmpmap[ s->g[tmpsource].index ], tmpmap[ s->g[tmptarget].index ], g ).first;
+		g[ed].weight = s->g[*it].weight;
+		g[ed].len = s->g[*it].len;
+	}
+	//cout << "done\n";
+}
+
 PopGraph::PopGraph(string p_newickString){
 	g = Graph(1);
 	index2father.clear();
