@@ -13,12 +13,14 @@ string infile;
 string outstem = "PhyloPop";
 int seed = 200;
 int nthread = 1;
+bool printscatter = false;
 
 void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i input file\n";
 	cout << "-o output stem (will be [stem].treeout.gz and [stem].meanout.gz)\n";
+	cout << "-s print scatter matrix (will be [stem].scatter.gz)\n";
 }
 
 
@@ -34,6 +36,7 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
+    if (cmdline.HasSwitch("-s"))	printscatter = true;
 
     string treefile = outstem+".treeout.gz";
     ogzstream treeout(treefile.c_str());
@@ -71,5 +74,6 @@ int main(int argc, char *argv[]){
     //MCMC
     MCMC_graph mcmc(&initstate, &p);
     mcmc.run(r, treeout);
+    if (printscatter) counts.print_scatter(outstem+".scatter.gz");
 	return 0;
 }

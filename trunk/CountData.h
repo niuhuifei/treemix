@@ -25,6 +25,7 @@ public:
 	void set_scatter();
 	void process_scatter();
 	void read_scatter(string); //for debugging
+	void print_scatter(string);
 	double scatter_det, scatter_gamma;
 };
 
