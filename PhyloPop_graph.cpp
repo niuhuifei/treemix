@@ -14,6 +14,7 @@ string outstem = "PhyloPop";
 int seed = 200;
 int nthread = 1;
 bool printscatter = false;
+int scaling = 1;
 
 void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
@@ -21,6 +22,7 @@ void printopts(){
 	cout << "-i input file\n";
 	cout << "-o output stem (will be [stem].treeout.gz and [stem].meanout.gz)\n";
 	cout << "-s print scatter matrix (will be [stem].scatter.gz)\n";
+	cout << "-sqrt use square root transformation of allele frequencies (default is arcsin)\n";
 }
 
 
@@ -37,12 +39,13 @@ int main(int argc, char *argv[]){
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
     if (cmdline.HasSwitch("-s"))	printscatter = true;
+    if (cmdline.HasSwitch("-sqrt"))	scaling = 2;
 
     string treefile = outstem+".treeout.gz";
     ogzstream treeout(treefile.c_str());
 
     cout << "Reading data and calculating scatter matrix.."; cout.flush();
-    CountData counts(infile);
+    CountData counts(infile, scaling);
     cout << "done\n"; cout.flush();
 
     string pops = counts.get_pops();

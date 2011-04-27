@@ -6,13 +6,13 @@
  */
 #include "CountData.h"
 
-CountData::CountData(string infile){
+CountData::CountData(string infile, int which){
 	read_counts(infile);
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
 	scatter = gsl_matrix_alloc(npop, npop);
 	set_alfreqs();
-	scale_alfreqs();
+	scale_alfreqs(which);
 	set_scatter();
 	process_scatter();
 }
@@ -153,12 +153,14 @@ void CountData::set_alfreqs(){
 	}
 }
 
-void CountData::scale_alfreqs(){
+void CountData::scale_alfreqs(int which){
 	for (int i = 0; i < nsnp; i++){
 		double total = 0;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
-			double scaled = asin(sqrt(f));
+			double scaled;
+			if (which ==1) scaled = asin(sqrt(f));
+			else if (which ==2) scaled = f/sqrt( f* (1-f) );
 			total = total+scaled;
 			gsl_matrix_set(alfreqs, i, j, scaled);
 		}
