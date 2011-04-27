@@ -218,5 +218,11 @@ double GraphState::dens_wishart(){
 	toreturn+= -( (double) n* (double) p/2.0) * log(2.0);
 	toreturn += -((double) n/2.0)*ld;
 	toreturn+= -countdata->scatter_gamma;
+
+	gsl_matrix_free(work);
+	gsl_matrix_free(inv);
+	gsl_matrix_free(ViU);
+	gsl_permutation_free(perm);
+
 	return toreturn;
 }
