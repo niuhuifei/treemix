@@ -226,3 +226,12 @@ double GraphState::dens_wishart(){
 
 	return toreturn;
 }
+
+
+void GraphState::init_tree(gsl_rng* r){
+	for (int i = 0; i < 50; i++){
+		tree->flip_sons(tree->root, r);
+		tree->randomize_tree(r);
+	}
+
+}

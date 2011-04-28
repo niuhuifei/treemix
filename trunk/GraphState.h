@@ -32,6 +32,7 @@ public:
 
 	//initialize the likelihood
 	void init();
+	void init_tree(gsl_rng*);
 
 	//update the tree
 	void update_tree(gsl_rng*);

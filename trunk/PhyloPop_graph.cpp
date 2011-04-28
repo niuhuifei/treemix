@@ -28,7 +28,7 @@ void printopts(){
 	cout << "-burn number of burn-in iterations of the MCMC (default 20,000)\n";
 	cout << "-samp number of sampling iterations of the MCMC (default 40,000)\n";
 	cout << "-ep parameter for changing topology during burn-in (default 0.002)\n";
-	//cout << "-sqrt use square root transformation of allele frequencies (default is arcsin)\n";
+	cout << "-sqrt use square root transformation of allele frequencies (default is arcsin)\n";
 }
 
 
@@ -53,12 +53,11 @@ int main(int argc, char *argv[]){
     string treefile = outstem+".treeout.gz";
     ogzstream treeout(treefile.c_str());
 
-    cout << "Reading data and calculating scatter matrix.."; cout.flush();
+    //cout << "Reading data and calculating scatter matrix.."; cout.flush();
     CountData counts(infile, scaling);
-    cout << "done\n"; cout.flush();
+    //cout << "done\n"; cout.flush();
 
-    string pops = counts.get_pops();
-    cout << pops << "\n";
+
 
 
     // MCMC parameters
@@ -67,6 +66,8 @@ int main(int argc, char *argv[]){
     p.burnin = burn;
     p.total = sample;
     p.nthread = nthread;
+
+    string pops = counts.get_pops();
     GraphState initstate(pops,  &counts, &p);
 
 
@@ -83,7 +84,9 @@ int main(int argc, char *argv[]){
     }
 
     // initialization
-    initstate.tree->randomize_tree(r);
+    initstate.init_tree(r);
+    //initstate.tree->randomize_tree(r);
+    cout << initstate.tree->get_newick_format() <<"\n";
     initstate.compute_sigma();
     initstate.init();
     //MCMC
