@@ -22,21 +22,26 @@ int main(){
 	string testnewick = "((YRI:0.8,LWD:0.4):0.1,(CEU:0.4,(JPT:0.2,CHB:0.3):0.2):0.5);";
 	ogzstream treeout("treeout.gz");
 	ogzstream mout("meanout.gz");
-	CountData counts("testin_counts.gz");
+	CountData counts("testin_counts.gz", 1);
 	MCMC_params p;
 
 	GraphState teststate(testnewick, &counts, &p);
 	teststate.tree->print();
+	vector< Graph::vertex_descriptor > vec = teststate.tree->get_inorder_traversal(5);
+	teststate.tree->local_update(vec[3], r);
+	//vec = teststate.tree->get_inorder_traversal(5);
+	//teststate.tree->local_update(vec[1], r);
+	teststate.tree->print();
 	//teststate.tree->randomize_tree(r);
-	teststate.compute_sigma();
+	//teststate.compute_sigma();
 
-	for(int i = 0; i < counts.npop; i++){
-		for (int j = 0; j < counts.npop; j++){
-			cout << gsl_matrix_get(teststate.sigma, i, j) << " ";
-		}
-		cout << "\n";
-	}
-	cout << "llik: "<< teststate.llik() << "\n";
+	//for(int i = 0; i < counts.npop; i++){
+	//	for (int j = 0; j < counts.npop; j++){
+	//		cout << gsl_matrix_get(teststate.sigma, i, j) << " ";
+	//	}
+	//	cout << "\n";
+	//}
+	//cout << "llik: "<< teststate.llik() << "\n";
 
 	//vector<vector<double> > freqs = counts.get_alfreqs();
 	//for (int i = 0; i < counts.nsnp ; i++){

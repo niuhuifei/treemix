@@ -16,6 +16,7 @@ public:
 	GraphState* state;
 	MCMC_params* param;
 	void run(gsl_rng*, ogzstream&);
+	void run_one(gsl_rng*);
 };
 
 

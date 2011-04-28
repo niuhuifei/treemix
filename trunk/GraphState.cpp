@@ -98,6 +98,116 @@ void GraphState::print_state(ogzstream& treefile){
 	treefile << t << "\n";
 }
 
+void GraphState::local_update_tree(gsl_rng* r){
+	local_update_tree_topology(r);
+	local_update_tree_branches(r);
+}
+void GraphState::local_update_tree_topology(gsl_rng* r){
+	double oldlik = current_lik;
+
+	//copy the old tree, get the traversal
+	tree_bk->copy(tree);
+	vector<Graph::vertex_descriptor> trav = tree->get_inorder_traversal(countdata->npop);
+	//int nnode = 2*countdata->npop  - 1;
+
+	//pick a random internal node (odd positions in inorder traversal)
+	double ran = gsl_rng_uniform(r) * ((double) countdata->npop-1);
+	int ranindex = int(2*ceil(ran) -1);
+	tree->local_update(trav[ranindex], r);
+	trav = tree->get_inorder_traversal(countdata->npop);
+
+	//check to make sure the tree isn't too large
+	double maxdist = 0;
+	for(int i = 0; i < trav.size(); i++){
+		if ( tree->get_height(trav[i]) > maxdist) maxdist = tree->get_height(trav[i]);
+	}
+
+	//if it's ok, do a metropolis update
+	if (maxdist < params->B){
+		double newlik = llik();
+		double ratio = exp(newlik-oldlik);
+		if (ratio < 1){
+			double acc = gsl_rng_uniform(r);
+			cout << oldlik << " "<< newlik << " "<< ratio << "\n";
+			if (acc > ratio){
+				PopGraph * tmptree = tree;
+				tree = tree_bk;
+				tree_bk = tmptree;
+				//tree->print();
+				compute_sigma();
+			}
+			else{
+				current_lik = newlik;
+			}
+		}
+		else{
+			current_lik = newlik;
+		}
+	}
+
+	//if not, switch back to the old tree
+	else{
+		PopGraph * tmptree = tree;
+		tree = tree_bk;
+		tree_bk = tmptree;
+		compute_sigma();
+	}
+
+}
+
+
+void GraphState::local_update_tree_branches(gsl_rng* r){
+	double oldlik = current_lik;
+
+	//copy the old tree, get the traversal
+	tree_bk->copy(tree);
+	vector<Graph::vertex_descriptor> trav = tree->get_inorder_traversal(countdata->npop);
+	//int nnode = 2*countdata->npop  - 1;
+
+	//pick a random internal node (odd positions in inorder traversal)
+	double ran = gsl_rng_uniform(r) * ((double) countdata->npop-1);
+	int ranindex = int(2*ceil(ran) -1);
+	tree->local_update_branches(trav[ranindex], r, params->epsilon);
+	trav = tree->get_inorder_traversal(countdata->npop);
+
+	//check to make sure the tree isn't too large
+	double maxdist = 0;
+	for(int i = 0; i < trav.size(); i++){
+		if ( tree->get_height(trav[i]) > maxdist) maxdist = tree->get_height(trav[i]);
+	}
+
+	//if it's ok, do a metropolis update
+	if (maxdist < params->B){
+		double newlik = llik();
+		double ratio = exp(newlik-oldlik);
+		if (ratio < 1){
+			double acc = gsl_rng_uniform(r);
+			cout << oldlik << " "<< newlik << " "<< ratio << "\n";
+			if (acc > ratio){
+				PopGraph * tmptree = tree;
+				tree = tree_bk;
+				tree_bk = tmptree;
+				//tree->print();
+				compute_sigma();
+			}
+			else{
+				current_lik = newlik;
+			}
+		}
+		else{
+			current_lik = newlik;
+		}
+	}
+
+	//if not, switch back to the old tree
+	else{
+		PopGraph * tmptree = tree;
+		tree = tree_bk;
+		tree_bk = tmptree;
+		compute_sigma();
+	}
+
+}
 
 void GraphState::update_tree(gsl_rng* r){
 	double oldlik = current_lik;
@@ -123,10 +233,8 @@ void GraphState::update_tree(gsl_rng* r){
 	if (maxdist < params->B){
 		double newlik = llik();
 		double ratio = exp(newlik-oldlik);
-		//cout << newlik << " "<< oldlik << " " << ratio << "\n";
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
-			//cout << "acc "<< acc << "\n";
 			if (acc > ratio){
 				PopGraph * tmptree = tree;
 				tree = tree_bk;

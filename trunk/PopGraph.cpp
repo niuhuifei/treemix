@@ -242,6 +242,154 @@ map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descripto
  	return toreturn;
 }
 
+void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
+	/*
+	 *
+	 * go from    1
+	 *          /  \*
+	 *         /    3
+	 *        /    / \
+	 *       2    4   5
+	 *
+	 * do local rearrangements. input is v3
+	 *
+	 */
+	if (!g[v3].is_root){
+
+	// set up descriptors and edge lengths
+	Graph::in_edge_iterator tmp = in_edges(v3, g).first;
+	Graph::edge_descriptor ed = *tmp;
+	Graph::vertex_descriptor v1, v2, v4, v5;
+	double d12, d13, d34, d35;
+
+	d13 = g[ed].len;
+	v1 = source(ed, g);
+	Graph::out_edge_iterator out3 = out_edges(v3, g).first;
+	v4 = target(*out3, g);
+	d34 = g[*out3].len;
+
+	++out3;
+	v5 = target(*out3, g);
+	d35 = g[*out3].len;
+
+	Graph::out_edge_iterator out1 = out_edges(v1, g).first;
+	if (target(*out1, g) == v3) {
+		out1++;
+		v2 = target(*out1, g);
+		d12 = g[*out1].len;
+	}
+	else {
+		v2 = target(*out1, g);
+		d12 = g[*out1].len;
+	}
+
+	//choose which rearrangement to do
+	double ran = gsl_rng_uniform(r);
+	//ran = 0.2;
+	if (ran < 0.5){
+		// go to ((2,4),5)
+
+		remove_edge(v1, v2, g);
+		remove_edge(v3, v5, g);
+		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+		g[e].weight = 1;
+		g[e].len = d12;
+		e = add_edge(v1, v5, g).first;
+		g[e].weight = 1;
+		g[e].len = d35;
+		update_heights_local( v5, -d13);
+		update_heights_local( v2, d13);
+
+	}
+	else{
+		//go to (4,(2,5))
+
+		remove_edge(v1, v2, g);
+		remove_edge(v3, v4, g);
+		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+		g[e].weight = 1;
+		g[e].len = d12;
+
+		e = add_edge(v1, v4, g).first;
+		g[e].weight = 1;
+		g[e].len = d34;
+		update_heights_local( v4, -d13);
+		update_heights_local( v2, d13);
+	}
+	}
+}
+
+
+void PopGraph::update_heights_local(Graph::vertex_descriptor v, double adj){
+	if (out_degree(v, g) > 0){
+		Graph::out_edge_iterator it = out_edges(v, g).first;
+		update_heights_local( target(*it, g), adj);
+		it++;
+		update_heights_local( target(*it, g), adj);
+	}
+	g[v].height += adj;
+}
+
+
+void PopGraph::local_update_branches(Graph::vertex_descriptor v3, gsl_rng* r, double epsilon){
+	/*
+	 *
+	 * go from    1
+	 *          /  \*
+	 *         /    3
+	 *        /    / \
+	 *       2    4   5
+	 *
+	 * do updates of branches in vicinity. input is v3
+	 *
+	 */
+	if (!g[v3].is_root){
+
+		// set up descriptors and edge lengths
+		Graph::in_edge_iterator tmp = in_edges(v3, g).first;
+		Graph::edge_descriptor ed = *tmp;
+		Graph::edge_descriptor e12, e34, e35;
+		Graph::vertex_descriptor v1, v2, v4, v5;
+		double d12, d13, d34, d35;
+
+		d13 = g[ed].len;
+		v1 = source(ed, g);
+		Graph::out_edge_iterator out3 = out_edges(v3, g).first;
+		v4 = target(*out3, g);
+		d34 = g[*out3].len;
+		e34 = *out3;
+
+		++out3;
+		v5 = target(*out3, g);
+		d35 = g[*out3].len;
+		e35 = *out3;
+		Graph::out_edge_iterator out1 = out_edges(v1, g).first;
+		if (target(*out1, g) == v3) {
+			out1++;
+			v2 = target(*out1, g);
+			d12 = g[*out1].len;
+			e12 = *out1;
+		}
+		else {
+			v2 = target(*out1, g);
+			d12 = g[*out1].len;
+			e12 = *out1;
+		}
+
+		single_branch_update( e12, r, epsilon);
+		single_branch_update( ed, r, epsilon);
+		single_branch_update( e34, r, epsilon);
+		single_branch_update( e35, r, epsilon);
+	}
+}
+
+void PopGraph::single_branch_update(Graph::edge_descriptor e, gsl_rng* r, double epsilon){
+	double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
+	double oldlen = g[e].len;
+	double newlen = fabs(oldlen+toadd);
+	g[e].len = newlen;
+	update_heights_local( target(e, g), newlen-oldlen);
+}
 
 void PopGraph::perturb_node_heights(vector< Graph::vertex_descriptor > trav, double epsilon, gsl_rng *r){
 
