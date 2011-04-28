@@ -34,9 +34,14 @@ public:
 	void init();
 	void init_tree(gsl_rng*);
 
-	//update the tree
+	//global update
 	void update_tree(gsl_rng*);
 	vector<Graph::vertex_descriptor> propose_tree(gsl_rng*);
+
+	//local update
+	void local_update_tree(gsl_rng*);
+	void local_update_tree_topology(gsl_rng*);
+	void local_update_tree_branches(gsl_rng*);
 
 	// compute the covariance matrix from the tree
 	void compute_sigma();

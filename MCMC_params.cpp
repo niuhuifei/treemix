@@ -10,13 +10,14 @@ MCMC_params::MCMC_params(){
 	lambda = 1;
 	s2 = 0.05;
 	s3 = 0.01;
-	epsilon = 0.002;
+	epsilon = 0.001;
 	B = 10;
 	burnin = 20000;
 	total = 40000;
 	samp = 10;
 	psamp = 500;
 	nthread = 1;
+	f = 2;
 }
 /*
 
