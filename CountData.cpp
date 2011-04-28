@@ -160,14 +160,15 @@ void CountData::scale_alfreqs(int which){
 			double f = gsl_matrix_get(alfreqs, i, j);
 			double scaled;
 			if (which ==1) scaled = asin(sqrt(f));
-			else if (which ==2) scaled = f/sqrt( f* (1-f) );
+			else if (which ==2) scaled = f;
 			total = total+scaled;
 			gsl_matrix_set(alfreqs, i, j, scaled);
 		}
 		double m = total/ (double) npop;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
-			gsl_matrix_set(alfreqs, i, j, f-m);
+			if (which ==1 )gsl_matrix_set(alfreqs, i, j, f-m);
+			else if (which == 2) gsl_matrix_set(alfreqs, i, j, (f-m)/ sqrt(m*(1-m)));
 		}
 	}
 }

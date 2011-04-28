@@ -274,7 +274,7 @@ void PopGraph::perturb_node_heights(vector< Graph::vertex_descriptor > trav, dou
     		double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
     		double newheight = fabs(g[trav[i]].height + toadd);
     		if (newheight > min) newheight = min - (newheight-min);
-    		if(newheight > 0) g[trav[i]].height = newheight;
+    		g[trav[i]].height = newheight; //removed if (newheight > 0), this now allows re-rooting
   	}
   }
 
@@ -385,7 +385,7 @@ void PopGraph::update_branch_lengths(Graph::vertex_descriptor root_v){
 void PopGraph::randomize_tree(gsl_rng* r){
 	map<string, Graph::vertex_descriptor> popname2tip = get_tips(root);
   	vector< Graph::vertex_descriptor > trav = get_inorder_traversal( popname2tip.size());
- 	double tipheight = gsl_rng_uniform(r)*0.5+0.5;
+ 	double tipheight = gsl_rng_uniform(r)*0.01+0.01;
 
  	// set the tip heights
  	for(int i = 0 ; i < trav.size(); i+=2){
