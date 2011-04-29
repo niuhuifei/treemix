@@ -103,6 +103,7 @@ void GraphState::local_update_tree(gsl_rng* r){
 	local_update_tree_branches(r);
 }
 void GraphState::local_update_tree_topology(gsl_rng* r){
+	//cout << "local update\n"; cout.flush();
 	double oldlik = current_lik;
 
 	//copy the old tree, get the traversal
@@ -113,8 +114,11 @@ void GraphState::local_update_tree_topology(gsl_rng* r){
 	//pick a random internal node (odd positions in inorder traversal)
 	double ran = gsl_rng_uniform(r) * ((double) countdata->npop-1);
 	int ranindex = int(2*ceil(ran) -1);
+
+	//do the local update
 	tree->local_update(trav[ranindex], r);
 	trav = tree->get_inorder_traversal(countdata->npop);
+	compute_sigma();
 
 	//check to make sure the tree isn't too large
 	double maxdist = 0;
@@ -124,11 +128,13 @@ void GraphState::local_update_tree_topology(gsl_rng* r){
 
 	//if it's ok, do a metropolis update
 	if (maxdist < params->B){
+		//cout << "local update\n"; cout.flush();
 		double newlik = llik();
 		double ratio = exp(newlik-oldlik);
+		//cout << newlik << " "<< oldlik << "\n";
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
-			cout << oldlik << " "<< newlik << " "<< ratio << "\n";
+			//cout << oldlik << " "<< newlik << " "<< ratio << "\n";
 			if (acc > ratio){
 				PopGraph * tmptree = tree;
 				tree = tree_bk;
@@ -167,8 +173,11 @@ void GraphState::local_update_tree_branches(gsl_rng* r){
 	//pick a random internal node (odd positions in inorder traversal)
 	double ran = gsl_rng_uniform(r) * ((double) countdata->npop-1);
 	int ranindex = int(2*ceil(ran) -1);
+
+	//do the local update
 	tree->local_update_branches(trav[ranindex], r, params->epsilon);
 	trav = tree->get_inorder_traversal(countdata->npop);
+	compute_sigma();
 
 	//check to make sure the tree isn't too large
 	double maxdist = 0;
@@ -182,7 +191,7 @@ void GraphState::local_update_tree_branches(gsl_rng* r){
 		double ratio = exp(newlik-oldlik);
 		if (ratio < 1){
 			double acc = gsl_rng_uniform(r);
-			cout << oldlik << " "<< newlik << " "<< ratio << "\n";
+			//cout << oldlik << " "<< newlik << " "<< ratio << "\n";
 			if (acc > ratio){
 				PopGraph * tmptree = tree;
 				tree = tree_bk;

@@ -14,6 +14,7 @@
 class CountData{
 public:
 	CountData(string, int);
+	CountData(string); //no rescaling (ie. just the allele frequencies)
 	void read_counts(string);
 	map<string, int> pop2id;
 	vector<vector<pair<int, int> > > allele_counts;
@@ -26,6 +27,7 @@ public:
 	void process_scatter();
 	void read_scatter(string); //for debugging
 	void print_scatter(string);
+	void print_fst(string);
 	double scatter_det, scatter_gamma;
 };
 

@@ -18,6 +18,7 @@ int scaling = 1;
 int burn = 20000;
 int sample = 40000;
 double epsilon = 0.002;
+double f_global = 0.2;
 
 void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
@@ -29,6 +30,7 @@ void printopts(){
 	cout << "-samp number of sampling iterations of the MCMC (default 40,000)\n";
 	cout << "-ep parameter for changing topology during burn-in (default 0.002)\n";
 	cout << "-sqrt use square root transformation of allele frequencies (default is arcsin)\n";
+	cout << "-f fraction of global updates (default is 0.2)\n";
 }
 
 
@@ -49,6 +51,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-samp"))	sample = atoi(cmdline.GetArgument("-samp", 0).c_str());
     if (cmdline.HasSwitch("-ep"))	epsilon = atof(cmdline.GetArgument("-ep", 0).c_str());
     if (cmdline.HasSwitch("-sqrt"))	scaling = 2;
+    if (cmdline.HasSwitch("-f"))	f_global = atof(cmdline.GetArgument("-f", 0).c_str());
 
     string treefile = outstem+".treeout.gz";
     ogzstream treeout(treefile.c_str());
@@ -66,6 +69,8 @@ int main(int argc, char *argv[]){
     p.burnin = burn;
     p.total = sample;
     p.nthread = nthread;
+    cout << f_global << "\n";
+    p.f = f_global;
 
     string pops = counts.get_pops();
     GraphState initstate(pops,  &counts, &p);
