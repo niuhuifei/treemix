@@ -17,6 +17,18 @@ CountData::CountData(string infile, int which){
 	process_scatter();
 }
 
+
+CountData::CountData(string infile){
+	read_counts(infile);
+	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
+	alfreqs = gsl_matrix_alloc(nsnp, npop);
+	scatter = gsl_matrix_alloc(npop, npop);
+	set_alfreqs();
+	//scale_alfreqs(which);
+	set_scatter();
+	process_scatter();
+}
+
 string CountData::get_pops(){
 	string toreturn = "(";
 	map<string , int>::iterator it = pop2id.begin();
@@ -197,6 +209,38 @@ void CountData::print_scatter(string outfile){
 		out << "\n";
 	}
 
+}
+
+void CountData::print_fst(string outfile){
+	gsl_matrix* fst = gsl_matrix_alloc(npop, npop);
+	ogzstream out(outfile.c_str());
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double total = 0;
+			for (int k = 0; k < nsnp; k++){
+				double f1 = gsl_matrix_get(alfreqs, k, i);
+				double f2 = gsl_matrix_get(alfreqs, k, j);
+				double f_hat = (f1+f2)/2;
+				double between = 2*f_hat*(1-f_hat);
+				double within = f1*(1-f1)+ f2*(1-f2);
+				double fst_ijk;
+				if (between < 1e-8) fst_ijk = 0;
+				else fst_ijk = (between-within)/between;
+				//cout << fst_ijk
+				total+= fst_ijk;
+			}
+			total = total / (double) nsnp;
+			gsl_matrix_set(fst, i, j, total);
+			gsl_matrix_set(fst, j, i, total);
+		}
+	}
+	for(map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++)	out << it->first << " ";
+	out << "\n";
+	for(map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++){
+		out << it->first;
+		for(map<string, int>::iterator it2 = pop2id.begin(); it2 != pop2id.end(); it2++)	 out << " "<< gsl_matrix_get(fst, it->second, it2->second);
+		out << "\n";
+	}
 }
 
 void CountData::process_scatter(){
