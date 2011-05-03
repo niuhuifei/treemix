@@ -251,7 +251,7 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 	 *        /    / \
 	 *       2    4   5
 	 *
-	 * do local rearrangements. input is v3
+	 * do local rearrangements. input is v3, which slides to the branch between 1 and 2 carrying 4 or 5
 	 *
 	 */
 	if (!g[v3].is_root){
@@ -261,7 +261,7 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 	Graph::edge_descriptor ed = *tmp;
 	Graph::vertex_descriptor v1, v2, v4, v5;
 	double d12, d13, d34, d35;
-
+	double l2, l4, l5;
 	d13 = g[ed].len;
 	v1 = source(ed, g);
 	Graph::out_edge_iterator out3 = out_edges(v3, g).first;
@@ -282,10 +282,57 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 		v2 = target(*out1, g);
 		d12 = g[*out1].len;
 	}
-
+	l2 = d12;
+	l4 = d13+d34;
+	l5 = d13+d35;
+	double min = l2;
+	if (l4 < min) min = l4;
+	if (l5 < min) min = l5;
+	//cout << min << " "<< l2 << " "<< l4 << " "<< l5 << "\n";
 	//choose which rearrangement to do
+	// either 4 or 5 slides with 3
 	double ran = gsl_rng_uniform(r);
-	//ran = 0.2;
+	ran = 0.7;
+	if (ran < 0.5){
+		// 4 slides
+		double ran2 = gsl_rng_uniform(r);
+		double newpos = ran2*min;
+		remove_edge(v1, v2, g);
+		remove_edge(v3, v5, g);
+		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+		g[e].weight = 1;
+		g[e].len = min - newpos;
+		e = add_edge(v1, v5, g).first;
+		g[e].weight = 1;
+		g[e].len = l5;
+		e = edge(v1, v3, g).first;
+		g[e].len = newpos;
+		e = edge(v3, v4, g).first;
+		g[e].len = l4 - newpos;
+		g[v3].height = g[v1].height+ newpos;
+	}
+	else{
+		//5 slides
+		double ran2 = gsl_rng_uniform(r);
+		double newpos = ran2*min;
+		remove_edge(v1, v2, g);
+		remove_edge(v3, v4, g);
+		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+		g[e].weight = 1;
+		g[e].len = min - newpos;
+		e = add_edge(v1, v4, g).first;
+		g[e].weight = 1;
+		g[e].len = l4;
+		e = edge(v1, v3, g).first;
+		g[e].len = newpos;
+		e = edge(v3, v5, g).first;
+		g[e].len = l5 - newpos;
+		g[v3].height = g[v1].height+ newpos;
+	}
+
+	/*//choose which rearrangement to do
+	double ran = gsl_rng_uniform(r);
+	ran = 0.2;
 	if (ran < 0.5){
 		// go to ((2,4),5)
 
@@ -315,8 +362,9 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 		g[e].len = d34;
 		update_heights_local( v4, -d13);
 		update_heights_local( v2, d13);
+	}*/
 	}
-	}
+
 }
 
 
@@ -330,6 +378,16 @@ void PopGraph::update_heights_local(Graph::vertex_descriptor v, double adj){
 	g[v].height += adj;
 }
 
+void PopGraph::move_root(gsl_rng* r){
+	double ran = gsl_rng_uniform(r);
+	Graph::out_edge_iterator it = out_edges(root, g).first;
+	Graph::vertex_descriptor target;
+	if (ran < 0.5) it++;
+
+	//target = target(*it, g);
+
+
+}
 
 void PopGraph::local_update_branches(Graph::vertex_descriptor v3, gsl_rng* r, double epsilon){
 	/*

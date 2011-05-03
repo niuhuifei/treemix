@@ -84,6 +84,7 @@ public:
 	void update_heights_local(Graph::vertex_descriptor, double);
 	void local_update_branches(Graph::vertex_descriptor, gsl_rng*, double);
 	void single_branch_update(Graph::edge_descriptor, gsl_rng*, double);
+	void move_root(gsl_rng*);
 
 	//randomize the tree
 	void randomize_tree(gsl_rng*);
