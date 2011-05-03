@@ -251,7 +251,7 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 	 *        /    / \
 	 *       2    4   5
 	 *
-	 * do local rearrangements. input is v3, which slides to the branch between 1 and 2 carrying 4 or 5
+	 * do local rearrangements.
 	 *
 	 */
 	if (!g[v3].is_root){
@@ -291,7 +291,7 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 	//cout << min << " "<< l2 << " "<< l4 << " "<< l5 << "\n";
 	//choose which rearrangement to do
 	// either 4 or 5 slides with 3
-	double ran = gsl_rng_uniform(r);
+	/*double ran = gsl_rng_uniform(r);
 	ran = 0.7;
 	if (ran < 0.5){
 		// 4 slides
@@ -329,8 +329,8 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 		g[e].len = l5 - newpos;
 		g[v3].height = g[v1].height+ newpos;
 	}
-
-	/*//choose which rearrangement to do
+*/
+	//choose which rearrangement to do
 	double ran = gsl_rng_uniform(r);
 	ran = 0.2;
 	if (ran < 0.5){
@@ -362,7 +362,7 @@ void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
 		g[e].len = d34;
 		update_heights_local( v4, -d13);
 		update_heights_local( v2, d13);
-	}*/
+	}
 	}
 
 }
