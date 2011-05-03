@@ -16,6 +16,11 @@ GraphState::GraphState(string newick, CountData* counts, MCMC_params* p){
 	tree_bk = new PopGraph(newick);
 	sigma = gsl_matrix_alloc(counts->npop, counts->npop);
 	gsl_matrix_set_zero(sigma);
+	cout << tree->get_newick_format() <<"\n";
+	//cout << "here\n"; cout.flush();
+	compute_sigma();
+	//cout <<  "here2\n"; cout.flush();
+
 }
 
 
