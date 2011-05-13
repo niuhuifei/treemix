@@ -20,10 +20,11 @@ public:
 	vector<vector<pair<int, int> > > allele_counts;
 	int npop, nsnp;
 	string get_pops();
-	gsl_matrix *alfreqs, *scatter;
+	gsl_matrix *alfreqs, *scatter, *cov;
 	void set_alfreqs();
 	void scale_alfreqs(int);
 	void set_scatter();
+	void set_cov();
 	void process_scatter();
 	void read_scatter(string); //for debugging
 	void print_scatter(string);
