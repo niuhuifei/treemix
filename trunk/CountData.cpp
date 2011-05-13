@@ -11,10 +11,12 @@ CountData::CountData(string infile, int which){
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
 	scatter = gsl_matrix_alloc(npop, npop);
+	cov = gsl_matrix_alloc(npop, npop);
 	set_alfreqs();
 	scale_alfreqs(which);
 	set_scatter();
 	process_scatter();
+	set_cov();
 }
 
 
@@ -195,6 +197,17 @@ void CountData::set_scatter(){
 			}
 			gsl_matrix_set(scatter, i, j, c);
 			gsl_matrix_set(scatter, j, i, c);
+		}
+	}
+}
+
+void CountData::set_cov(){
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double sc = gsl_matrix_get(scatter, i, j);
+			double c = sc/ ( (double) nsnp - 1);
+			gsl_matrix_set(cov, i, j, c);
+			gsl_matrix_set(cov, j, i, c);
 		}
 	}
 }
