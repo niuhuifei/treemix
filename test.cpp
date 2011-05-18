@@ -32,10 +32,10 @@ int main(){
 	MCMC_params p;
 
 	GraphState teststate(testnewick, &counts, &p);
-	cout << teststate.llik() <<"\n";
+	cout << teststate.llik_normal() <<"\n";
 	teststate.set_branches_ls();
 	teststate.compute_sigma();
-	cout << teststate.llik() << "\n";
+	cout << teststate.llik_normal() << "\n";
 	cout << teststate.tree->get_newick_format() << "\n";
 	//teststate.tree->print();
 	//vector< Graph::vertex_descriptor > vec = teststate.tree->get_inorder_traversal(5);
@@ -52,10 +52,10 @@ int main(){
 	//teststate.compute_sigma();
 	testnewick = "((((pop12:0.00906342,pop11:0.00939995):0.000409853,(pop9:0.0106216,pop10:0.010027):0.00037873):0.000125612,((pop7:0.0121508,pop8:0.0111988):0.000449598,((pop5:0.0126136,(((pop1:0.0156482,pop2:0.0141466):0.000919802,pop3:0.0139073):0.000560655,pop4:0.0133937):0.000572252):0.000359304,pop6:0.012505):0.000776528):0.000163241):4.31837e-07,((pop14:0.00787589,((pop16:0.00661613,(((pop19:0.00494392,pop20:0.00515132):0.000711535,pop18:0.00547178):0.000608346,pop17:0.00587652):0.000647406):0.000533695,pop15:0.0073544):0.000446108):0.000422077,pop13:0.0088081):0.000607757)";
 	GraphState teststate2(testnewick, &counts, &p);
-	cout << teststate2.llik() << " 2\n";
+	cout << teststate2.llik_normal() << " 2\n";
 	teststate2.set_branches_ls();
 	teststate2.compute_sigma();
-	cout << teststate2.llik() << " 2\n";
+	cout << teststate2.llik_normal() << " 2\n";
 
 	//cout << teststate.tree->get_newick_format() << "\n";
 //
