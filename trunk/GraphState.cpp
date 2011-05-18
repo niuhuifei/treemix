@@ -422,5 +422,18 @@ void GraphState::set_branches_ls(){
 }
 
 double GraphState::llik_normal(){
-
+	double v = countdata->cov_var;
+	double toreturn = 0;
+	int npop = countdata->npop;
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double pred = gsl_matrix_get(sigma, i, j);
+			double obs = gsl_matrix_get(countdata->cov, i, j);
+			double dif = obs-pred;
+			double toadd = gsl_ran_gaussian_pdf(dif, sqrt(v));
+			//cout << pred << " "<< obs << " "<< toadd << "\n";
+			toreturn+= log(toadd);
+		}
+	}
+	return toreturn;
 }

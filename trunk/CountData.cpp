@@ -283,6 +283,7 @@ void CountData::process_cov(){
 	for (int i = 0; i < npop; i++){
 		for (int j = i; j < npop; j++){
 			double c = 0;
+
 			double tmp_cov = gsl_matrix_get(cov, i, j);
 			for (int k = 0; k < nsnp; k++){
 				double toadd = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
@@ -295,12 +296,13 @@ void CountData::process_cov(){
 	double tmp = 0;
 	int todivide =0;
 	for (int i = 0; i < npop; i++){
-		for (int j = i; i < npop; j++)	{
+		for (int j = i; j < npop; j++)	{
+			//cout << i << " "<< j << " "<< gsl_matrix_get(var_matrix, i, j)<< "\n";
 			tmp+= gsl_matrix_get(var_matrix, i, j);
 			todivide++;
 		}
 	}
 	tmp = tmp/ (double) todivide;
-	cout << "tmp "<< tmp << "\n";
+	//cout << "tmp "<< tmp << "\n";
 	cov_var = tmp;
 }
