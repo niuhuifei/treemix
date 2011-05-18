@@ -35,6 +35,7 @@
 #include <math.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_multifit.h>
 #include <omp.h>
 #include <cmath>
 #include "CmdLine.h"
