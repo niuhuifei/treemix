@@ -53,6 +53,11 @@ public:
 	double llik();
 	double dens_wishart();
 	void print_state(ogzstream&);
+	double llik_normal();
+
+	//under normal model, get the max lik branch lengths
+	// for a given topology by least squares
+	void set_branches_ls();
 };
 
 

@@ -178,6 +178,14 @@ vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal(int nodes){
         	return toreturn;
 }
 
+vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal_noroot(int nodes){
+	vector<Graph::vertex_descriptor> toreturn;
+	vector<Graph::vertex_descriptor> tmp = get_inorder_traversal(nodes);
+	for (int i = 0; i < tmp.size(); i++){
+		if (g[tmp[i]].is_root == false) toreturn.push_back(tmp[i]);
+	}
+	return toreturn;
+}
 void PopGraph::inorder_traverse(Graph::vertex_descriptor rootIterator, int* i, vector<Graph::vertex_descriptor >* v){
 	graph_traits<Graph>::out_edge_iterator out_i = out_edges(rootIterator, g).first;
 	if (g[rootIterator].is_tip == false){
@@ -667,4 +675,18 @@ void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
 
 double PopGraph::get_height(Graph::vertex_descriptor v){
 	return g[v].height;
+}
+
+
+set<Graph::vertex_descriptor> PopGraph::get_path_to_root(Graph::vertex_descriptor v){
+	set<Graph::vertex_descriptor> toreturn;
+	while (g[v].is_root == false){
+		//cout << g[v].index << "\n";
+		toreturn.insert(v);
+		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
+		//cout << "got iterator" << "\n";
+		v = source(*in_i, g);
+		//cout << "but not here\n"; cout.flush();
+	}
+	return toreturn;
 }

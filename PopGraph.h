@@ -64,9 +64,13 @@ public:
 	//get the inorder traversal
 	vector< Graph::vertex_descriptor > get_inorder_traversal( int);
 	void inorder_traverse(Graph::vertex_descriptor, int*, vector<Graph::vertex_descriptor >*);
+	vector< Graph::vertex_descriptor > get_inorder_traversal_noroot( int);
 
 	//get the LCA of two tips in the tree
 	Graph::vertex_descriptor get_LCA(Graph::vertex_descriptor, Graph::vertex_descriptor, Graph::vertex_descriptor);
+
+	//get the path to the root for a vertex
+	set<Graph::vertex_descriptor> get_path_to_root(Graph::vertex_descriptor);
 
 	//set the heights of the vertices
 	void set_node_heights(vector<Graph::vertex_descriptor>);

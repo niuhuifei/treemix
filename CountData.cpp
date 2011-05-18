@@ -17,6 +17,7 @@ CountData::CountData(string infile, int which){
 	set_scatter();
 	process_scatter();
 	set_cov();
+	process_cov();
 }
 
 
@@ -275,4 +276,31 @@ void CountData::process_scatter(){
 	scatter_gamma = ( (double) npop * ( (double)  npop-1.0) /4.0) * log (M_PI);
 	for (int i = 1; i <= npop; i++) scatter_gamma+= gsl_sf_lngamma( (double) n/2.0 + (1.0- (double) i)/2.0);
 	//cout << "scatter_gamma "<< scatter_gamma << "\n";
+}
+
+void CountData::process_cov(){
+	gsl_matrix * var_matrix = gsl_matrix_alloc(npop, npop);
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double c = 0;
+			double tmp_cov = gsl_matrix_get(cov, i, j);
+			for (int k = 0; k < nsnp; k++){
+				double toadd = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
+				c += (toadd-tmp_cov) * (toadd-tmp_cov);
+			}
+			gsl_matrix_set(var_matrix, i, j, c/nsnp);
+			gsl_matrix_set(var_matrix, j, i, c/nsnp);
+		}
+	}
+	double tmp = 0;
+	int todivide =0;
+	for (int i = 0; i < npop; i++){
+		for (int j = i; i < npop; j++)	{
+			tmp+= gsl_matrix_get(var_matrix, i, j);
+			todivide++;
+		}
+	}
+	tmp = tmp/ (double) todivide;
+	cout << "tmp "<< tmp << "\n";
+	cov_var = tmp;
 }

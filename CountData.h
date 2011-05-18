@@ -26,10 +26,11 @@ public:
 	void set_scatter();
 	void set_cov();
 	void process_scatter();
+	void process_cov();
 	void read_scatter(string); //for debugging
 	void print_scatter(string);
 	void print_fst(string);
-	double scatter_det, scatter_gamma;
+	double scatter_det, scatter_gamma, cov_var;
 };
 
 #endif /* COUNTDATA_H_ */

@@ -357,3 +357,70 @@ void GraphState::init_tree(gsl_rng* r){
 	}
 
 }
+
+void GraphState::set_branches_ls(){
+	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal_noroot(countdata->npop);
+
+	//initialize the workspace
+	int n = countdata->npop * countdata->npop;
+	int p = 2*countdata->npop -2;
+	gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc (n, p);
+	gsl_matrix * X = gsl_matrix_alloc(n, p);
+	gsl_vector * y  = gsl_vector_alloc(n);
+	gsl_vector * c = gsl_vector_alloc(p);
+	gsl_matrix * cov = gsl_matrix_alloc(p, p);
+	double chisq;
+
+	//set up the workspace
+	map<string, Graph::vertex_descriptor > popname2tip = tree->get_tips(tree->root);
+	int index = 0;
+	for( map<string, int>::iterator it1 = countdata->pop2id.begin(); it1 != countdata->pop2id.end(); it1++){
+		for (map<string, int>::iterator it2 = countdata->pop2id.begin(); it2 != countdata->pop2id.end(); it2++){
+			string p1 = it1->first;
+			string p2 = it2->first;
+			//cout << p1 << " "<< p2 << " here\n"; cout.flush();
+			int i = it1->second;
+			int j = it2->second;
+			double empirical_cov = gsl_matrix_get(countdata->cov, i, j);
+			set<Graph::vertex_descriptor> path;
+			if (i == j) path = tree->get_path_to_root(popname2tip[p1]);
+
+			else{
+				Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p1], popname2tip[p2]);
+				path = tree->get_path_to_root(lca);
+			}
+			//cout << "here2\n"; cout.flush();
+			gsl_vector_set(y, index, empirical_cov);
+			for (int i2 =0 ; i2 < i_nodes.size(); i2++){
+				Graph::vertex_descriptor tmp = i_nodes[i2];
+				if  (path.find(tmp) == path.end() ) gsl_matrix_set(X, index, i2, 0);
+				else  gsl_matrix_set(X, index, i2, 1);
+			}
+			index++;
+		}
+	}
+
+	// fit the least squares estimates
+	gsl_multifit_linear(X, y, c, cov, &chisq, work);
+
+	//and put in the solutions
+	for( int i = 0; i < i_nodes.size(); i++){
+		Graph::vertex_descriptor v = i_nodes[i];
+		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, tree->g).first;
+		double l = gsl_vector_get(c, i);
+		//if (l < 0) l = 1E-8;
+		tree->g[*in_i].len = l;
+	}
+
+	//free memory
+	gsl_multifit_linear_free(work);
+	gsl_matrix_free(X);
+	gsl_vector_free(y);
+	gsl_vector_free(c);
+	gsl_matrix_free(cov);
+
+}
+
+double GraphState::llik_normal(){
+
+}
