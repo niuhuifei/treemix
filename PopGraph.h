@@ -42,16 +42,25 @@ public:
 	// initialize from a Newick string
 	PopGraph(string);
 
+	// initialize with three populations
+	PopGraph(vector<string>);
+
 	//copy from another location
 	void copy(PopGraph*);
 	//void copy_helper(Graph::vertex_descriptor, Graph::vertex_descriptor, PopGraph *);
 
 	Graph g;
 	bool istree; // is this a tree? if so, allow shortcuts
+	int indexcounter;
 
 	vector<Graph::vertex_descriptor> index2father;
 	vector<string> popnames;
 	Graph::vertex_descriptor root;
+
+
+	Graph::vertex_descriptor add_tip(Graph::vertex_descriptor, string);
+	void remove_tip(Graph::vertex_descriptor);
+
 
 	void set_root(Graph::vertex_descriptor);
 	void print();

@@ -24,7 +24,9 @@ GraphState::GraphState(string newick, CountData* counts, MCMC_params* p){
 }
 
 
+GraphState::GraphState(CountData* counts){
 
+}
 void GraphState::print_sigma(){
 	for(int i = 0; i < countdata->npop; i++){
 		for (int j = 0; j < countdata->npop; j++){
