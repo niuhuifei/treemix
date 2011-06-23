@@ -19,6 +19,157 @@ PopGraph::PopGraph(){
 }
 
 
+PopGraph::PopGraph(vector<string> first3pops){
+
+	g = Graph(1);
+	istree = true;
+	Graph::vertex_descriptor v = *vertices(g).first;
+	Graph::vertex_descriptor v2, v3, v4, v5, v6;
+	Graph::edge_descriptor e;
+	g[v].index = 0;
+	g[v].name = "NA";
+	g[v].height = 0;
+	g[v].is_tip = false;
+	g[v].is_root = true;
+	g[v].rev = false;
+	root = v;
+
+	// add the first three populations to the tree
+	// tree will look like this:
+	//
+	//           root
+	//            /\
+	//           /  \
+	//          /   /\
+	//         1    2 3
+	if (first3pops.size() != 3) {
+		std::cout << "Error initializing PopGraph: need 3 pops, not "<< first3pops.size() << "\n";
+		exit(1);
+	}
+	v3 = add_vertex(g);
+	g[v3].index = 1;
+	g[v3].name = first3pops[0];
+	g[v3].height = 0;
+	g[v3].is_tip = true;
+	g[v3].is_root = false;
+	g[v3].rev = false;
+	e = add_edge( v, v3, g).first;
+	g[e].weight = 1;
+	g[e].len = 1;
+
+
+	v4 = add_vertex(g);
+	g[v4].index = 2;
+	g[v4].name = "NA";
+	g[v4].height = 0;
+	g[v4].is_tip = false;
+	g[v4].is_root = false;
+	g[v4].rev = false;
+	e = add_edge( v, v4, g).first;
+	g[e].weight = 1;
+	g[e].len = 1;
+
+
+	v5 = add_vertex(g);
+	g[v5].index = 3;
+	g[v5].name = first3pops[1];
+	g[v5].height = 0;
+	g[v5].is_tip = true;
+	g[v5].is_root = false;
+	g[v5].rev = false;
+	e = add_edge( v4, v5, g).first;
+	g[e].weight = 1;
+	g[e].len = 1;
+
+	v6 = add_vertex(g);
+	g[v6].index = 4;
+	g[v6].name = first3pops[2];
+	g[v6].height = 0;
+	g[v6].is_tip = true;
+	g[v6].is_root = false;
+	g[v6].rev = false;
+	e = add_edge( v4, v6, g).first;
+	g[e].weight = 1;
+	g[e].len = 1;
+	indexcounter = 5;
+}
+
+
+
+Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string name){
+	// add a tip attached above v, halfway to the parent node
+	Graph::vertex_descriptor vtipnew, vintnew, vparent;
+	double len, newlen;
+	Graph::edge_descriptor e;
+
+	// remove edge from parent to target
+	graph_traits<Graph>::in_edge_iterator init = in_edges(v, g).first;
+	len = g[*init].len;
+	newlen = len/2;
+	vparent = source(*init, g);
+	remove_edge(*init, g);
+
+	//add new vertices
+	vtipnew = add_vertex(g);
+	vintnew = add_vertex(g);
+
+	g[vtipnew].index = indexcounter;
+	g[vtipnew].name = name;
+	g[vtipnew].height = 0;
+	g[vtipnew].is_tip = true;
+	g[vtipnew].is_root = false;
+	g[vtipnew].rev = false;
+	indexcounter++;
+
+	g[vintnew].index = indexcounter;
+	g[vintnew].name = "NA";
+	g[vintnew].height = 0;
+	g[vintnew].is_tip = false;
+	g[vintnew].is_root = false;
+	g[vintnew].rev = false;
+	indexcounter++;
+
+	// add new edges
+	e = add_edge( vparent, vintnew, g).first;
+	g[e].weight = 1;
+	g[e].len = newlen;
+	e = add_edge( vintnew, v, g).first;
+	g[e].weight = 1;
+	g[e].len = newlen;
+	e = add_edge( vintnew, vtipnew, g).first;
+	g[e].weight = 1;
+	g[e].len = 1;
+	return vtipnew;
+}
+
+
+void PopGraph::remove_tip(Graph::vertex_descriptor v){
+	Graph::vertex_descriptor vparent, vparent2, vnewdest;
+	double newlen;
+	Graph::edge_descriptor e;
+
+	graph_traits<Graph>::in_edge_iterator init = in_edges(v, g).first;
+	vparent = source(*init, g);
+
+	graph_traits<Graph>::in_edge_iterator init2 = in_edges(vparent, g).first;
+	vparent2 = source(*init2, g);
+
+	remove_edge(*init, g);
+
+	graph_traits<Graph>::out_edge_iterator outit = out_edges(vparent, g).first;
+	vnewdest = target(*outit, g);
+	newlen = g[*outit].len+ g[*init2].len;
+
+	e = add_edge(vparent2, vnewdest, g).first;
+	g[e].len = newlen;
+	g[e].weight = 1;
+
+	clear_vertex(vparent, g);
+	remove_vertex(vparent, g);
+	remove_vertex(v, g);
+}
+
+
 void PopGraph::copy(PopGraph * s){
 	istree = s->istree;
 	popnames = s->popnames;
@@ -188,10 +339,12 @@ vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal_noroot(int nod
 }
 void PopGraph::inorder_traverse(Graph::vertex_descriptor rootIterator, int* i, vector<Graph::vertex_descriptor >* v){
 	graph_traits<Graph>::out_edge_iterator out_i = out_edges(rootIterator, g).first;
+	//cout << g[rootIterator].index << " "<< g[rootIterator].name << " "<< g[rootIterator].is_tip << " "<< g[rootIterator].rev << "\n";
 	if (g[rootIterator].is_tip == false){
 		if (g[rootIterator].rev == true) out_i++;
  		inorder_traverse(target(*out_i, g), i , v);
  	}
+
  	v->at(*i) = rootIterator;
  	*i = *i+1;
 
@@ -681,12 +834,9 @@ double PopGraph::get_height(Graph::vertex_descriptor v){
 set<Graph::vertex_descriptor> PopGraph::get_path_to_root(Graph::vertex_descriptor v){
 	set<Graph::vertex_descriptor> toreturn;
 	while (g[v].is_root == false){
-		//cout << g[v].index << "\n";
 		toreturn.insert(v);
 		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
-		//cout << "got iterator" << "\n";
 		v = source(*in_i, g);
-		//cout << "but not here\n"; cout.flush();
 	}
 	return toreturn;
 }

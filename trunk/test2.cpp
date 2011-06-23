@@ -5,8 +5,8 @@
  *      Author: pickrell
  */
 
-#include "CountData2.h"
-#include "PopGraph2.h"
+#include "CountData.h"
+#include "PopGraph.h"
 
 int main (void)
 {
@@ -22,11 +22,12 @@ int main (void)
 	//tmpcount.print_cov("test_cov.gz");
 	vector<string> tmpnames;
 	tmpnames.push_back("pop1"); tmpnames.push_back("pop2");tmpnames.push_back("pop3");
-	PopGraph2 tmp("pop0", tmpnames);
+	PopGraph tmp(tmpnames);
 
 	tmp.print();
 
 	vector<Graph::vertex_descriptor> inord = tmp.get_inorder_traversal_noroot(3);
+	cout << "here\n";
 	for (int i = 0; i < inord.size(); i++){
 		cout << tmp.g[ inord[i]].index << " "<< tmp.g[ inord[i]].name << "\n";
 	}
