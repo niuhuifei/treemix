@@ -22,6 +22,7 @@ CountData::CountData(string infile, int which){
 
 
 CountData::CountData(string infile){
+	cerr << "Do not use this constructor for CountData!\n"; exit(1);
 	read_counts(infile);
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
@@ -191,6 +192,7 @@ void CountData::scale_alfreqs(int which){
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
 			if (which ==1 )gsl_matrix_set(alfreqs, i, j, f-m);
+			//if (which ==1 )gsl_matrix_set(alfreqs, i, j, f);
 			else if (which == 2) gsl_matrix_set(alfreqs, i, j, (f-m)/ sqrt(m*(1-m)));
 		}
 	}
@@ -316,6 +318,7 @@ void CountData::process_cov(){
 }
 
 double CountData::get_cov(string pop1, string pop2){
+
 	if (pop2id.find(pop1)  == pop2id.end()) {
 		cerr << "No population "<< pop1 << "\n";
 		exit(1);
@@ -332,6 +335,24 @@ double CountData::get_cov(string pop1, string pop2){
 	return toreturn;
 }
 
+
+double CountData::get_scatter(string pop1, string pop2){
+
+	if (pop2id.find(pop1)  == pop2id.end()) {
+		cerr << "No population "<< pop1 << "\n";
+		exit(1);
+	}
+	if (pop2id.find(pop2)  == pop2id.end()) {
+		cerr << "No population "<< pop2 << "\n";
+		exit(1);
+	}
+
+
+	int p1 = pop2id[pop1];
+	int p2 = pop2id[pop2];
+	double toreturn = gsl_matrix_get(scatter, p1, p2);
+	return toreturn;
+}
 
 double CountData::get_cov_var(string pop1, string pop2){
 	if (pop2id.find(pop1)  == pop2id.end()) {

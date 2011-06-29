@@ -25,6 +25,8 @@ int main (void)
 	state.print_sigma();
 	state.add_pop();
 	state.add_pop();
+	state.add_pop();
+	cout << state.tree->get_newick_format() <<"\n";
 
 
 	/*

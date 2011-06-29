@@ -33,6 +33,7 @@ public:
 	void print_fst(string);
 	double get_cov(string, string);
 	double get_cov_var(string, string);
+	double get_scatter(string, string);
 	void print_cov(string);
 	double scatter_det, scatter_gamma;
 };

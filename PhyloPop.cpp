@@ -6,7 +6,7 @@
  */
 
 #include "Settings.hpp"
-#include "MCMC.h"
+#include "GraphState2.h"
 
 string infile;
 string outstem = "PhyloPop";
@@ -17,7 +17,7 @@ void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i input file\n";
-	cout << "-o output stem (will be [stem].treeout.gz and [stem].meanout.gz)\n";
+	cout << "-o output stem (will be [stem].treeout.gz, [stem].cov.gz)\n";
 }
 
 
@@ -35,41 +35,17 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
 
     string treefile = outstem+".treeout.gz";
-    string mfile = outstem+".mout.gz";
+    string covfile = outstem+".cov.gz";
+
     ogzstream treeout(treefile.c_str());
-    ogzstream mout(mfile.c_str());
-    CountData counts(infile);
-    string pops = counts.get_pops();
-    cout << pops << "\n";
+    CountData counts(infile, 1);
+    counts.print_cov(covfile);
+    GraphState2 state(&counts);
+    while (counts.npop > state.current_npops){
+    	//cout << counts.npop << " "<< state.current_npops << "\n";
+    	state.add_pop();
 
-
-    // MCMC parameters
-    MCMC_params p;
-    p.nthread = nthread;
-    State initstate(pops,  &counts, &p);
-
-
-    //start random number generator
-    const gsl_rng_type * T;
-    gsl_rng * r;
-    gsl_rng_env_setup();
-    T = gsl_rng_ranlxs2;
-    r = gsl_rng_alloc(T);
-    if (seed > 0)  gsl_rng_set(r,(int)seed);
-    else{
-    	seed = (int)time(0);
-    	gsl_rng_set(r, seed);
     }
-
-    // initialization
-    initstate.tree->randomize_tree(r);
-    initstate.compute_sigma();
-    initstate.init_thetas();
-    initstate.init_means();
-    initstate.init_liks();
-
-    //MCMC
-    MCMC mcmc(&initstate, &p);
-    mcmc.run(r, treeout, mout);
+    cout << state.tree->get_newick_format() << "\n";
 	return 0;
 }

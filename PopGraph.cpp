@@ -102,44 +102,78 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 	double len, newlen;
 	Graph::edge_descriptor e;
 
-	// remove edge from parent to target
-	graph_traits<Graph>::in_edge_iterator init = in_edges(v, g).first;
-	len = g[*init].len;
-	newlen = len/2;
-	vparent = source(*init, g);
-	remove_edge(*init, g);
+	if (g[v].is_root == false){
+		// remove edge from parent to target
+		graph_traits<Graph>::in_edge_iterator init = in_edges(v, g).first;
+		len = g[*init].len;
+		newlen = len/2;
+		vparent = source(*init, g);
+		remove_edge(*init, g);
 
-	//add new vertices
-	vtipnew = add_vertex(g);
-	vintnew = add_vertex(g);
+		//add new vertices
+		vtipnew = add_vertex(g);
+		vintnew = add_vertex(g);
 
-	g[vtipnew].index = indexcounter;
-	g[vtipnew].name = name;
-	g[vtipnew].height = 0;
-	g[vtipnew].is_tip = true;
-	g[vtipnew].is_root = false;
-	g[vtipnew].rev = false;
-	indexcounter++;
+		g[vtipnew].index = indexcounter;
+		g[vtipnew].name = name;
+		g[vtipnew].height = 0;
+		g[vtipnew].is_tip = true;
+		g[vtipnew].is_root = false;
+		g[vtipnew].rev = false;
+		indexcounter++;
 
-	g[vintnew].index = indexcounter;
-	g[vintnew].name = "NA";
-	g[vintnew].height = 0;
-	g[vintnew].is_tip = false;
-	g[vintnew].is_root = false;
-	g[vintnew].rev = false;
-	indexcounter++;
+		g[vintnew].index = indexcounter;
+		g[vintnew].name = "NA";
+		g[vintnew].height = 0;
+		g[vintnew].is_tip = false;
+		g[vintnew].is_root = false;
+		g[vintnew].rev = false;
+		indexcounter++;
 
-	// add new edges
-	e = add_edge( vparent, vintnew, g).first;
-	g[e].weight = 1;
-	g[e].len = newlen;
-	e = add_edge( vintnew, v, g).first;
-	g[e].weight = 1;
-	g[e].len = newlen;
-	e = add_edge( vintnew, vtipnew, g).first;
-	g[e].weight = 1;
-	g[e].len = 1;
-	return vtipnew;
+		// add new edges
+		e = add_edge( vparent, vintnew, g).first;
+		g[e].weight = 1;
+		g[e].len = newlen;
+		e = add_edge( vintnew, v, g).first;
+		g[e].weight = 1;
+		g[e].len = newlen;
+		e = add_edge( vintnew, vtipnew, g).first;
+		g[e].weight = 1;
+		g[e].len = 1;
+		return vtipnew;
+	}
+	else{
+
+		//add a new root
+		g[v].is_root = false;
+		vintnew = add_vertex(g);
+		vtipnew = add_vertex(g);
+		root = vintnew;
+		g[vtipnew].index = indexcounter;
+		g[vtipnew].name = name;
+		g[vtipnew].height = 0;
+		g[vtipnew].is_tip = true;
+		g[vtipnew].is_root = false;
+		g[vtipnew].rev = false;
+		indexcounter++;
+
+		g[vintnew].index = indexcounter;
+		g[vintnew].name = "NA";
+		g[vintnew].height = 0;
+		g[vintnew].is_tip = false;
+		g[vintnew].is_root = true;
+		g[vintnew].rev = false;
+		indexcounter++;
+
+		// add new edges
+		e = add_edge( vintnew, v, g).first;
+		g[e].weight = 1;
+		g[e].len = 1;
+		e = add_edge( vintnew, vtipnew, g).first;
+		g[e].weight = 1;
+		g[e].len = 1;
+		return vtipnew;
+	}
 }
 
 
@@ -148,25 +182,66 @@ void PopGraph::remove_tip(Graph::vertex_descriptor v){
 	double newlen;
 	Graph::edge_descriptor e;
 
+
 	graph_traits<Graph>::in_edge_iterator init = in_edges(v, g).first;
 	vparent = source(*init, g);
 
-	graph_traits<Graph>::in_edge_iterator init2 = in_edges(vparent, g).first;
-	vparent2 = source(*init2, g);
+	//if the node isn't coming from the root
+	if (g[vparent].is_root == false){
 
-	remove_edge(*init, g);
+		/*
+		 *     vp2
+		 *     / \
+		 *    /   \
+		 *         vp
+		 *         / \
+		 *        /   \
+		 *       v     vnewdest
+		 *
+		 *
+		 *  delete v, vp, draw edge from vp2 to vnewdest
+		 */
+		graph_traits<Graph>::in_edge_iterator init2 = in_edges(vparent, g).first;
+		vparent2 = source(*init2, g);
 
-	graph_traits<Graph>::out_edge_iterator outit = out_edges(vparent, g).first;
-	vnewdest = target(*outit, g);
-	newlen = g[*outit].len+ g[*init2].len;
+		remove_edge(*init, g);
 
-	e = add_edge(vparent2, vnewdest, g).first;
-	g[e].len = newlen;
-	g[e].weight = 1;
+		graph_traits<Graph>::out_edge_iterator outit = out_edges(vparent, g).first;
+		vnewdest = target(*outit, g);
+		newlen = g[*outit].len+ g[*init2].len;
 
-	clear_vertex(vparent, g);
-	remove_vertex(vparent, g);
-	remove_vertex(v, g);
+		e = add_edge(vparent2, vnewdest, g).first;
+		g[e].len = newlen;
+		g[e].weight = 1;
+
+		clear_vertex(vparent, g);
+		remove_vertex(vparent, g);
+		remove_vertex(v, g);
+	}
+
+	//otw
+
+	else{
+
+		/*
+		 *
+		 *         vp
+		 *        /  \
+		 *       /    \
+		 *      v      vnewdest
+		 *
+		 * delete v, vp, make vnewdest the new root
+		 *
+		 */
+		remove_edge(*init, g);
+		graph_traits<Graph>::out_edge_iterator outit = out_edges(vparent, g).first;
+		vnewdest = target(*outit, g);
+		g[vnewdest].is_root = true; //this is the new root
+		root = vnewdest;
+		clear_vertex(vparent, g);
+		remove_vertex(vparent, g);
+		remove_vertex(v, g);
+ 	}
 }
 
 
@@ -877,8 +952,13 @@ void PopGraph::print(){
 
 	cout << "vertices(g) = ";
 	pair<vertex_iter, vertex_iter> vp;
-	for (vp = vertices(g); vp.first != vp.second; ++vp.first)
-		std::cout << index[*vp.first] <<  ":"<< g[*vp.first].name << ":"<< get_dist_to_root(*vp.first)<< " ";
+	for (vp = vertices(g); vp.first != vp.second; ++vp.first){
+		std::cout << index[*vp.first] <<  ":"<< g[*vp.first].name << ":"<< get_dist_to_root(*vp.first);
+		if (g[*vp.first].is_root) std::cout << ":ROOT";
+		if (g[*vp.first].is_tip) std::cout << ":TIP";
+		cout << " ";
+
+	}
 	cout << "\n";
 
     std::cout << "edges(g) = ";

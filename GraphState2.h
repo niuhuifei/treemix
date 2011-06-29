@@ -22,11 +22,13 @@ public:
 
 	gsl_matrix *sigma;
 	CountData* countdata; //pointer to the data
-	vector<string> allpopnames;
-	int current_npops;
+	vector<string> allpopnames; //names of populations, will be added one at a time after the first 3
+	int current_npops; //current total number of populations
 	double current_llik;
+	double scatter_det, scatter_gamma;
+	gsl_matrix *scatter; //current scatter matrix
 
-	// covariance matrix
+	//covariance matrix
 	void compute_sigma();
 	void print_sigma();
 
@@ -35,13 +37,16 @@ public:
 
 	//add a new population
 	void add_pop();
+	void process_scatter();
 
 	//under normal model, get the max lik branch lengths
 	// for a given topology by least squares
 	void set_branches_ls();
 
 	//likelihoods
+	double llik();
 	double llik_normal();
+	double llik_wishart();
 };
 
 
