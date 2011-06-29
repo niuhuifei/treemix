@@ -357,6 +357,7 @@ void PopGraph::inorder_traverse(Graph::vertex_descriptor rootIterator, int* i, v
 
 Graph::vertex_descriptor PopGraph::get_LCA(Graph::vertex_descriptor root_v,
 		Graph::vertex_descriptor tip1_v, Graph::vertex_descriptor tip2_v){
+		//cout << "in get_LCA "<< g[root_v].index << " "<< g[tip1_v].index << " "<< g[tip2_v].index << "\n"; cout.flush();
 		if (g[root_v].is_tip == true) return NULL;
 		graph_traits<Graph>::out_edge_iterator out_i = out_edges(root_v, g).first;
 		bool found = false;
@@ -549,6 +550,101 @@ void PopGraph::move_root(gsl_rng* r){
 
 
 }
+
+
+void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
+	/*
+	 *
+	 * go from    1
+	 *          /  \*
+	 *         /    3
+	 *        /    / \
+	 *       2    4   5
+	 *
+	 *  if i == 1, go to
+	 *
+	 *           1
+	 *          / \
+	 *         3   \
+	 *        / \   \
+	 *       2   4   5
+	 *
+	 *  if i == 2, go to
+	 *
+	 *           1
+	 *          / \
+	 *         3   \
+	 *        / \   \
+	 *       2   5   4
+	 *
+	 *
+	 */
+	if (!g[v3].is_root){
+
+	// set up descriptors and edge lengths
+	Graph::in_edge_iterator tmp = in_edges(v3, g).first;
+	Graph::edge_descriptor ed = *tmp;
+	Graph::vertex_descriptor v1, v2, v4, v5;
+	double d12, d13, d34, d35;
+	double l2, l4, l5;
+	d13 = g[ed].len;
+	v1 = source(ed, g);
+	Graph::out_edge_iterator out3 = out_edges(v3, g).first;
+	v4 = target(*out3, g);
+	d34 = g[*out3].len;
+
+	++out3;
+	v5 = target(*out3, g);
+	d35 = g[*out3].len;
+
+	Graph::out_edge_iterator out1 = out_edges(v1, g).first;
+	if (target(*out1, g) == v3) {
+		out1++;
+		v2 = target(*out1, g);
+		d12 = g[*out1].len;
+	}
+	else {
+		v2 = target(*out1, g);
+		d12 = g[*out1].len;
+	}
+	l2 = d12;
+	l4 = d13+d34;
+	l5 = d13+d35;
+	double min = l2;
+	if (l4 < min) min = l4;
+	if (l5 < min) min = l5;
+
+	if (i == 1){
+		// go to ((2,4),5)
+
+		remove_edge(v1, v2, g);
+		remove_edge(v3, v5, g);
+		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+		g[e].weight = 1;
+		g[e].len = d12;
+		e = add_edge(v1, v5, g).first;
+		g[e].weight = 1;
+		g[e].len = d35;
+
+	}
+	else{
+		//go to (4,(2,5))
+
+		remove_edge(v1, v2, g);
+		remove_edge(v3, v4, g);
+		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+		g[e].weight = 1;
+		g[e].len = d12;
+
+		e = add_edge(v1, v4, g).first;
+		g[e].weight = 1;
+		g[e].len = d34;
+
+	}
+	}
+
+}
+
 
 void PopGraph::local_update_branches(Graph::vertex_descriptor v3, gsl_rng* r, double epsilon){
 	/*
