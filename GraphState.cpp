@@ -25,7 +25,12 @@ GraphState::GraphState(string newick, CountData* counts, MCMC_params* p){
 
 
 GraphState::GraphState(CountData* counts){
-
+	countdata = counts;
+	double llik1, llik2, llik3;
+	vector<string> pops = counts->list_pops();
+	vector<string> test1; test1.push_back(pops[0]), test1.push_back(pops[1]), test1.push_back(pops[2]);
+	vector<string> test2; test2.push_back(pops[1]), test2.push_back(pops[0]), test2.push_back(pops[2]);
+	vector<string> test3; test2.push_back(pops[2]), test2.push_back(pops[0]), test2.push_back(pops[1]);
 }
 void GraphState::print_sigma(){
 	for(int i = 0; i < countdata->npop; i++){

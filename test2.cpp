@@ -7,6 +7,7 @@
 
 #include "CountData.h"
 #include "PopGraph.h"
+#include "GraphState2.h"
 
 int main (void)
 {
@@ -18,8 +19,15 @@ int main (void)
 	r = gsl_rng_alloc(T);
 	gsl_rng_set(r, 100);
 
-	//CountData2 tmpcount("testin_counts.gz", "pop1", r);
-	//tmpcount.print_cov("test_cov.gz");
+	CountData tmpcount("testin_counts.gz", 1);
+	tmpcount.print_cov("test_cov.gz");
+	GraphState2 state(&tmpcount);
+	state.print_sigma();
+	state.add_pop();
+	state.add_pop();
+
+
+	/*
 	vector<string> tmpnames;
 	tmpnames.push_back("pop1"); tmpnames.push_back("pop2");tmpnames.push_back("pop3");
 	PopGraph tmp(tmpnames);
@@ -38,5 +46,6 @@ int main (void)
 	tmp.remove_tip(n);
 	cout << "\n";
 	tmp.print();
+	*/
     return 0;
 }

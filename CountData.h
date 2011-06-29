@@ -19,8 +19,9 @@ public:
 	map<string, int> pop2id;
 	vector<vector<pair<int, int> > > allele_counts;
 	int npop, nsnp;
-	string get_pops();
-	gsl_matrix *alfreqs, *scatter, *cov;
+	string get_pops(); //in Newick format
+	vector<string> list_pops(); //simple list
+	gsl_matrix *alfreqs, *scatter, *cov, *cov_var;
 	void set_alfreqs();
 	void scale_alfreqs(int);
 	void set_scatter();
@@ -30,7 +31,10 @@ public:
 	void read_scatter(string); //for debugging
 	void print_scatter(string);
 	void print_fst(string);
-	double scatter_det, scatter_gamma, cov_var;
+	double get_cov(string, string);
+	double get_cov_var(string, string);
+	void print_cov(string);
+	double scatter_det, scatter_gamma;
 };
 
 #endif /* COUNTDATA_H_ */

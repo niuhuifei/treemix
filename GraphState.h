@@ -21,7 +21,7 @@ public:
 	GraphState(string, CountData*, MCMC_params*);
 
 	// Initializes tree to first three populations in count data
-	GraphState(CountData*);
+	GraphState(CountData*); //NOT FINISHED, USE GRAPHSTATE2
 
 	// pointer to the tree data structure (and a copy of it)
 	PopGraph* tree;

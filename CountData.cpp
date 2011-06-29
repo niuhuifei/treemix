@@ -52,6 +52,14 @@ string CountData::get_pops(){
 	return toreturn;
 }
 
+
+vector<string> CountData::list_pops(){
+	vector<string> toreturn;
+	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++) toreturn.push_back( it->first);
+	return toreturn;
+}
+
+
 void CountData::read_scatter(string infile){
 	npop =0;
 	gsl_matrix_free(scatter);
@@ -279,7 +287,7 @@ void CountData::process_scatter(){
 }
 
 void CountData::process_cov(){
-	gsl_matrix * var_matrix = gsl_matrix_alloc(npop, npop);
+	cov_var = gsl_matrix_alloc(npop, npop);
 	for (int i = 0; i < npop; i++){
 		for (int j = i; j < npop; j++){
 			double c = 0;
@@ -289,20 +297,69 @@ void CountData::process_cov(){
 				double toadd = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
 				c += (toadd-tmp_cov) * (toadd-tmp_cov);
 			}
-			gsl_matrix_set(var_matrix, i, j, c/nsnp);
-			gsl_matrix_set(var_matrix, j, i, c/nsnp);
+			gsl_matrix_set(cov_var, i, j, c/nsnp);
+			gsl_matrix_set(cov_var, j, i, c/nsnp);
 		}
 	}
-	double tmp = 0;
-	int todivide =0;
-	for (int i = 0; i < npop; i++){
-		for (int j = i; j < npop; j++)	{
-			//cout << i << " "<< j << " "<< gsl_matrix_get(var_matrix, i, j)<< "\n";
-			tmp+= gsl_matrix_get(var_matrix, i, j);
-			todivide++;
-		}
-	}
-	tmp = tmp/ (double) todivide;
+	//double tmp = 0;
+	//int todivide =0;
+	//for (int i = 0; i < npop; i++){
+	//	for (int j = i; j < npop; j++)	{
+	//		//cout << i << " "<< j << " "<< gsl_matrix_get(var_matrix, i, j)<< "\n";
+	//		tmp+= gsl_matrix_get(var_matrix, i, j);
+	//		todivide++;
+	//	}
+	//}
+	//tmp = tmp/ (double) todivide;
 	//cout << "tmp "<< tmp << "\n";
-	cov_var = tmp;
+	//cov_var = tmp;
 }
+
+double CountData::get_cov(string pop1, string pop2){
+	if (pop2id.find(pop1)  == pop2id.end()) {
+		cerr << "No population "<< pop1 << "\n";
+		exit(1);
+	}
+	if (pop2id.find(pop2)  == pop2id.end()) {
+		cerr << "No population "<< pop2 << "\n";
+		exit(1);
+	}
+
+
+	int p1 = pop2id[pop1];
+	int p2 = pop2id[pop2];
+	double toreturn = gsl_matrix_get(cov, p1, p2);
+	return toreturn;
+}
+
+
+double CountData::get_cov_var(string pop1, string pop2){
+	if (pop2id.find(pop1)  == pop2id.end()) {
+		cerr << "No population "<< pop1 << "\n";
+		exit(1);
+	}
+	if (pop2id.find(pop2)  == pop2id.end()) {
+		cerr << "No population "<< pop2 << "\n";
+		exit(1);
+	}
+
+
+	int p1 = pop2id[pop1];
+	int p2 = pop2id[pop2];
+	double toreturn = gsl_matrix_get(cov_var, p1, p2);
+	return toreturn;
+}
+
+void CountData::print_cov(string outfile){
+	ogzstream out(outfile.c_str());
+	vector<string> pops = list_pops();
+	for (int i = 0; i < pops.size(); i++) out << pops.at(i)<< " ";
+	out << "\n";
+	for (int i = 0; i < pops.size(); i++){
+		out << pops.at(i);
+		for(int j = 0; j < pops.size(); j++)	 out << " "<< gsl_matrix_get(cov, pop2id[pops[i]], pop2id[pops[j]]);
+		out << "\n";
+	}
+
+}
+
