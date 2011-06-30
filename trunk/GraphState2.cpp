@@ -24,7 +24,9 @@ GraphState2::GraphState2(CountData* counts){
 
 	//tree->print();
 	//cout << "llik: "<< llik_normal() << "\n";
+	cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
+	cout << tree->get_newick_format() << "\n";
 	//cout << "here2\n"; cout.flush();
 	compute_sigma();
 	//cout << "here\n"; cout.flush();
@@ -132,7 +134,11 @@ void GraphState2::set_branches_ls(){
 				Graph::vertex_descriptor tmp = i_nodes[i2];
 				if  (path.find(tmp) != path.end() ) {
 					gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2)+1);
-					gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) + inv_total2);
+						for (int z = 0; z < n ; z++){
+							if (z == 0) cout << i2 << "\n";
+							gsl_matrix_set(X, z, i2, gsl_matrix_get(X, z, i2) + inv_total2);
+						}
+
 				}
 			}
 			index++;
@@ -146,7 +152,7 @@ void GraphState2::set_branches_ls(){
 		}
 		cout << "\n\n";
 	}
-
+	cout << "\n";
 	// Now add the bias terms
 	index = 0;
 	for( int i = 0; i < current_npops; i++){
@@ -171,11 +177,22 @@ void GraphState2::set_branches_ls(){
 				for (int i2 =0 ; i2 < i_nodes.size(); i2++){
 					Graph::vertex_descriptor tmp = i_nodes[i2];
 					if (i == j){
-						if  (path_ik.find(tmp) != path_ik.end() ) gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+						if  (path_ik.find(tmp) != path_ik.end() ) {
+
+
+							gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - 2*inv_total);
+							//if (index == 0) cout << gsl_matrix_get(X, index, i2) << "\n";
+						}
 					}
 					else{
-						if  (path_ik.find(tmp) != path_ik.end() ) gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
-						if  (path_jk.find(tmp) != path_jk.end() ) gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+						if  (path_ik.find(tmp) != path_ik.end() ) {
+							gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+							if (index == 1) cout << i2 << "\n";
+						}
+						if  (path_jk.find(tmp) != path_jk.end() ) {
+							gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+							if (index == 1) cout << i2 << "\n";
+						}
 					}
 
 				}
@@ -240,19 +257,25 @@ void GraphState2::local_hillclimb(int inorder_index){
 	cout << tree->get_newick_format() << " "<< llik() << "\n";
 	tree_bk->copy(tree);
 
+
 	tree->local_rearrange(inorder[inorder_index], 1);
+	cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
+	cout << tree->get_newick_format() << "\n";
 	compute_sigma();
 	llik1 =  llik();
-	cout << tree->get_newick_format() << " "<< llik() << "\n";
+
 	tree->copy(tree_bk);
 
 	inorder = tree->get_inorder_traversal(current_npops);
 	tree->local_rearrange(inorder[inorder_index], 2);
+
+	cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
+	cout << tree->get_newick_format()  << "\n";
 	compute_sigma();
 	llik2 =  llik();
-	cout << tree->get_newick_format() << " "<< llik() << "\n";
+
 	//cout << current_llik << " "<< llik1 << " "<< llik2 << "\n";
 	tree->copy(tree_bk);
 	inorder = tree->get_inorder_traversal(current_npops);

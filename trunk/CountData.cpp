@@ -94,6 +94,61 @@ void CountData::read_scatter(string infile){
     }
 
 }
+
+
+
+void CountData::read_alfreqs(string infile){
+	npop =0;
+	gsl_matrix_free(alfreqs);
+	gsl_matrix_free(scatter);
+	pop2id.clear();
+	vector<vector<double> > tmpalfreqs;
+	igzstream in(infile.c_str()); //only gzipped files
+    vector<string> line;
+    struct stat stFileInfo;
+    int intStat;
+    string st, buf;
+
+    intStat = stat(infile.c_str(), &stFileInfo);
+    if (intStat !=0){
+            std::cerr<< "ERROR: cannot open file " << in << "\n";
+            exit(1);
+    }
+    while(getline(in, st)){
+             buf.clear();
+             stringstream ss(st);
+             line.clear();
+             while (ss>> buf){
+                     line.push_back(buf);
+             }
+             vector<double> tmp;
+             for (vector<string>::iterator it = line.begin(); it != line.end(); it++) tmp.push_back(atof(it->c_str()));
+             tmpalfreqs.push_back(tmp);
+    }
+    nsnp = tmpalfreqs.size();
+    npop = tmpalfreqs[0].size();
+    scatter = gsl_matrix_alloc(npop, npop);
+    alfreqs = gsl_matrix_alloc(nsnp, npop);
+    for (int i = 0; i < nsnp; i++){
+    	for (int j = 0; j< npop; j++) gsl_matrix_set(alfreqs, i, j, tmpalfreqs[i][j]);
+    }
+    for(int i = 0; i < npop; i++){
+    	stringstream ss;
+    	ss << "pop";
+    	ss << i;
+    	string name = ss.str();
+    	pop2id.insert(make_pair(name, i));
+    }
+    scale_alfreqs(3);
+    set_scatter();
+
+    //print_scatter("testout_scatter.gz");
+	//cout << "here\n";
+    set_cov();
+    process_cov();
+
+}
+
 void CountData::read_counts(string infile){
     allele_counts.clear();
     pop2id.clear();
@@ -184,14 +239,14 @@ void CountData::scale_alfreqs(int which){
 			double f = gsl_matrix_get(alfreqs, i, j);
 			double scaled;
 			if (which ==1) scaled = asin(sqrt(f));
-			else if (which ==2) scaled = f;
+			else if (which ==2 || which ==3) scaled = f;
 			total = total+scaled;
 			gsl_matrix_set(alfreqs, i, j, scaled);
 		}
 		double m = total/ (double) npop;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
-			if (which ==1 )gsl_matrix_set(alfreqs, i, j, f-m);
+			if (which ==1 || which ==3)gsl_matrix_set(alfreqs, i, j, f-m);
 			//if (which ==1 )gsl_matrix_set(alfreqs, i, j, f);
 			else if (which == 2) gsl_matrix_set(alfreqs, i, j, (f-m)/ sqrt(m*(1-m)));
 		}
@@ -213,6 +268,9 @@ void CountData::set_scatter(){
 }
 
 void CountData::set_cov(){
+	gsl_matrix_free(cov);
+	//cout << npop << "\n";
+	cov = gsl_matrix_alloc(npop, npop);
 	for (int i = 0; i < npop; i++){
 		for (int j = i; j < npop; j++){
 			double sc = gsl_matrix_get(scatter, i, j);
