@@ -29,6 +29,7 @@ public:
 	void process_scatter();
 	void process_cov();
 	void read_scatter(string); //for debugging
+	void read_alfreqs(string); //for debugging, can input simulated allele frequencies
 	void print_scatter(string);
 	void print_fst(string);
 	double get_cov(string, string);

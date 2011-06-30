@@ -20,13 +20,14 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	CountData tmpcount("testin_counts.gz", 1);
+	tmpcount.read_alfreqs("testin_freqs.gz");
 	tmpcount.print_cov("test_cov.gz");
 	GraphState2 state(&tmpcount);
-	state.print_sigma();
-	state.add_pop();
-	state.add_pop();
-	state.add_pop();
-	cout << state.tree->get_newick_format() <<"\n";
+	//state.print_sigma();
+	//state.add_pop();
+	//state.add_pop();
+	//state.add_pop();
+	//cout << state.tree->get_newick_format() <<"\n";
 
 
 	/*
