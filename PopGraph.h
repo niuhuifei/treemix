@@ -41,6 +41,7 @@ public:
 
 	// initialize from a Newick string
 	PopGraph(string);
+	void set_graph(string); //or set it to a Newick string
 
 	// initialize with three populations
 	PopGraph(vector<string>);
@@ -63,6 +64,7 @@ public:
 
 
 	void set_root(Graph::vertex_descriptor);
+	set<Graph::vertex_descriptor> get_root_adj();
 	void print();
 	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);
 

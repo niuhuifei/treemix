@@ -11,12 +11,13 @@
 #include "Settings.hpp"
 #include "PopGraph.h"
 #include "CountData.h"
-
+#include "PhyloPop_params.h"
 
 class GraphState2{
 public:
-	GraphState2(CountData*);
+	GraphState2(CountData*, PhyloPop_params*);
 
+	PhyloPop_params* params; //paramters for run
 	PopGraph* tree;
 	PopGraph* tree_bk;
 
@@ -28,11 +29,14 @@ public:
 	double scatter_det, scatter_gamma;
 	gsl_matrix *scatter; //current scatter matrix
 
+	//set the graph structure to a Newick string
+	void set_graph(string);
+
 	//covariance matrix
 	void compute_sigma();
 	void print_sigma();
 
-	//local hill=climbing
+	//local hill-climbing
 	void local_hillclimb(int);
 
 	//add a new population
@@ -42,6 +46,7 @@ public:
 	//under normal model, get the max lik branch lengths
 	// for a given topology by least squares
 	void set_branches_ls();
+	void set_branches_ls_old();
 
 	//likelihoods
 	double llik();

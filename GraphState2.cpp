@@ -8,7 +8,8 @@
 #include "GraphState2.h"
 
 
-GraphState2::GraphState2(CountData* counts){
+GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
+	params = pa;
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	vector<string> startpops;
@@ -77,9 +78,12 @@ void GraphState2::print_sigma(){
 	}
 }
 
+void GraphState2::set_graph(string newick){
+	tree->set_graph(newick);
+	compute_sigma();
+}
 
-
-void GraphState2::set_branches_ls(){
+void GraphState2::set_branches_ls_old(){
 
 	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal_noroot(current_npops);
 
@@ -134,80 +138,83 @@ void GraphState2::set_branches_ls(){
 				Graph::vertex_descriptor tmp = i_nodes[i2];
 				if  (path.find(tmp) != path.end() ) {
 					gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2)+1);
+					if (params->bias_correct){
 						for (int z = 0; z < n ; z++){
-							if (z == 0) cout << i2 << "\n";
+							//if (z == 0) cout << i2 << "\n";
 							gsl_matrix_set(X, z, i2, gsl_matrix_get(X, z, i2) + inv_total2);
 						}
-
+					}
 				}
 			}
 			index++;
 		}
 	}
 
-	for(int i = 0; i < n ; i ++){
-		cout << gsl_vector_get(y, i) << " ";
-		for (int j = 0; j < p; j++){
-			cout << gsl_matrix_get(X, i, j) << " ";
-		}
-		cout << "\n\n";
-	}
-	cout << "\n";
+	//for(int i = 0; i < n ; i ++){
+	//	cout << gsl_vector_get(y, i) << " ";
+	//	for (int j = 0; j < p; j++){
+	//		cout << gsl_matrix_get(X, i, j) << " ";
+	//	}
+	//	cout << "\n\n";
+	//}
+	//cout << "\n";
 	// Now add the bias terms
 	index = 0;
-	for( int i = 0; i < current_npops; i++){
-		for (int j = 0; j < current_npops; j++){
-			string p1 = allpopnames[i];
-			string p2 = allpopnames[j];
-			set<Graph::vertex_descriptor> path_ik;
-			set<Graph::vertex_descriptor> path_jk;
-			for (int k = 0; k < current_npops; k++){
-				string p3 = allpopnames[k];
-				if (i == k) path_ik = tree->get_path_to_root(popname2tip[p1]);
-				else{
-					Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p1], popname2tip[p3]);
-					path_ik = tree->get_path_to_root(lca);
-				}
-				if (j == k) path_jk = tree->get_path_to_root(popname2tip[p2]);
-				else{
-					//cout << p1 << " "<< p2 << " "<< tree->g[popname2tip[p2]].index << "\n";
-					Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p2], popname2tip[p3]);
-					path_jk = tree->get_path_to_root(lca);
-				}
-				for (int i2 =0 ; i2 < i_nodes.size(); i2++){
-					Graph::vertex_descriptor tmp = i_nodes[i2];
-					if (i == j){
-						if  (path_ik.find(tmp) != path_ik.end() ) {
-
-
-							gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - 2*inv_total);
-							//if (index == 0) cout << gsl_matrix_get(X, index, i2) << "\n";
-						}
-					}
+	if (params->bias_correct){
+		for( int i = 0; i < current_npops; i++){
+			for (int j = 0; j < current_npops; j++){
+				string p1 = allpopnames[i];
+				string p2 = allpopnames[j];
+				set<Graph::vertex_descriptor> path_ik;
+				set<Graph::vertex_descriptor> path_jk;
+				for (int k = 0; k < current_npops; k++){
+					string p3 = allpopnames[k];
+					if (i == k) path_ik = tree->get_path_to_root(popname2tip[p1]);
 					else{
-						if  (path_ik.find(tmp) != path_ik.end() ) {
-							gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
-							if (index == 1) cout << i2 << "\n";
-						}
-						if  (path_jk.find(tmp) != path_jk.end() ) {
-							gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
-							if (index == 1) cout << i2 << "\n";
-						}
+						Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p1], popname2tip[p3]);
+						path_ik = tree->get_path_to_root(lca);
 					}
+					if (j == k) path_jk = tree->get_path_to_root(popname2tip[p2]);
+					else{
+					//cout << p1 << " "<< p2 << " "<< tree->g[popname2tip[p2]].index << "\n";
+						Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p2], popname2tip[p3]);
+						path_jk = tree->get_path_to_root(lca);
+					}
+					for (int i2 =0 ; i2 < i_nodes.size(); i2++){
+						Graph::vertex_descriptor tmp = i_nodes[i2];
+						if (i == j){
+							if  (path_ik.find(tmp) != path_ik.end() ) {
 
+
+								gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - 2*inv_total);
+							//if (index == 0) cout << gsl_matrix_get(X, index, i2) << "\n";
+							}
+						}
+						else{
+							if  (path_ik.find(tmp) != path_ik.end() ) {
+								gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+								//if (index == 1) cout << i2 << "\n";
+							}
+							if  (path_jk.find(tmp) != path_jk.end() ) {
+								gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+								//if (index == 1) cout << i2 << "\n";
+							}
+						}
+
+					}
 				}
+				index++;
 			}
-			index++;
 		}
 	}
 
-	for(int i = 0; i < n ; i ++){
-			cout << gsl_vector_get(y, i) << " ";
-			for (int j = 0; j < p; j++){
-				cout << gsl_matrix_get(X, i, j) << " ";
-			}
-			cout << "\n\n";
-		}
+	//for(int i = 0; i < n ; i ++){
+	//		cout << gsl_vector_get(y, i) << " ";
+	//		for (int j = 0; j < p; j++){
+	//			cout << gsl_matrix_get(X, i, j) << " ";
+	//		}
+	//		cout << "\n\n";
+	//	}
 
 
 	// fit the least squares estimates
@@ -231,6 +238,207 @@ void GraphState2::set_branches_ls(){
 
 }
 
+
+void GraphState2::set_branches_ls(){
+
+	// edit so only one parameter for branch length including root
+
+	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal_noroot(current_npops);
+	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj();
+	vector<Graph::vertex_descriptor> i_nodes2;
+	for (int i = 0; i < i_nodes.size(); i++){
+		if (root_adj.find(i_nodes[i]) == root_adj.end()) i_nodes2.push_back( i_nodes[i] );
+	}
+	int joint_index = i_nodes2.size();
+
+	//initialize the workspace
+	int n = current_npops * current_npops; //n is the total number of entries in the covariance matrix
+	int p = 2*current_npops -3; // p is the number of branches lengths to be estimated
+	int total = countdata->npop; //total is the total number of populations (for the bias correction)
+	double inv_total = 1.0/ (double) total;
+	double inv_total2 = 1.0/ ( (double) total * (double) total);
+
+	//cout << "inv "<< inv_total << " "<< inv_total2 << "\n";
+	gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc (n, p);
+	gsl_matrix * X = gsl_matrix_alloc(n, p); //X holds the weights on each branch. In the simplest model, this is 1s and 0s corresponding to whether the branch
+	                                         // is in the path to the root. With the bias correction, will contain terms with 1/n and 1/n^2, where n is the total number of populations
+	gsl_vector * y  = gsl_vector_alloc(n);  // y contains the entries of the empirical covariance matrix
+	gsl_vector * c = gsl_vector_alloc(p);   // c will be estimated, contains the entries of the fitted covariance matrix
+	gsl_matrix * cov = gsl_matrix_alloc(p, p);
+	double chisq;
+	gsl_matrix_set_zero(X);
+	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
+	//for (map<string, Graph::vertex_descriptor>::iterator it = popname2tip.begin(); it != popname2tip.end(); it++){
+	//	cout << it->first << " "<< tree->g[it->second].index << "\n";
+	//}
+
+
+	//set up the workspace
+
+
+	// Set up the matrices from the tree
+	int index = 0;
+	for( int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			string p1 = allpopnames[i];
+			string p2 = allpopnames[j];
+			//cout << p1 << " "<< p2 << "\n";cout.flush();
+			double empirical_cov = countdata->get_cov(p1, p2);
+			//cout << p1 << " "<< p2 << " "<< empirical_cov << "\n";cout.flush();
+			set<Graph::vertex_descriptor> path;
+
+			if (i == j) path = tree->get_path_to_root(popname2tip[p1]);
+
+			else{
+				//cout << p1 << " "<< p2 << " "<< tree->g[popname2tip[p2]].index << "\n";
+				Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p1], popname2tip[p2]);
+				path = tree->get_path_to_root(lca);
+
+			}
+
+			gsl_vector_set(y, index, empirical_cov);
+
+			for (int i2 =0 ; i2 < i_nodes2.size(); i2++){
+				Graph::vertex_descriptor tmp = i_nodes2[i2];
+				if  (path.find(tmp) != path.end() ) {
+					gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2)+1);
+					if (params->bias_correct){
+						for (int z = 0; z < n ; z++){
+							//if (z == 0) cout << i2 << "\n";
+							gsl_matrix_set(X, z, i2, gsl_matrix_get(X, z, i2) + inv_total2);
+						}
+					}
+				}
+			}
+			for (set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end() ;it++){
+				if (path.find(*it) != path.end() ){
+					gsl_matrix_set(X, index, joint_index, gsl_matrix_get(X, index, joint_index)+0.5);
+					if (params->bias_correct) {
+						for (int z = 0; z < n ; z++){
+							gsl_matrix_set(X, z, joint_index, gsl_matrix_get(X, z, joint_index) + inv_total2/2);
+						}
+					}
+				}
+			}
+			index++;
+		}
+	}
+
+	//for(int i = 0; i < n ; i ++){
+	//	cout << gsl_vector_get(y, i) << " ";
+	//	for (int j = 0; j < p; j++){
+	//		cout << gsl_matrix_get(X, i, j) << " ";
+	//	}
+	//	cout << "\n\n";
+	//}
+	//cout << "\n";
+	// Now add the bias terms
+	index = 0;
+	if (params->bias_correct){
+		for( int i = 0; i < current_npops; i++){
+			for (int j = 0; j < current_npops; j++){
+				string p1 = allpopnames[i];
+				string p2 = allpopnames[j];
+				set<Graph::vertex_descriptor> path_ik;
+				set<Graph::vertex_descriptor> path_jk;
+				for (int k = 0; k < current_npops; k++){
+					string p3 = allpopnames[k];
+					if (i == k) path_ik = tree->get_path_to_root(popname2tip[p1]);
+					else{
+						Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p1], popname2tip[p3]);
+						path_ik = tree->get_path_to_root(lca);
+					}
+					if (j == k) path_jk = tree->get_path_to_root(popname2tip[p2]);
+					else{
+					//cout << p1 << " "<< p2 << " "<< tree->g[popname2tip[p2]].index << "\n";
+						Graph::vertex_descriptor lca = tree->get_LCA(tree->root, popname2tip[p2], popname2tip[p3]);
+						path_jk = tree->get_path_to_root(lca);
+					}
+					for (int i2 =0 ; i2 < i_nodes2.size(); i2++){
+						Graph::vertex_descriptor tmp = i_nodes2[i2];
+						if (i == j){
+							if  (path_ik.find(tmp) != path_ik.end() ) {
+
+
+								gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - 2*inv_total);
+							//if (index == 0) cout << gsl_matrix_get(X, index, i2) << "\n";
+							}
+						}
+						else{
+							if  (path_ik.find(tmp) != path_ik.end() ) {
+								gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+								//if (index == 1) cout << i2 << "\n";
+							}
+							if  (path_jk.find(tmp) != path_jk.end() ) {
+								gsl_matrix_set(X, index, i2, gsl_matrix_get(X, index, i2) - inv_total);
+								//if (index == 1) cout << i2 << "\n";
+							}
+						}
+
+					}
+					for (set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++){
+						if (i == j){
+							if  (path_ik.find(*it) != path_ik.end() ) {
+
+
+								gsl_matrix_set(X, index, joint_index, gsl_matrix_get(X, index, joint_index) - inv_total);
+							//if (index == 0) cout << gsl_matrix_get(X, index, i2) << "\n";
+							}
+						}
+						else{
+							if  (path_ik.find(*it) != path_ik.end() ) {
+								gsl_matrix_set(X, index, joint_index, gsl_matrix_get(X, index, joint_index) - inv_total/2);
+								//if (index == 1) cout << i2 << "\n";
+							}
+							if  (path_jk.find(*it) != path_jk.end() ) {
+								gsl_matrix_set(X, index, joint_index, gsl_matrix_get(X, index, joint_index) - inv_total/2);
+								//if (index == 1) cout << i2 << "\n";
+							}
+						}
+					}
+				}
+				index++;
+			}
+
+		}
+	}
+
+	//for(int i = 0; i < n ; i ++){
+	//		cout << gsl_vector_get(y, i) << " ";
+	//		for (int j = 0; j < p; j++){
+	//			cout << gsl_matrix_get(X, i, j) << " ";
+	//		}
+	//		cout << "\n\n";
+	//	}
+
+
+	// fit the least squares estimates
+	gsl_multifit_linear(X, y, c, cov, &chisq, work);
+
+	//and put in the solutions
+	for( int i = 0; i < i_nodes2.size(); i++){
+		Graph::vertex_descriptor v = i_nodes2[i];
+		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, tree->g).first;
+		double l = gsl_vector_get(c, i);
+		//if (l < 0) l = 1E-8;
+		tree->g[*in_i].len = l;
+	}
+	for(set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++){
+		Graph::vertex_descriptor v = *it;
+		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, tree->g).first;
+		double l = gsl_vector_get(c, joint_index);
+		//if (l < 0) l = 1E-8;
+		tree->g[*in_i].len = l/2;
+	}
+
+	//free memory
+	gsl_multifit_linear_free(work);
+	gsl_matrix_free(X);
+	gsl_vector_free(y);
+	gsl_vector_free(c);
+	gsl_matrix_free(cov);
+
+}
 
 
 double GraphState2::llik_normal(){

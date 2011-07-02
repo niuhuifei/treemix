@@ -7,6 +7,7 @@
 
 #include "Settings.hpp"
 #include "GraphState2.h"
+#include "PhyloPop_params.h"
 
 string infile;
 string outstem = "PhyloPop";
@@ -36,11 +37,12 @@ int main(int argc, char *argv[]){
 
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
-
+    PhyloPop_params p;
+    //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
     CountData counts(infile, 1);
     counts.print_cov(covfile);
-    GraphState2 state(&counts);
+    GraphState2 state(&counts, &p);
     while (counts.npop > state.current_npops){
     	//cout << counts.npop << " "<< state.current_npops << "\n";
     	state.add_pop();
