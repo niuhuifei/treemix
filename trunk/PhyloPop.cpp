@@ -43,11 +43,14 @@ int main(int argc, char *argv[]){
     CountData counts(infile, 1);
     counts.print_cov(covfile);
     GraphState2 state(&counts, &p);
+    //while (5 > state.current_npops){
     while (counts.npop > state.current_npops){
     	//cout << counts.npop << " "<< state.current_npops << "\n";
     	state.add_pop();
+    	state.iterate_hillclimb();
 
     }
+    cout << "ln(likelihood): "<< state.current_llik << "\n";
     cout << state.tree->get_newick_format() << "\n";
 	return 0;
 }

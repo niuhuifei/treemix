@@ -22,6 +22,7 @@ public:
 	PopGraph* tree_bk;
 
 	gsl_matrix *sigma;
+	gsl_matrix *sigma_cor;
 	CountData* countdata; //pointer to the data
 	vector<string> allpopnames; //names of populations, will be added one at a time after the first 3
 	int current_npops; //current total number of populations
@@ -37,7 +38,9 @@ public:
 	void print_sigma();
 
 	//local hill-climbing
-	void local_hillclimb(int);
+	int local_hillclimb(int);
+	int many_local_hillclimb();
+	void iterate_hillclimb();
 
 	//add a new population
 	void add_pop();
