@@ -20,6 +20,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 
 	current_npops = 3;
 	sigma = gsl_matrix_alloc(current_npops, current_npops);
+	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
 	scatter = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_set_zero(sigma);
 
@@ -73,6 +74,14 @@ void GraphState2::print_sigma(){
 		cout << allpopnames[i] << " ";
 		for (int j = 0; j < current_npops; j++){
 			cout << gsl_matrix_get(sigma, i, j) << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	for(int i = 0; i < current_npops; i++){
+		cout << allpopnames[i] << " ";
+		for (int j = 0; j < current_npops; j++){
+			cout << gsl_matrix_get(sigma_cor, i, j) << " ";
 		}
 		cout << "\n";
 	}
@@ -220,7 +229,7 @@ void GraphState2::set_branches_ls_old(){
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
 
-	//and put in the solutions
+	//and put in the solutions in the graph
 	for( int i = 0; i < i_nodes.size(); i++){
 		Graph::vertex_descriptor v = i_nodes[i];
 		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, tree->g).first;
@@ -415,7 +424,7 @@ void GraphState2::set_branches_ls(){
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
 
-	//and put in the solutions
+	//and put in the solutions in the graph
 	for( int i = 0; i < i_nodes2.size(); i++){
 		Graph::vertex_descriptor v = i_nodes2[i];
 		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, tree->g).first;
@@ -430,6 +439,24 @@ void GraphState2::set_branches_ls(){
 		//if (l < 0) l = 1E-8;
 		tree->g[*in_i].len = l/2;
 	}
+
+	//and the corrected covariance matrix
+	index = 0;
+	for (int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			double pred = 0;
+			for (int k = 0; k < p; k++) {
+				pred += gsl_matrix_get(X, index, k) * gsl_vector_get(c, k);
+			}
+
+			//cout << index << " "<< i << " "<< j << " "<< pred << "\n";
+			gsl_matrix_set(sigma_cor, i, j, pred);
+			//cout << "not here\n";
+			index++;
+		}
+
+	}
+
 
 	//free memory
 	gsl_multifit_linear_free(work);
@@ -447,7 +474,7 @@ double GraphState2::llik_normal(){
 		for (int j = 0; j < current_npops; j++){
 			string p1 = allpopnames[i];
 			string p2 = allpopnames[j];
-			double pred = gsl_matrix_get(sigma, i, j);
+			double pred = gsl_matrix_get(sigma_cor, i, j);
 			double obs = countdata->get_cov(p1, p2);
 			double var = countdata->get_cov_var(p1, p2);
 			double dif = obs-pred;
@@ -459,31 +486,33 @@ double GraphState2::llik_normal(){
 	return toreturn;
 }
 
-void GraphState2::local_hillclimb(int inorder_index){
+int GraphState2::local_hillclimb(int inorder_index){
+	// if there was a rearrangement, return 1. otw 0.
+	//
+
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
 	double llik1, llik2;
-	cout << tree->get_newick_format() << " "<< llik() << "\n";
+	//cout << tree->get_newick_format() << " "<< llik() << " "<< current_llik << " l0\n";
 	tree_bk->copy(tree);
 
 
 	tree->local_rearrange(inorder[inorder_index], 1);
-	cout << tree->get_newick_format() << "\n";
+	//cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
-	cout << tree->get_newick_format() << "\n";
+
 	compute_sigma();
 	llik1 =  llik();
-
+	//cout << tree->get_newick_format() << " "<< llik1 << " l1\n";
 	tree->copy(tree_bk);
 
 	inorder = tree->get_inorder_traversal(current_npops);
 	tree->local_rearrange(inorder[inorder_index], 2);
 
-	cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
-	cout << tree->get_newick_format()  << "\n";
+	//cout << tree->get_newick_format()  << "\n";
 	compute_sigma();
 	llik2 =  llik();
-
+	//cout << tree->get_newick_format() << " "<< llik2 << " l2\n";
 	//cout << current_llik << " "<< llik1 << " "<< llik2 << "\n";
 	tree->copy(tree_bk);
 	inorder = tree->get_inorder_traversal(current_npops);
@@ -493,14 +522,32 @@ void GraphState2::local_hillclimb(int inorder_index){
 			set_branches_ls();
 			compute_sigma();
 			current_llik = llik1;
+			return 1;
 		}
 		else{
 			tree->local_rearrange(inorder[inorder_index], 2);
+			//cout << tree->get_newick_format() << " "<< llik2 << " "<< llik() << "\n";
 			set_branches_ls();
 			compute_sigma();
 			current_llik = llik2;
+			return 1;
 		}
 	}
+	return 0;
+}
+
+int GraphState2::many_local_hillclimb(){
+	int leninorder = 2*current_npops -1;
+	int toreturn = 0;
+	for (int i = 1; i < leninorder; i+=2){
+		toreturn += local_hillclimb(i);
+	}
+	return toreturn;
+}
+
+void GraphState2::iterate_hillclimb(){
+	int changes = many_local_hillclimb();
+	while (changes > 0) changes = many_local_hillclimb();
 }
 
 void GraphState2::add_pop(){
@@ -508,6 +555,9 @@ void GraphState2::add_pop(){
 	gsl_matrix_free(sigma);
 	sigma = gsl_matrix_alloc(current_npops+1, current_npops+1);
 	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops+1, current_npops+1);
+	gsl_matrix_set_zero(sigma_cor);
 
 	current_npops++;
 	process_scatter();
@@ -518,6 +568,7 @@ void GraphState2::add_pop(){
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
 	int max_index;
 	double max_llik;
+	tree_bk->copy(tree);
 
 	for (int i = 0; i < inorder.size(); i++){
 
@@ -531,7 +582,7 @@ void GraphState2::add_pop(){
 
 
 		double llk = llik();
-
+		//cout << "testing to add "<< tree->get_newick_format()<< " "<< llik() << " "<< max_llik<<"\n";
 		//cout << i << " "<< llk << "\n"; cout.flush();
 		if (i == 0){
 			max_index = i;
@@ -542,7 +593,8 @@ void GraphState2::add_pop(){
 			max_llik = llk;
 		}
 		//cout << "removing "<< tree->g[tmp].index;
-		tree->remove_tip(tmp);
+		tree->copy(tree_bk);
+		//tree->remove_tip(tmp);
 		//tree->print(); cout << "\n";
 		current_npops--;
 		inorder = tree->get_inorder_traversal(current_npops);
@@ -551,6 +603,7 @@ void GraphState2::add_pop(){
 	current_npops++;
 	set_branches_ls();
 	compute_sigma();
+	//cout << "added "<< tree->get_newick_format()<< " "<< llik() << " "<< max_llik <<"\n";
 	current_llik = max_llik;
 	//cout << "will process scatter\n"; cout.flush();
 
