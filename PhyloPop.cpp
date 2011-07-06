@@ -49,9 +49,9 @@ int main(int argc, char *argv[]){
     	//cout << counts.npop << " "<< state.current_npops << "\n";
     	state.add_pop();
     	state.iterate_hillclimb();
-
+    	cout << "ln(likelihood): "<< state.current_llik << "\n";
+    	cout << state.tree->get_newick_format() << "\n";
     }
-    cout << "ln(likelihood): "<< state.current_llik << "\n";
-    cout << state.tree->get_newick_format() << "\n";
+    treeout << state.tree->get_newick_format() << "\n";
 	return 0;
 }
