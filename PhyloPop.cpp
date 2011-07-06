@@ -13,12 +13,13 @@ string infile;
 string outstem = "PhyloPop";
 int seed = 200;
 int nthread = 1;
-
+int norm_type = 3;
 void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i input file\n";
 	cout << "-o output stem (will be [stem].treeout.gz, [stem].cov.gz)\n";
+	cout << "-arcsin perform the arcsin square root transformation on the allele frequencies before centering\n";
 }
 
 
@@ -34,13 +35,13 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
-
+    if (cmdline.HasSwitch("-arcsin")) norm_type = 1;
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     PhyloPop_params p;
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
-    CountData counts(infile, 1);
+    CountData counts(infile, norm_type);
     counts.print_cov(covfile);
     GraphState2 state(&counts, &p);
     //while (5 > state.current_npops){
