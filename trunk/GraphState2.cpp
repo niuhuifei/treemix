@@ -26,9 +26,9 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 
 	//tree->print();
 	//cout << "llik: "<< llik_normal() << "\n";
-	cout << tree->get_newick_format() << "\n";
+	//cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
-	cout << tree->get_newick_format() << "\n";
+	//cout << tree->get_newick_format() << "\n";
 	//cout << "here2\n"; cout.flush();
 	compute_sigma();
 	//cout << "here\n"; cout.flush();
