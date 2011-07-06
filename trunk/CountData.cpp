@@ -227,6 +227,10 @@ void CountData::set_alfreqs(){
 			int c1 = allele_counts[i][j].first;
 			int c2 = allele_counts[i][j].second;
 			double f = (double) c1 / ( (double) c1 + (double) c2 );
+			if ( c1+c2 < 1){
+				cerr << "Warning: no counts at SNP "<< i << " population "<< j <<"\n";
+				continue;
+			}
 			gsl_matrix_set(alfreqs, i, j, f);
 		}
 	}
