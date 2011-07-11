@@ -18,8 +18,8 @@ void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i input file\n";
-	cout << "-o output stem (will be [stem].treeout.gz, [stem].cov.gz)\n";
-	cout << "-arcsin perform the arcsin square root transformation on the allele frequencies before centering\n";
+	cout << "-o output stem (will be [stem].treeout.gz, [stem].cov.gz), [stem].modelcov.gz\n";
+	cout << "-arcsin (perform the arcsin square root transformation on the allele frequencies before centering)\n";
 }
 
 
@@ -38,6 +38,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-arcsin")) norm_type = 1;
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
+    string modelcovfile = outstem+".modelcov.gz";
     PhyloPop_params p;
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
@@ -53,5 +54,6 @@ int main(int argc, char *argv[]){
     	cout << state.tree->get_newick_format() << "\n";
     }
     treeout << state.tree->get_newick_format() << "\n";
+    state.print_sigma_cor(modelcovfile);
 	return 0;
 }
