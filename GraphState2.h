@@ -36,6 +36,7 @@ public:
 	//covariance matrix
 	void compute_sigma();
 	void print_sigma();
+	void print_sigma_cor(string);
 
 	//local hill-climbing
 	int local_hillclimb(int);

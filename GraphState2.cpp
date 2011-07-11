@@ -694,3 +694,17 @@ void GraphState2::process_scatter(){
 	for (int i = 1; i <= current_npops; i++) scatter_gamma+= gsl_sf_lngamma( (double) n/2.0 + (1.0- (double) i)/2.0);
 	//cout << "scatter_gamma "<< scatter_gamma << "\n";
 }
+
+
+void GraphState2::print_sigma_cor(string outfile){
+	ogzstream out(outfile.c_str());
+	for (int i = 0; i < current_npops; i++) out << allpopnames.at(i)<< " ";
+	out << "\n";
+	for (int i = 0; i < current_npops; i++){
+		out << allpopnames.at(i);
+		for(int j = 0; j < current_npops; j++)	 out << " "<< gsl_matrix_get(sigma_cor, i, j);
+		out << "\n";
+	}
+
+}
+
