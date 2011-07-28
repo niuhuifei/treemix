@@ -56,6 +56,9 @@ public:
 	double llik();
 	double llik_normal();
 	double llik_wishart();
+
+	//migration
+	void add_mig();
 };
 
 

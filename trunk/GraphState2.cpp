@@ -708,3 +708,5 @@ void GraphState2::print_sigma_cor(string outfile){
 
 }
 
+void GraphState2::add_mig(){
+}
