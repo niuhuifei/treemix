@@ -25,6 +25,7 @@ struct Dist
 {
 	float weight;
 	float len;
+	bool is_mig;
 };
 
 typedef adjacency_list<vecS, listS, boost::bidirectionalS, Node, Dist> Graph;

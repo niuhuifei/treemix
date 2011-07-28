@@ -56,6 +56,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	e = add_edge( v, v3, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
+	g[e].is_mig = false;
 
 
 	v4 = add_vertex(g);
@@ -68,6 +69,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	e = add_edge( v, v4, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
+	g[e].is_mig = false;
 
 
 	v5 = add_vertex(g);
@@ -80,6 +82,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	e = add_edge( v4, v5, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
+	g[e].is_mig = false;
 
 	v6 = add_vertex(g);
 	g[v6].index = 4;
@@ -91,6 +94,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	e = add_edge( v4, v6, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
+	g[e].is_mig = false;
 	indexcounter = 5;
 }
 
@@ -134,12 +138,15 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 		e = add_edge( vparent, vintnew, g).first;
 		g[e].weight = 1;
 		g[e].len = newlen;
+		g[e].is_mig = false;
 		e = add_edge( vintnew, v, g).first;
 		g[e].weight = 1;
 		g[e].len = newlen;
+		g[e].is_mig = false;
 		e = add_edge( vintnew, vtipnew, g).first;
 		g[e].weight = 1;
 		g[e].len = 1;
+		g[e].is_mig = false;
 		return vtipnew;
 	}
 	else{
@@ -169,13 +176,120 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 		e = add_edge( vintnew, v, g).first;
 		g[e].weight = 1;
 		g[e].len = 1;
+		g[e].is_mig = false;
 		e = add_edge( vintnew, vtipnew, g).first;
 		g[e].weight = 1;
 		g[e].len = 1;
+		g[e].is_mig = false;
 		return vtipnew;
 	}
 }
 
+Graph::edge_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
+	// from     p1   \
+	//          /     \
+	//         /       sp
+	//        st
+	// to
+	//
+	//
+    //
+	//
+	//       p1     /
+	//      /      /
+	//     /      /
+	//    st-----sp
+ 	//
+	//
+
+	Graph::edge_descriptor e;
+	istree = false;
+	e = add_edge(st, sp, g).first;
+	g[e].weight = 0.25;
+	g[e].len = 1;
+	g[e].is_mig = true;
+	return e;
+
+	/*
+	Graph::vertex_descriptor p1, p2;
+	Graph::edge_descriptor e;
+	Graph::in_edge_iterator in_it = in_edges(st, g).first;
+
+	//find p1
+	bool foundparent = false;
+	while (!foundparent){
+		if ( g[*in_it].is_mig == false){
+			foundparent = true;
+			p1 = source(*in_it, g);
+			e = *in_it;
+		}
+		in_it++;
+	}
+	double oldlen = g[e].len;
+	//remove edge, insert node
+	remove_edge(e, g);
+	p2 = add_vertex(g);
+	g[p2].index = indexcounter;
+	g[p2].name = "NA";
+	g[p2].height = 0;
+	g[p2].is_tip = false;
+	g[p2].is_root = false;
+	g[p2].rev = false;
+	indexcounter++;
+
+	//add new edges
+	e = add_edge(p1, p2, g).first;
+	g[e].weight = 1;
+	g[e].len = oldlen/2;
+	g[e].is_mig = false;
+
+	e = add_edge(p2, st, g).first;
+	g[e].weight = 1;
+	g[e].len = oldlen/2;
+	g[e].is_mig = false;
+
+	e = add_edge(p2, sp, g).first;
+	g[e].weight = 0.25;
+	g[e].len = 1;
+	g[e].is_mig = true;
+
+	return p2;
+	*/
+}
+
+set<pair<double, set<Graph::vertex_descriptor> > > PopGraph::get_paths_to_root(Graph::vertex_descriptor v){
+
+	set<pair<double, set<Graph::vertex_descriptor> > > toreturn;
+	Graph::in_edge_iterator init = in_edges(v, g).first;
+	while (init != in_edges(v, g).second){
+
+		double w = g[*init].weight;
+		//scout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
+		set<Graph::vertex_descriptor> tmpset;
+		tmpset.insert(v);
+		Graph::vertex_descriptor parent = source(*init, g);
+		if (g[parent].is_root){
+			tmpset.insert(parent);
+			toreturn.insert(make_pair(w, tmpset));
+		}
+		else{
+			set<pair<double, set<Graph::vertex_descriptor> > > p_path = get_paths_to_root(parent);
+			for (set<pair<double, set<Graph::vertex_descriptor> > >::iterator it = p_path.begin(); it != p_path.end(); it++){
+				double w2 = w*it->first;
+				set<Graph::vertex_descriptor> tmpset2 = tmpset;
+				for (set<Graph::vertex_descriptor>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) tmpset2.insert(*it2);
+				toreturn.insert(make_pair(w2, tmpset2));
+			}
+		}
+		init++;
+	}
+	return toreturn;
+}
+
+//pair<double, set<Graph::vertex_descriptor> > PopGraph::get_paths_helper(Graph::vertex_descriptor v){
+//	pair<double, set<Graph::vertex_descriptor> > toreturn;
+//	return toreturn;
+//}
 
 void PopGraph::remove_tip(Graph::vertex_descriptor v){
 	Graph::vertex_descriptor vparent, vparent2, vnewdest;
@@ -274,6 +388,7 @@ void PopGraph::copy(PopGraph * s){
 		Graph::edge_descriptor ed = add_edge( tmpmap[ s->g[tmpsource].index ], tmpmap[ s->g[tmptarget].index ], g ).first;
 		g[ed].weight = s->g[*it].weight;
 		g[ed].len = s->g[*it].len;
+		g[ed].is_mig = s->g[*it].is_mig;
 	}
 	//cout << "done\n";
 }
@@ -349,6 +464,7 @@ PopGraph::PopGraph(string p_newickString){
               for ( tie(in_i, in_end)= in_edges(v, g); in_i != in_end; ++in_i ){
             	  g[*in_i].len = atof(length.c_str());
             	  g[*in_i].weight = 1;
+            	  g[*in_i].is_mig = false;
               }
       }
       else if( *I == ';' )
@@ -447,6 +563,7 @@ void PopGraph::set_graph(string p_newickString){
               for ( tie(in_i, in_end)= in_edges(v, g); in_i != in_end; ++in_i ){
             	  g[*in_i].len = atof(length.c_str());
             	  g[*in_i].weight = 1;
+            	  g[*in_i].is_mig = false;
               }
       }
       else if( *I == ';' )

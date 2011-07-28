@@ -24,6 +24,7 @@ struct Dist
 {
 	float weight;
 	float len;
+	bool is_mig;
 };
 
 typedef adjacency_list<vecS, listS, boost::bidirectionalS, Node, Dist> Graph;
@@ -108,6 +109,11 @@ public:
 	//Newick format
 	string get_newick_format();
 	void newick_helper( Graph::vertex_descriptor, string*);
+
+	//migration
+	Graph::edge_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
+	set<pair<double, set<Graph::vertex_descriptor> > > get_paths_to_root(Graph::vertex_descriptor);
+	//pair<double, set<Graph::vertex_descriptor> > get_paths_helper(Graph::vertex_descriptor);
 
 };
 
