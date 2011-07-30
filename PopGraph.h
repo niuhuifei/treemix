@@ -17,6 +17,7 @@ struct Node
 	double height;
 	bool is_tip;
 	bool is_root;
+	bool is_mig;
 	bool rev;
 };
 
@@ -110,11 +111,15 @@ public:
 	string get_newick_format();
 	void newick_helper( Graph::vertex_descriptor, string*);
 
-	//migration
-	Graph::edge_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
+	//MIGRATION GRAPH
+	Graph::vertex_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
 	set<pair<double, set<Graph::vertex_descriptor> > > get_paths_to_root(Graph::vertex_descriptor);
-	//pair<double, set<Graph::vertex_descriptor> > get_paths_helper(Graph::vertex_descriptor);
 
+	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes(Graph::vertex_descriptor); // skips over migration nodes
+	Graph::vertex_descriptor get_parent_node(Graph::vertex_descriptor); //skips over migration nodes
+	Graph::vertex_descriptor get_parent_node_wmig(Graph::vertex_descriptor); // skips migration edges, but will return a migration node
+	bool does_mig_exist(Graph::vertex_descriptor, Graph::vertex_descriptor); //does a migration edge already exist between these two nodes?
+	bool is_legal_migration(Graph::vertex_descriptor, Graph::vertex_descriptor); //is migration between these two nodes legal? (no migration already, not the same parent, not creating loop)
 };
 
 #endif /* POPGRAPH_H_ */
