@@ -25,6 +25,7 @@ void printopts(){
 
 int main(int argc, char *argv[]){
     CCmdLine cmdline;
+    PhyloPop_params p;
     if (cmdline.SplitLine(argc, argv) < 1){
     	printopts();
     	exit(1);
@@ -35,14 +36,14 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
-    if (cmdline.HasSwitch("-arcsin")) norm_type = 1;
+    if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
-    PhyloPop_params p;
+
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
-    CountData counts(infile, norm_type);
+    CountData counts(infile, &p);
     counts.print_cov(covfile);
     GraphState2 state(&counts, &p);
     //while (5 > state.current_npops){

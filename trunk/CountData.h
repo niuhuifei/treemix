@@ -8,12 +8,12 @@
 #ifndef COUNTDATA_H_
 #define COUNTDATA_H_
 #include "Settings.hpp"
-
+#include "PhyloPop_params.h"
 
 
 class CountData{
 public:
-	CountData(string, int);
+	CountData(string, PhyloPop_params*);
 	CountData(string); //no rescaling (ie. just the allele frequencies)
 	void read_counts(string);
 	map<string, int> pop2id;
@@ -23,7 +23,7 @@ public:
 	vector<string> list_pops(); //simple list
 	gsl_matrix *alfreqs, *scatter, *cov, *cov_var;
 	void set_alfreqs();
-	void scale_alfreqs(int);
+	void scale_alfreqs();
 	void set_scatter();
 	void set_cov();
 	void process_scatter();
@@ -37,6 +37,7 @@ public:
 	double get_scatter(string, string);
 	void print_cov(string);
 	double scatter_det, scatter_gamma;
+	PhyloPop_params* params;
 };
 
 #endif /* COUNTDATA_H_ */
