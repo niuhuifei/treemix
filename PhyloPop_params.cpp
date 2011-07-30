@@ -9,4 +9,6 @@
 
 PhyloPop_params::PhyloPop_params(){
 	bias_correct = true;
+	window_size = 1;
+	alfreq_scaling = 0;
 }

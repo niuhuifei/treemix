@@ -6,14 +6,15 @@
  */
 #include "CountData.h"
 
-CountData::CountData(string infile, int which){
+CountData::CountData(string infile, PhyloPop_params* p){
 	read_counts(infile);
+	params = p;
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
 	scatter = gsl_matrix_alloc(npop, npop);
 	cov = gsl_matrix_alloc(npop, npop);
 	set_alfreqs();
-	scale_alfreqs(which);
+	scale_alfreqs();
 	set_scatter();
 	process_scatter();
 	set_cov();
@@ -139,7 +140,7 @@ void CountData::read_alfreqs(string infile){
     	string name = ss.str();
     	pop2id.insert(make_pair(name, i));
     }
-    scale_alfreqs(3);
+    scale_alfreqs();
     set_scatter();
 
     //print_scatter("testout_scatter.gz");
@@ -236,23 +237,21 @@ void CountData::set_alfreqs(){
 	}
 }
 
-void CountData::scale_alfreqs(int which){
+void CountData::scale_alfreqs(){
 	for (int i = 0; i < nsnp; i++){
 		double total = 0;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
 			double scaled;
-			if (which ==1) scaled = asin(sqrt(f));
-			else if (which ==2 || which ==3) scaled = f;
+			if (params->alfreq_scaling == 1) scaled = asin(sqrt(f));
+			else scaled = f;
 			total = total+scaled;
 			gsl_matrix_set(alfreqs, i, j, scaled);
 		}
 		double m = total/ (double) npop;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
-			if (which ==1 || which ==3)gsl_matrix_set(alfreqs, i, j, f-m);
-			//if (which ==1 )gsl_matrix_set(alfreqs, i, j, f);
-			else if (which == 2) gsl_matrix_set(alfreqs, i, j, (f-m)/ sqrt(m*(1-m)));
+			gsl_matrix_set(alfreqs, i, j, f-m);
 		}
 	}
 }
