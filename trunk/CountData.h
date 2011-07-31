@@ -17,6 +17,9 @@ public:
 	CountData(string); //no rescaling (ie. just the allele frequencies)
 	void read_counts(string);
 	map<string, int> pop2id;
+	map<int, double> mean_hzy;
+	map<int, double> mean_ninds;
+	map<int, int> id2nsnp;
 	vector<vector<pair<int, int> > > allele_counts;
 	int npop, nsnp;
 	string get_pops(); //in Newick format

@@ -13,12 +13,13 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
 	scatter = gsl_matrix_alloc(npop, npop);
 	cov = gsl_matrix_alloc(npop, npop);
+	cov_var = gsl_matrix_alloc(npop, npop);
 	set_alfreqs();
 	scale_alfreqs();
 	set_scatter();
 	process_scatter();
 	set_cov();
-	process_cov();
+	//process_cov();
 }
 
 
@@ -223,6 +224,15 @@ void CountData::read_counts(string infile){
 }
 
 void CountData::set_alfreqs(){
+	mean_ninds.clear();
+	mean_hzy.clear();
+	id2nsnp.clear();
+
+	for (int i = 0; i < npop; i++){
+		mean_ninds.insert(make_pair(i, 0.0));
+		mean_hzy.insert(make_pair(i, 0.0));
+		id2nsnp.insert(make_pair(i, 0));
+	}
 	for (int i = 0; i < nsnp; i++){
 		for (int j = 0; j < npop; j++){
 			int c1 = allele_counts[i][j].first;
@@ -233,7 +243,14 @@ void CountData::set_alfreqs(){
 				continue;
 			}
 			gsl_matrix_set(alfreqs, i, j, f);
+			mean_ninds[j] += ((double) c1+ (double) c2)/2.0;
+			mean_hzy[j] += 2*f*(1-f);
+			id2nsnp[j]++;
 		}
+	}
+	for (int i = 0; i < npop; i++){
+		mean_ninds[i] = mean_ninds[i]/ id2nsnp[i];
+		mean_hzy[i] = mean_hzy[i]/ id2nsnp[i];
 	}
 }
 
@@ -271,10 +288,66 @@ void CountData::set_scatter(){
 }
 
 void CountData::set_cov(){
+	/*
+	 * Calculate covariance matrix in blocks on SNPs
+	 *  cov[i,j] = mean( cov[i,j]_k ) over all k blocks
+	 */
 	gsl_matrix_free(cov);
+	gsl_matrix_free(cov_var);
 	//cout << npop << "\n";
 	cov = gsl_matrix_alloc(npop, npop);
+	cov_var = gsl_matrix_alloc(npop, npop);
+
+	//initialize block estimation of covariance matrix
+	vector<vector<vector<double> > > cov_block;
 	for (int i = 0; i < npop; i++){
+		vector<vector<double> > tmp1;
+		for(int j = 0; j < npop; j++){
+			vector<double> tmp;
+			tmp1.push_back(tmp);
+		}
+		cov_block.push_back(tmp1);
+	}
+	//get the number of blocks
+	int nblock = nsnp/params->window_size;
+
+	//calculate the covariance matrix in each block
+	cout << "Estimating covariance matrix in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
+	for (int k = 0; k < nblock ; k++){
+		for(int i = 0; i < npop; i++){
+			for (int j = i; j < npop; j++){
+				double c = 0;
+				for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
+					double toadd = gsl_matrix_get(alfreqs, n, i) * gsl_matrix_get(alfreqs, n, j);
+					c+= toadd;
+				}
+				double cov = c/params->window_size;
+				cov_block[i][j].push_back(cov);
+			}
+		}
+	}
+	//calculate the mean, standard error of covariance estimates
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			vector<double> all_covs = cov_block[i][j];
+			double sum = 0;
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= *it;
+			double mean = sum/all_covs.size();
+			gsl_matrix_set(cov, i, j, mean);
+			gsl_matrix_set(cov, j, i, mean);
+
+			// and standard error
+			sum = 0;
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
+			double c = sum/nblock;
+			c = sqrt(c);
+			gsl_matrix_set(cov_var, i, j, c);
+			gsl_matrix_set(cov_var, j, i, c);
+		}
+	}
+
+
+	/*for (int i = 0; i < npop; i++){
 		for (int j = i; j < npop; j++){
 			double sc = gsl_matrix_get(scatter, i, j);
 			double c = sc/ ( (double) nsnp - 1);
@@ -282,6 +355,7 @@ void CountData::set_cov(){
 			gsl_matrix_set(cov, j, i, c);
 		}
 	}
+	*/
 }
 
 void CountData::print_scatter(string outfile){

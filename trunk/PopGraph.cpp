@@ -1209,6 +1209,12 @@ void PopGraph::print(){
 }
 
 
+string PopGraph::get_newick_format(map<string, double>* trim){
+ 	string toreturn = "";
+ 	newick_helper(root, &toreturn, trim);
+ 	return toreturn;
+ }
+
 void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
 	if (node != NULL){
 		graph_traits<Graph>::out_edge_iterator out_i = out_edges(node, g).first;
@@ -1235,6 +1241,41 @@ void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
 			ss << g[node].name;
 			ss << ":";
 			ss<< g[*in_i].len;
+			s->append(ss.str());
+		}
+	}
+}
+
+
+void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s, map<string, double>* trim){
+	if (node != NULL){
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(node, g).first;
+		graph_traits<Graph>::out_edge_iterator out_end = out_edges(node, g).second;
+		if (out_i != out_end){
+			s->append("(");
+			newick_helper(target(*out_i, g), s, trim);
+			s->append(",");
+			++out_i;
+			newick_helper(target(*out_i, g), s, trim);
+			s->append(")");
+			if (g[node].is_root == false){
+				graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
+				s->append(":");
+				stringstream ss;
+				ss<< g[*in_i].len;
+				s->append(ss.str());
+			}
+			else s->append(";");
+		}
+		else{
+			graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
+			stringstream ss;
+			ss << g[node].name;
+			ss << ":";
+
+			double trimmedlen = g[*in_i].len - trim->find( g[node].name )->second;
+			if (trimmedlen < 0) trimmedlen = 0;
+			ss<< trimmedlen;
 			s->append(ss.str());
 		}
 	}

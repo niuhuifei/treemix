@@ -110,6 +110,8 @@ public:
 	//Newick format
 	string get_newick_format();
 	void newick_helper( Graph::vertex_descriptor, string*);
+	string get_newick_format(map<string, double>*);
+	void newick_helper( Graph::vertex_descriptor, string*, map<string, double>*);
 
 	//MIGRATION GRAPH
 	Graph::vertex_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
