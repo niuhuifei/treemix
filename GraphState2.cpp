@@ -500,7 +500,7 @@ int GraphState2::local_hillclimb(int inorder_index){
 	//cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
 
-	compute_sigma();
+	//compute_sigma();
 	llik1 =  llik();
 	//cout << tree->get_newick_format() << " "<< llik1 << " l1\n";
 	tree->copy(tree_bk);
@@ -510,7 +510,7 @@ int GraphState2::local_hillclimb(int inorder_index){
 
 	set_branches_ls();
 	//cout << tree->get_newick_format()  << "\n";
-	compute_sigma();
+	//compute_sigma();
 	llik2 =  llik();
 	//cout << tree->get_newick_format() << " "<< llik2 << " l2\n";
 	//cout << current_llik << " "<< llik1 << " "<< llik2 << "\n";
@@ -520,7 +520,7 @@ int GraphState2::local_hillclimb(int inorder_index){
 		if (llik1 > llik2){
 			tree->local_rearrange(inorder[inorder_index], 1);
 			set_branches_ls();
-			compute_sigma();
+			//compute_sigma();
 			current_llik = llik1;
 			return 1;
 		}
@@ -528,7 +528,7 @@ int GraphState2::local_hillclimb(int inorder_index){
 			tree->local_rearrange(inorder[inorder_index], 2);
 			//cout << tree->get_newick_format() << " "<< llik2 << " "<< llik() << "\n";
 			set_branches_ls();
-			compute_sigma();
+			//compute_sigma();
 			current_llik = llik2;
 			return 1;
 		}
@@ -578,7 +578,7 @@ void GraphState2::add_pop(){
 		//cout << "here\n"; cout.flush();
 		set_branches_ls();
 
-		compute_sigma();
+		//compute_sigma();
 
 
 		double llk = llik();
@@ -602,7 +602,7 @@ void GraphState2::add_pop(){
 	Graph::vertex_descriptor tmp = tree->add_tip(inorder[max_index], toadd);
 	current_npops++;
 	set_branches_ls();
-	compute_sigma();
+	//compute_sigma();
 	//cout << "added "<< tree->get_newick_format()<< " "<< llik() << " "<< max_llik <<"\n";
 	current_llik = max_llik;
 	//cout << "will process scatter\n"; cout.flush();
@@ -709,4 +709,21 @@ void GraphState2::print_sigma_cor(string outfile){
 }
 
 void GraphState2::add_mig(){
+}
+
+string GraphState2::get_trimmed_newick(){
+	map<string, double> trim;
+	string toreturn;
+
+	for ( map<string, int>::iterator it = countdata->pop2id.begin(); it!= countdata->pop2id.end(); it++){
+		int id = it->second;
+		string pop = it->first;
+		double meanhzy = countdata->mean_hzy.find(id)->second;
+		double mean_n = countdata->mean_ninds.find(id)->second;
+		double t = meanhzy / (4.0* mean_n);
+		//cout << pop  << " "<< t << "\n";
+		trim.insert(make_pair(pop, t));
+	}
+	toreturn = tree->get_newick_format(&trim);
+	return toreturn;
 }

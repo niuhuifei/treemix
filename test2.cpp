@@ -22,7 +22,10 @@ int main (void)
 
 	PhyloPop_params p;
 	//p.bias_correct = false;
-	CountData tmpcount("testin_counts.gz", 1);
+	CountData tmpcount("testin_counts.gz", &p);
+	for( map<string, int>::iterator it = tmpcount.pop2id.begin(); it != tmpcount.pop2id.end() ; it++){
+		cout << it->first << " "<< tmpcount.mean_hzy[it->second]<< " "<< tmpcount.mean_ninds[it->second] << " "<< tmpcount.id2nsnp[it->second]<< "\n";
+	}
 	GraphState2 state(&tmpcount, &p);
 	//state.print_sigma();
 	state.add_pop();
@@ -31,6 +34,9 @@ int main (void)
 	//state.add_pop();
 	//state.iterate_hillclimb();
 	//state.add_pop();
+	cout << state.get_trimmed_newick() << " trimmed\n";
+
+
 	cout << state.tree->get_newick_format() <<"\n";
 	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(4);
 	state.tree->print();

@@ -59,6 +59,9 @@ public:
 
 	//migration
 	void add_mig();
+
+	//get newick string with trimmed terminal branch lengths
+	string get_trimmed_newick();
 };
 
 

@@ -20,6 +20,7 @@ void printopts(){
 	cout << "-i input file\n";
 	cout << "-o output stem (will be [stem].treeout.gz, [stem].cov.gz), [stem].modelcov.gz\n";
 	cout << "-arcsin (perform the arcsin square root transformation on the allele frequencies before centering)\n";
+	cout << "-k number of SNPs per block for estimation of covariance matrix (1)\n";
 }
 
 
@@ -37,6 +38,7 @@ int main(int argc, char *argv[]){
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
+    if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
@@ -55,6 +57,7 @@ int main(int argc, char *argv[]){
     	cout << state.tree->get_newick_format() << "\n";
     }
     treeout << state.tree->get_newick_format() << "\n";
+    treeout << state.get_trimmed_newick() << "\n";
     state.print_sigma_cor(modelcovfile);
 	return 0;
 }
