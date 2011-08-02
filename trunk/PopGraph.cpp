@@ -33,6 +33,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	g[v].is_root = true;
 	g[v].rev = false;
 	g[v].is_mig = false;
+	g[v].mig_frac = 0;
 	root = v;
 
 	// add the first three populations to the tree
@@ -55,6 +56,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	g[v3].is_root = false;
 	g[v3].rev = false;
 	g[v3].is_mig = false;
+	g[v].mig_frac = 0;
 	e = add_edge( v, v3, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
@@ -69,6 +71,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	g[v4].is_root = false;
 	g[v4].rev = false;
 	g[v4].is_mig = false;
+	g[v4].mig_frac = 0;
 	e = add_edge( v, v4, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
@@ -83,6 +86,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	g[v5].is_root = false;
 	g[v5].rev = false;
 	g[v5].is_mig = false;
+	g[v5].mig_frac = 0;
 	e = add_edge( v4, v5, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
@@ -96,6 +100,7 @@ PopGraph::PopGraph(vector<string> first3pops){
 	g[v6].is_root = false;
 	g[v6].rev = false;
 	g[v6].is_mig = false;
+	g[v6].mig_frac = 0;
 	e = add_edge( v4, v6, g).first;
 	g[e].weight = 1;
 	g[e].len = 1;
@@ -130,6 +135,7 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 		g[vtipnew].is_root = false;
 		g[vtipnew].rev = false;
 		g[vtipnew].is_mig = false;
+		g[vtipnew].mig_frac = 0;
 		indexcounter++;
 
 		g[vintnew].index = indexcounter;
@@ -139,6 +145,7 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 		g[vintnew].is_root = false;
 		g[vintnew].rev = false;
 		g[vintnew].is_mig = false;
+		g[vintnew].mig_frac = 0;
 		indexcounter++;
 
 		// add new edges
@@ -170,6 +177,7 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 		g[vtipnew].is_root = false;
 		g[vtipnew].rev = false;
 		g[vtipnew].is_mig = false;
+		g[vtipnew].mig_frac = 0;
 		indexcounter++;
 
 		g[vintnew].index = indexcounter;
@@ -179,6 +187,7 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 		g[vintnew].is_root = true;
 		g[vintnew].rev = false;
 		g[vintnew].is_mig = false;
+		g[vintnew].mig_frac = 0;
 		indexcounter++;
 
 		// add new edges
@@ -241,6 +250,7 @@ Graph::vertex_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Gra
 	g[p2].is_root = false;
 	g[p2].rev = false;
 	g[p2].is_mig = true;
+	g[p2].mig_frac = 0.5; //default to migration halfway between nodes
 	indexcounter++;
 
 	//add new edges
@@ -268,13 +278,22 @@ Graph::vertex_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Gra
 set<pair<double, set<Graph::vertex_descriptor> > > PopGraph::get_paths_to_root(Graph::vertex_descriptor v){
 
 	set<pair<double, set<Graph::vertex_descriptor> > > toreturn;
+
+
+	double wsum = 0;
+	Graph::edge_descriptor nonmig;
+	for (Graph::in_edge_iterator it = in_edges(v, g).first; it != in_edges(v, g).second; it++){
+		if (g[*it].is_mig == false) nonmig = *it;
+		else wsum+= g[*it].weight;
+	}
+	g[nonmig].weight = 1-wsum;
 	Graph::in_edge_iterator init = in_edges(v, g).first;
 	while (init != in_edges(v, g).second){
 
 		double w = g[*init].weight;
 		//scout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
 		set<Graph::vertex_descriptor> tmpset;
-
+		tmpset.insert(v);
 		Graph::vertex_descriptor parent = source(*init, g);
 		tmpset.insert(parent);
 		if (g[parent].is_root){
@@ -688,11 +707,6 @@ Graph::vertex_descriptor PopGraph::get_LCA(Graph::vertex_descriptor root_v,
        	}
 }
 
-void PopGraph::set_node_heights(vector<Graph::vertex_descriptor> trav){
-        	for (int i = 0; i < trav.size(); i++){
-        		g[trav[i]].height = get_dist_to_root(trav[i]);
-        	}
-}
 
 map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descriptor p_rootIterator){
 	map<string, Graph::vertex_descriptor> toreturn;
@@ -700,12 +714,11 @@ map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descripto
  		toreturn.insert(make_pair(g[p_rootIterator].name, p_rootIterator));
  	}
  	else{
- 		graph_traits<Graph>::out_edge_iterator out_i = out_edges(p_rootIterator, g).first;
- 		map<string, Graph::vertex_descriptor> t1 = get_tips(target(*out_i, g));
+ 		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children =  get_child_nodes(p_rootIterator);
+ 		map<string, Graph::vertex_descriptor> t1 = get_tips(children.first);
 
 
- 		++out_i;
- 		map<string, Graph::vertex_descriptor> t2 = get_tips(target(*out_i, g));
+ 		map<string, Graph::vertex_descriptor> t2 = get_tips(children.second);
  		for (map<string, Graph::vertex_descriptor >::iterator it1 = t1.begin(); it1 != t1.end(); it1++){
  			//pair<int, iterator<NODEDATA> > = std::make_pair(it1->first, it1->second);
  			toreturn.insert(make_pair(it1->first, it1->second));
@@ -715,142 +728,6 @@ map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descripto
  		}
  	}
  	return toreturn;
-}
-
-void PopGraph::local_update(Graph::vertex_descriptor v3, gsl_rng* r){
-	/*
-	 *
-	 * go from    1
-	 *          /  \*
-	 *         /    3
-	 *        /    / \
-	 *       2    4   5
-	 *
-	 * do local rearrangements.
-	 *
-	 */
-	if (!g[v3].is_root){
-
-	// set up descriptors and edge lengths
-	Graph::in_edge_iterator tmp = in_edges(v3, g).first;
-	Graph::edge_descriptor ed = *tmp;
-	Graph::vertex_descriptor v1, v2, v4, v5;
-	double d12, d13, d34, d35;
-	double l2, l4, l5;
-	d13 = g[ed].len;
-	v1 = source(ed, g);
-	Graph::out_edge_iterator out3 = out_edges(v3, g).first;
-	v4 = target(*out3, g);
-	d34 = g[*out3].len;
-
-	++out3;
-	v5 = target(*out3, g);
-	d35 = g[*out3].len;
-
-	Graph::out_edge_iterator out1 = out_edges(v1, g).first;
-	if (target(*out1, g) == v3) {
-		out1++;
-		v2 = target(*out1, g);
-		d12 = g[*out1].len;
-	}
-	else {
-		v2 = target(*out1, g);
-		d12 = g[*out1].len;
-	}
-	l2 = d12;
-	l4 = d13+d34;
-	l5 = d13+d35;
-	double min = l2;
-	if (l4 < min) min = l4;
-	if (l5 < min) min = l5;
-	//cout << min << " "<< l2 << " "<< l4 << " "<< l5 << "\n";
-	//choose which rearrangement to do
-	// either 4 or 5 slides with 3
-	/*double ran = gsl_rng_uniform(r);
-	ran = 0.7;
-	if (ran < 0.5){
-		// 4 slides
-		double ran2 = gsl_rng_uniform(r);
-		double newpos = ran2*min;
-		remove_edge(v1, v2, g);
-		remove_edge(v3, v5, g);
-		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
-		g[e].weight = 1;
-		g[e].len = min - newpos;
-		e = add_edge(v1, v5, g).first;
-		g[e].weight = 1;
-		g[e].len = l5;
-		e = edge(v1, v3, g).first;
-		g[e].len = newpos;
-		e = edge(v3, v4, g).first;
-		g[e].len = l4 - newpos;
-		g[v3].height = g[v1].height+ newpos;
-	}
-	else{
-		//5 slides
-		double ran2 = gsl_rng_uniform(r);
-		double newpos = ran2*min;
-		remove_edge(v1, v2, g);
-		remove_edge(v3, v4, g);
-		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
-		g[e].weight = 1;
-		g[e].len = min - newpos;
-		e = add_edge(v1, v4, g).first;
-		g[e].weight = 1;
-		g[e].len = l4;
-		e = edge(v1, v3, g).first;
-		g[e].len = newpos;
-		e = edge(v3, v5, g).first;
-		g[e].len = l5 - newpos;
-		g[v3].height = g[v1].height+ newpos;
-	}
-*/
-	//choose which rearrangement to do
-	double ran = gsl_rng_uniform(r);
-	ran = 0.2;
-	if (ran < 0.5){
-		// go to ((2,4),5)
-
-		remove_edge(v1, v2, g);
-		remove_edge(v3, v5, g);
-		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
-		g[e].weight = 1;
-		g[e].len = d12;
-		e = add_edge(v1, v5, g).first;
-		g[e].weight = 1;
-		g[e].len = d35;
-		update_heights_local( v5, -d13);
-		update_heights_local( v2, d13);
-
-	}
-	else{
-		//go to (4,(2,5))
-
-		remove_edge(v1, v2, g);
-		remove_edge(v3, v4, g);
-		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
-		g[e].weight = 1;
-		g[e].len = d12;
-
-		e = add_edge(v1, v4, g).first;
-		g[e].weight = 1;
-		g[e].len = d34;
-		update_heights_local( v4, -d13);
-		update_heights_local( v2, d13);
-	}
-	}
-
-}
-
-
-void PopGraph::update_heights_local(Graph::vertex_descriptor v, double adj){
-	if (out_degree(v, g) > 0){
-		Graph::out_edge_iterator it = out_edges(v, g).first;
-		update_heights_local( target(*it, g), adj);
-		it++;
-		update_heights_local( target(*it, g), adj);
-	}
-	g[v].height += adj;
 }
 
 void PopGraph::move_root(gsl_rng* r){
@@ -959,223 +836,11 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 }
 
 
-void PopGraph::local_update_branches(Graph::vertex_descriptor v3, gsl_rng* r, double epsilon){
-	/*
-	 *
-	 * go from    1
-	 *          /  \*
-	 *         /    3
-	 *        /    / \
-	 *       2    4   5
-	 *
-	 * do updates of branches in vicinity. input is v3
-	 *
-	 */
-	if (!g[v3].is_root){
-
-		// set up descriptors and edge lengths
-		Graph::in_edge_iterator tmp = in_edges(v3, g).first;
-		Graph::edge_descriptor ed = *tmp;
-		Graph::edge_descriptor e12, e34, e35;
-		Graph::vertex_descriptor v1, v2, v4, v5;
-		double d12, d13, d34, d35;
-
-		d13 = g[ed].len;
-		v1 = source(ed, g);
-		Graph::out_edge_iterator out3 = out_edges(v3, g).first;
-		v4 = target(*out3, g);
-		d34 = g[*out3].len;
-		e34 = *out3;
-
-		++out3;
-		v5 = target(*out3, g);
-		d35 = g[*out3].len;
-		e35 = *out3;
-		Graph::out_edge_iterator out1 = out_edges(v1, g).first;
-		if (target(*out1, g) == v3) {
-			out1++;
-			v2 = target(*out1, g);
-			d12 = g[*out1].len;
-			e12 = *out1;
-		}
-		else {
-			v2 = target(*out1, g);
-			d12 = g[*out1].len;
-			e12 = *out1;
-		}
-
-		single_branch_update( e12, r, epsilon);
-		single_branch_update( ed, r, epsilon);
-		single_branch_update( e34, r, epsilon);
-		single_branch_update( e35, r, epsilon);
-	}
-}
-
-void PopGraph::single_branch_update(Graph::edge_descriptor e, gsl_rng* r, double epsilon){
-	double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
-	double oldlen = g[e].len;
-	double newlen = fabs(oldlen+toadd);
-	g[e].len = newlen;
-	update_heights_local( target(e, g), newlen-oldlen);
-}
-
-void PopGraph::perturb_node_heights(vector< Graph::vertex_descriptor > trav, double epsilon, gsl_rng *r){
-
-  	// perturb the tip heights, they're in even positions
-  	for(int i = 0 ; i < trav.size(); i+=2){
-  		double d1 = 0;
-  		double d2 = 0;
-  		double max = 0;
-  		if (i-1 >=0)	d1 = g[trav[i-1]].height;
-  		if (i+1 < trav.size())	d2 = g[trav[i+1]].height;
-
-  		max = d1;
-  		if (d2 > max ) max = d2;
-  		double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
-  		double newheight = g[trav[i]].height + toadd;
-  		if (newheight < max) newheight = max+ (max-newheight);
-  		g[trav[i]].height = newheight;
-  	}
-
-  	//perturb the heights of the interior nodes
-  	for (int i = 1 ; i < trav.size(); i+=2){
-     		double d1 = 10000;
-     		double d2 = 10000;
-     		double min = 0;
-     		if (i-1 >=0)	d1 = g[trav[i-1]].height;
-      		if (i+1 < trav.size())	d2 = g[trav[i+1]].height;
-
-    		min = d1;
-    		if (d2 < min ) min = d2;
-    		double toadd = (2* gsl_rng_uniform(r) - 1)*epsilon;
-    		double newheight = fabs(g[trav[i]].height + toadd);
-    		if (newheight > min) newheight = min - (newheight-min);
-    		g[trav[i]].height = newheight; //removed if (newheight > 0), this now allows re-rooting
-  	}
-  }
-
-
-
-void PopGraph::build_tree(vector< Graph::vertex_descriptor > trav){
- 	//
- 	//first find the new root (the minimum height)
- 	//
-
- 	Graph::vertex_descriptor newroot = trav[0];
- 	double minheight = g[trav[0]].height;
- 	int minpos = 0;
- 	for(int i = 0 ; i < trav.size(); i ++){
- 		if (g[trav[i]].height < minheight) {
- 			newroot = trav[i];
- 			minheight = g[trav[i]].height;
- 			minpos =i;
- 		}
- 	}
- 	set_root(newroot);
-
- 	build_tree_helper(&trav, minpos);
-
-
- }
-
 void PopGraph::set_root(Graph::vertex_descriptor v){
 	g[root].is_root = false;
 	g[v].is_root = true;
 	root = v;
 }
-void PopGraph::build_tree_helper(vector< Graph::vertex_descriptor >* trav, int index){
- 	//
- 	// look left
- 	//
- 	bool leftborder = false;
- 	bool rightborder = false;
- 	double leftmin = 10000;
- 	double rightmin = 10000;
- 	int minindex = 0;
- 	int i = index-1;
- 	bool foundleft = false;
- 	while (i >= 0 && leftborder ==false){
- 		if (g[trav->at(i)].height < g[trav->at(index)].height){
- 			leftborder = true;
- 			continue;
- 		}
- 		if (g[trav->at(i)].height < leftmin){
- 			minindex = i;
- 			leftmin = g[trav->at(i)].height;
- 			foundleft = true;
- 		}
- 		i--;
- 	}
-  	//
- 	// fiddle with the adjacency list if necessary
- 	//
- 	if (foundleft){
- 		clear_out_edges(trav->at(index), g);
- 		add_edge(trav->at(index), trav->at(minindex), g);
- 		build_tree_helper(trav, minindex);
- 	}
-
- 	//
- 	// look right
- 	//
- 	minindex = 0;
- 	i = index+1;
- 	bool foundright = 0;
-   	while (i < trav->size() && rightborder ==false){
-     		if (g[trav->at(i)].height < g[trav->at(index)].height){
-     			rightborder = true;
-     			continue;
-     		}
-     		if (g[trav->at(i)].height < rightmin){
-     			minindex = i;
-     			rightmin = g[trav->at(i)].height;
-     			foundright = true;
-     		}
-     		i++;
-   	}
-   	//
-   	// fiddle with the adjacency list if necessary
-   	//
-   	if (foundright){
-		add_edge(trav->at(index), trav->at(minindex), g);
- 		build_tree_helper(trav, minindex);
-   	}
- }
-
-
-void PopGraph::update_branch_lengths(Graph::vertex_descriptor root_v){
-		graph_traits<Graph>::out_edge_iterator out_i = out_edges(root_v, g).first;
-		graph_traits<Graph>::out_edge_iterator out_end = out_edges(root_v, g).second;
-		graph_traits<Graph>::in_edge_iterator in_i = in_edges(root_v, g).first;
-		if (out_i != out_end) update_branch_lengths(target(*out_i, g));
-		if (g[root_v].is_root == false) {
-			g[*in_i].len = g[root_v].height - g[source(*in_i, g)].height;
-		}
- 		if (out_i != out_end) {
- 			++out_i;
- 			update_branch_lengths(target(*out_i, g));
- 		}
-  }
-
-
-void PopGraph::randomize_tree(gsl_rng* r){
-	map<string, Graph::vertex_descriptor> popname2tip = get_tips(root);
-  	vector< Graph::vertex_descriptor > trav = get_inorder_traversal( popname2tip.size());
- 	double tipheight = gsl_rng_uniform(r)*0.01+0.01;
-
- 	// set the tip heights
- 	for(int i = 0 ; i < trav.size(); i+=2){
- 		g[trav[i]].height = tipheight;
- 	}
- 	for(int i = 1; i < trav.size(); i+=2){
- 		g[trav[i]].height = gsl_rng_uniform(r)*tipheight;
- 	}
-
- 	build_tree(trav);
- 	update_branch_lengths(root);
- 	trav = get_inorder_traversal(popname2tip.size());
- 	set_node_heights(trav);
- }
 
 string PopGraph::get_newick_format(){
  	string toreturn = "";
@@ -1335,29 +1000,64 @@ pair<Graph::vertex_descriptor, Graph::vertex_descriptor> PopGraph::get_child_nod
 	return make_pair(c1, c2);
 }
 
-Graph::vertex_descriptor PopGraph::get_parent_node_wmig(Graph::vertex_descriptor v){
+Graph::vertex_descriptor PopGraph::get_child_node_mig(Graph::vertex_descriptor v){
 	Graph::vertex_descriptor toreturn = v;
+	if (g[v].is_mig == false){
+		cerr << "Calling get_child_node_mig on a non-migration node\n";
+		exit(1);
+	}
+	if (out_degree(v, g) != 2){
+		return toreturn;
+	}
+	while( g[toreturn].is_mig){
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
+		if ( g[*out_i].is_mig == false) toreturn = target(*out_i, g);
+		else{
+			out_i++;
+			toreturn = target(*out_i, g);
+		}
+	}
+	return toreturn;
+}
+
+pair<Graph::vertex_descriptor, double> PopGraph::get_parent_node_wmig(Graph::vertex_descriptor v){
+	pair<Graph::vertex_descriptor, double> toreturn;
+	toreturn.first = v;
+	toreturn.second = 0;
 	graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
 	while (in_i != in_edges(v, g).second){
-		if (g[*in_i].is_mig == false) return source(*in_i, g);
+		if (g[*in_i].is_mig == false) {
+			toreturn.first = source(*in_i, g);
+			toreturn.second = g[*in_i].len;
+			return toreturn;
+		}
 		in_i++;
 	}
 	return toreturn;
 }
 
-Graph::vertex_descriptor PopGraph::get_parent_node(Graph::vertex_descriptor v){
-	if (g[v].is_root) return v;
-	Graph::vertex_descriptor v2 = get_parent_node_wmig(v);
-	while (g[v2].is_mig == true) v2 = get_parent_node_wmig(v2);
-	return v2;
+pair<Graph::vertex_descriptor, double> PopGraph::get_parent_node(Graph::vertex_descriptor v){
+	pair<Graph::vertex_descriptor, double> toreturn;
+	if (g[v].is_root) {
+		toreturn.first = v;
+		toreturn.second = 0;
+		return toreturn;
+	}
+	toreturn = get_parent_node_wmig(v);
+	while (g[toreturn.first].is_mig == true) {
+		pair<Graph::vertex_descriptor, double> tmp = get_parent_node_wmig(toreturn.first);
+		toreturn.first = tmp.first;
+		toreturn.second += tmp.second;
+	}
+	return toreturn;
 }
 
 bool PopGraph::does_mig_exist(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
 	if (g[st].is_root) return false;
-	Graph::vertex_descriptor v2 = get_parent_node_wmig(st);
+	Graph::vertex_descriptor v2 = get_parent_node_wmig(st).first;
 	while (g[v2].is_mig == true){
 		if ( edge(v2, sp, g).second == true) return true;
-		v2 = get_parent_node_wmig(v2);
+		v2 = get_parent_node_wmig(v2).first;
 	}
 	return false;
 }

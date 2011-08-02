@@ -50,7 +50,7 @@ public:
 	//under normal model, get the max lik branch lengths
 	// for a given topology by least squares
 	void set_branches_ls();
-	void set_branches_ls_old();
+	void set_branches_ls_wmig();
 
 	//likelihoods
 	double llik();
