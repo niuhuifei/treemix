@@ -15,6 +15,7 @@ struct Node
 	int index;
 	string name;
 	double height;
+	float mig_frac;
 	bool is_tip;
 	bool is_root;
 	bool is_mig;
@@ -85,27 +86,9 @@ public:
 	//get the path to the root for a vertex
 	set<Graph::vertex_descriptor> get_path_to_root(Graph::vertex_descriptor);
 
-	//set the heights of the vertices
-	void set_node_heights(vector<Graph::vertex_descriptor>);
-
-	//and perturb them
-	void perturb_node_heights(vector< Graph::vertex_descriptor>, double, gsl_rng*);
-
-	//build a tree from a traversal order and heights
-	void build_tree(vector< Graph::vertex_descriptor >);
-	void build_tree_helper(vector< Graph::vertex_descriptor >*, int);
-	void update_branch_lengths(Graph::vertex_descriptor);
-
 	//local rearrangement
-	void local_update(Graph::vertex_descriptor, gsl_rng*);
 	void local_rearrange(Graph::vertex_descriptor, int);
-	void update_heights_local(Graph::vertex_descriptor, double);
-	void local_update_branches(Graph::vertex_descriptor, gsl_rng*, double);
-	void single_branch_update(Graph::edge_descriptor, gsl_rng*, double);
 	void move_root(gsl_rng*);
-
-	//randomize the tree
-	void randomize_tree(gsl_rng*);
 
 	//Newick format
 	string get_newick_format();
@@ -118,8 +101,9 @@ public:
 	set<pair<double, set<Graph::vertex_descriptor> > > get_paths_to_root(Graph::vertex_descriptor);
 
 	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes(Graph::vertex_descriptor); // skips over migration nodes
-	Graph::vertex_descriptor get_parent_node(Graph::vertex_descriptor); //skips over migration nodes
-	Graph::vertex_descriptor get_parent_node_wmig(Graph::vertex_descriptor); // skips migration edges, but will return a migration node
+	Graph::vertex_descriptor get_child_node_mig(Graph::vertex_descriptor); //input a migration node, get the next non-migration node (along non-migration edges)
+	pair<Graph::vertex_descriptor, double> get_parent_node(Graph::vertex_descriptor); //skips over migration nodes
+	pair<Graph::vertex_descriptor, double> get_parent_node_wmig(Graph::vertex_descriptor); // skips migration edges, but will return a migration node. returns the node and distance
 	bool does_mig_exist(Graph::vertex_descriptor, Graph::vertex_descriptor); //does a migration edge already exist between these two nodes?
 	bool is_legal_migration(Graph::vertex_descriptor, Graph::vertex_descriptor); //is migration between these two nodes legal? (no migration already, not the same parent, not creating loop)
 };

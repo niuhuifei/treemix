@@ -28,27 +28,27 @@ int main (void)
 	}
 	GraphState2 state(&tmpcount, &p);
 	//state.print_sigma();
-	state.add_pop();
 	//state.add_pop();
-	state.iterate_hillclimb();
 	//state.add_pop();
 	//state.iterate_hillclimb();
 	//state.add_pop();
-	cout << state.get_trimmed_newick() << " trimmed\n";
+	//state.iterate_hillclimb();
+	//state.add_pop();
+	//cout << state.get_trimmed_newick() << " trimmed\n";
 
 
-	cout << state.tree->get_newick_format() <<"\n";
-	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(4);
-	state.tree->print();
-	cout << state.tree->does_mig_exist(inorder[1], inorder[4]) <<"\n";
-	cout << "legal? "<< state.tree->is_legal_migration(inorder[1], inorder[4]) <<"\n";
-	state.tree->add_mig_edge(inorder[1], inorder[4]);
-	cout << state.tree->does_mig_exist(inorder[1], inorder[4]) <<"\n";
-	cout << "legal? "<< state.tree->is_legal_migration(inorder[4], inorder[1]) <<"\n";
-	state.tree->add_mig_edge(inorder[4], inorder[1]);
-	state.tree->print();
+	//cout << state.tree->get_newick_format() <<"\n";
+	//vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(4);
+	//state.tree->print();
+	//cout << state.tree->does_mig_exist(inorder[1], inorder[4]) <<"\n";
+	//cout << "legal? "<< state.tree->is_legal_migration(inorder[1], inorder[4]) <<"\n";
+	//state.tree->add_mig_edge(inorder[1], inorder[4]);
+	//cout << state.tree->does_mig_exist(inorder[1], inorder[4]) <<"\n";
+	//cout << "legal? "<< state.tree->is_legal_migration(inorder[4], inorder[1]) <<"\n";
+	//state.tree->add_mig_edge(inorder[4], inorder[1]);
+	//state.tree->print();
 
-	set< pair<double, set<Graph::vertex_descriptor> > > tmppath = state.tree->get_paths_to_root(inorder[4]);
+	//set< pair<double, set<Graph::vertex_descriptor> > > tmppath = state.tree->get_paths_to_root(inorder[4]);
 	//cout << "size "<< tmppath.size() <<"\n";
 	//for( set< pair<double, set<Graph::vertex_descriptor> > >::iterator it = tmppath.begin(); it != tmppath.end(); it++){
 	//	cout << it->first << " t\n"; cout.flush();
