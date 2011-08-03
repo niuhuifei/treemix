@@ -169,7 +169,7 @@ void CountData::read_counts(string infile){
 
     intStat = stat(infile.c_str(), &stFileInfo);
     if (intStat !=0){
-            std::cerr<< "ERROR: cannot open file " << in << "\n";
+            std::cerr<< "ERROR: cannot open file " << infile << "\n";
             exit(1);
     }
 

@@ -24,16 +24,8 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	scatter = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_set_zero(sigma);
 
-	//tree->print();
-	//cout << "llik: "<< llik_normal() << "\n";
-	//cout << tree->get_newick_format() << "\n";
 	set_branches_ls();
-	//cout << tree->get_newick_format() << "\n";
-	//cout << "here2\n"; cout.flush();
-	compute_sigma();
-	//cout << "here\n"; cout.flush();
 	process_scatter();
-	//cout << "not here\n"; cout.flush();
 	current_llik = llik();
 
 	//vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(3);
@@ -89,7 +81,34 @@ void GraphState2::print_sigma(){
 
 void GraphState2::set_graph(string newick){
 	tree->set_graph(newick);
-	compute_sigma();
+}
+
+
+void GraphState2::set_graph_from_file(string infile){
+	ifstream in(infile.c_str());
+    vector<string> line;
+    struct stat stFileInfo;
+    int intStat;
+    string st, buf;
+    intStat = stat(infile.c_str(), &stFileInfo);
+    if (intStat !=0){
+            std::cerr<< "ERROR: cannot open file " << infile << "\n";
+            exit(1);
+    }
+    getline(in, st);
+    current_npops = allpopnames.size();
+	gsl_matrix_free(sigma);
+	sigma = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma_cor);
+
+    cout << "Reading tree topology from file:\n";
+    cout << st << "\n";
+	tree->set_graph(st);
+	set_branches_ls();
+	cout << "ln(lk): "<< llik() << "\n";
 }
 
 map<Graph::vertex_descriptor, int> GraphState2::get_v2index(){
@@ -644,7 +663,7 @@ int GraphState2::global_hillclimb(int inorder_index){
 	// take the node in inorder_index, try putting it above all the other nodes
 	// return 1 if there is an improvement, 0 otw
 	double max = current_llik;
-	double maxindex = inorder_index;
+	int maxindex = inorder_index;
 	tree_bk ->copy(tree);
 	int toreturn = 0;
 	for (int i = 0; i < 2*current_npops-1; i++){

@@ -12,4 +12,6 @@ PhyloPop_params::PhyloPop_params(){
 	window_size = 1;
 	alfreq_scaling = 0;
 	global = false;
+	readtree = false;
+	treefile = "NA";
 }
