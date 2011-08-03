@@ -17,11 +17,12 @@ int norm_type = 3;
 void printopts(){
 	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
-	cout << "-i input file\n";
-	cout << "-o output stem (will be [stem].treeout.gz, [stem].cov.gz), [stem].modelcov.gz\n";
+	cout << "-i [file name] input file\n";
+	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz), [stem].modelcov.gz\n";
 	cout << "-arcsin (perform the arcsin square root transformation on the allele frequencies before centering)\n";
-	cout << "-k number of SNPs per block for estimation of covariance matrix (1)\n";
+	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global (Do a round of global rearrangements after adding all populations)\n";
+	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 }
 
 
@@ -38,6 +39,10 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     if (cmdline.HasSwitch("-o"))	outstem = cmdline.GetArgument("-o", 0).c_str();
+    if (cmdline.HasSwitch("-tf"))	{
+    	p.treefile = cmdline.GetArgument("-tf", 0).c_str();
+    	p.readtree = true;
+    }
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
@@ -50,8 +55,10 @@ int main(int argc, char *argv[]){
     CountData counts(infile, &p);
     counts.print_cov(covfile);
     GraphState2 state(&counts, &p);
-    //while (5 > state.current_npops){
-    while (counts.npop > state.current_npops){
+    if (p.readtree) state.set_graph_from_file(p.treefile);
+
+
+    while (!p.readtree && counts.npop > state.current_npops){
     	//cout << counts.npop << " "<< state.current_npops << "\n";
     	state.add_pop();
     	state.iterate_hillclimb();

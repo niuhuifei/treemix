@@ -32,6 +32,7 @@ public:
 
 	//set the graph structure to a Newick string
 	void set_graph(string);
+	void set_graph_from_file(string);
 
 	//covariance matrix
 	void compute_sigma();

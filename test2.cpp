@@ -21,7 +21,11 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	//p.bias_correct = false;
+	CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
+	GraphState2 state(&tmpcount, &p);
+	state.set_graph_from_file("phylopop_treein");
+
+	/*
 	CountData tmpcount("testin_counts.gz", &p);
 	for( map<string, int>::iterator it = tmpcount.pop2id.begin(); it != tmpcount.pop2id.end() ; it++){
 		cout << it->first << " "<< tmpcount.mean_hzy[it->second]<< " "<< tmpcount.mean_ninds[it->second] << " "<< tmpcount.id2nsnp[it->second]<< "\n";
@@ -51,7 +55,7 @@ int main (void)
 	state.many_global_hillclimb();
 	//state.tree->global_rearrange(inorder[10], inorder[8]);
 	//state.tree->print();
-
+*/
 
 	/*
 	cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
