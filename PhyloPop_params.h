@@ -13,7 +13,7 @@
 class PhyloPop_params{
 public:
 	PhyloPop_params();
-	bool bias_correct;
+	bool bias_correct, global;
 	int window_size;
 	int alfreq_scaling; // 0 = no scaling, 1 = asin(sqrt(f))
 };

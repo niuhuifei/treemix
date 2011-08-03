@@ -27,38 +27,43 @@ int main (void)
 		cout << it->first << " "<< tmpcount.mean_hzy[it->second]<< " "<< tmpcount.mean_ninds[it->second] << " "<< tmpcount.id2nsnp[it->second]<< "\n";
 	}
 	GraphState2 state(&tmpcount, &p);
-	//state.print_sigma();
-	//state.add_pop();
-	//state.add_pop();
-	//state.iterate_hillclimb();
-	//state.add_pop();
-	//state.iterate_hillclimb();
-	//state.add_pop();
-	//cout << state.get_trimmed_newick() << " trimmed\n";
+
+	state.add_pop();
+	state.iterate_hillclimb();
+	state.add_pop();
+	state.iterate_hillclimb();
+	state.add_pop();
+	state.iterate_hillclimb();
+
+	state.print_sigma();
+	cout << "llik: "<< state.llik()<<"\n";
+	cout << state.tree->get_newick_format() <<"\n";
 
 
-	//cout << state.tree->get_newick_format() <<"\n";
-	//vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(4);
+	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
+	state.tree->print();
+
+	int i = 0;
+	for(vector<Graph::vertex_descriptor>::iterator it = inorder.begin(); it != inorder.end(); it++){
+		cout << i << " "<< state.tree->g[*it].index << "\n";
+		i++;
+	}
+	state.many_global_hillclimb();
+	//state.tree->global_rearrange(inorder[10], inorder[8]);
 	//state.tree->print();
-	//cout << state.tree->does_mig_exist(inorder[1], inorder[4]) <<"\n";
-	//cout << "legal? "<< state.tree->is_legal_migration(inorder[1], inorder[4]) <<"\n";
-	//state.tree->add_mig_edge(inorder[1], inorder[4]);
-	//cout << state.tree->does_mig_exist(inorder[1], inorder[4]) <<"\n";
-	//cout << "legal? "<< state.tree->is_legal_migration(inorder[4], inorder[1]) <<"\n";
-	//state.tree->add_mig_edge(inorder[4], inorder[1]);
-	//state.tree->print();
-
-	//set< pair<double, set<Graph::vertex_descriptor> > > tmppath = state.tree->get_paths_to_root(inorder[4]);
-	//cout << "size "<< tmppath.size() <<"\n";
-	//for( set< pair<double, set<Graph::vertex_descriptor> > >::iterator it = tmppath.begin(); it != tmppath.end(); it++){
-	//	cout << it->first << " t\n"; cout.flush();
-	//	for (set<Graph::vertex_descriptor>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++){
-	//		cout << state.tree->g[*it2].index <<"\n";
-	//	}
-	//	cout << "\n";
-	//}
 
 
+	/*
+	cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
+	cout << "legal? "<< state.tree->is_legal_migration(inorder[10], inorder[6]) <<"\n";
+	state.tree->add_mig_edge(inorder[10], inorder[6]);
+	cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
+	state.tree->print();
+	state.set_branches_ls();
+	state.tree->print();
+	cout << "llik: "<< state.llik()<<"\n";
+	state.print_sigma();
+*/
 	//state.set_graph("(((((pop0:0.1,pop1:0.1):0.1,pop2:0.1):0.1,pop3:0.1):0.1,pop4:0.1):0.1,pop5:0.1);");
 	//state.tree->print();
 	//state.set_branches_ls();

@@ -90,6 +90,9 @@ public:
 	void local_rearrange(Graph::vertex_descriptor, int);
 	void move_root(gsl_rng*);
 
+	//global rearrangement
+	void global_rearrange(Graph::vertex_descriptor, Graph::vertex_descriptor);
+
 	//Newick format
 	string get_newick_format();
 	void newick_helper( Graph::vertex_descriptor, string*);
@@ -99,6 +102,7 @@ public:
 	//MIGRATION GRAPH
 	Graph::vertex_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
 	set<pair<double, set<Graph::vertex_descriptor> > > get_paths_to_root(Graph::vertex_descriptor);
+	set<pair<double, set<Graph::edge_descriptor> > > get_paths_to_root_edge(Graph::vertex_descriptor);
 
 	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes(Graph::vertex_descriptor); // skips over migration nodes
 	Graph::vertex_descriptor get_child_node_mig(Graph::vertex_descriptor); //input a migration node, get the next non-migration node (along non-migration edges)
