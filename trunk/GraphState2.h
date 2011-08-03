@@ -43,6 +43,11 @@ public:
 	int many_local_hillclimb();
 	void iterate_hillclimb();
 
+	//global hill-climbing
+	int global_hillclimb(int);
+	int many_global_hillclimb();
+	void iterate_global_hillclimb();
+
 	//add a new population
 	void add_pop();
 	void process_scatter();
@@ -51,6 +56,12 @@ public:
 	// for a given topology by least squares
 	void set_branches_ls();
 	void set_branches_ls_wmig();
+	//functions used by the above least squares fitting
+	map<Graph::vertex_descriptor, int> get_v2index();
+
+	//maximize the weights on the branches. This will be iterative on each individual weight
+	void optimize_wights();
+
 
 	//likelihoods
 	double llik();

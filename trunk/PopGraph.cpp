@@ -313,6 +313,45 @@ set<pair<double, set<Graph::vertex_descriptor> > > PopGraph::get_paths_to_root(G
 	return toreturn;
 }
 
+
+set<pair<double, set<Graph::edge_descriptor> > > PopGraph::get_paths_to_root_edge(Graph::vertex_descriptor v){
+
+	set<pair<double, set<Graph::edge_descriptor> > > toreturn;
+
+
+	double wsum = 0;
+	Graph::edge_descriptor nonmig;
+	for (Graph::in_edge_iterator it = in_edges(v, g).first; it != in_edges(v, g).second; it++){
+		if (g[*it].is_mig == false) nonmig = *it;
+		else wsum+= g[*it].weight;
+	}
+	g[nonmig].weight = 1-wsum;
+
+	Graph::in_edge_iterator init = in_edges(v, g).first;
+	while (init != in_edges(v, g).second){
+
+		double w = g[*init].weight;
+		//scout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
+		set<Graph::edge_descriptor> tmpset;
+		tmpset.insert(*init);
+		Graph::vertex_descriptor parent = source(*init, g);
+		if (g[parent].is_root){
+			toreturn.insert(make_pair(w, tmpset));
+		}
+		else{
+			set<pair<double, set<Graph::edge_descriptor> > > p_path = get_paths_to_root_edge(parent);
+			for (set<pair<double, set<Graph::edge_descriptor> > >::iterator it = p_path.begin(); it != p_path.end(); it++){
+				double w2 = w*it->first;
+				set<Graph::edge_descriptor> tmpset2 = tmpset;
+				for (set<Graph::edge_descriptor>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) tmpset2.insert(*it2);
+				toreturn.insert(make_pair(w2, tmpset2));
+			}
+		}
+		init++;
+	}
+	return toreturn;
+}
+
 //pair<double, set<Graph::vertex_descriptor> > PopGraph::get_paths_helper(Graph::vertex_descriptor v){
 //	pair<double, set<Graph::vertex_descriptor> > toreturn;
 //	return toreturn;
@@ -624,10 +663,9 @@ void PopGraph::set_graph(string p_newickString){
 
 set<Graph::vertex_descriptor> PopGraph::get_root_adj(){
 	set<Graph::vertex_descriptor> toreturn;
-	Graph::out_edge_iterator it = out_edges(root, g).first;
-	toreturn.insert( target(*it, g));
-	it++;
-	toreturn.insert( target(*it, g));
+	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> adj = get_child_nodes(root);
+	toreturn.insert( adj.first);
+	toreturn.insert( adj.second);
 	return toreturn;
 }
 
@@ -812,9 +850,11 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
 		g[e].weight = 1;
 		g[e].len = d12;
+		g[e].is_mig = false;
 		e = add_edge(v1, v5, g).first;
 		g[e].weight = 1;
 		g[e].len = d35;
+		g[e].is_mig = false;
 
 	}
 	else{
@@ -825,16 +865,117 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
 		g[e].weight = 1;
 		g[e].len = d12;
+		g[e].is_mig = false;
 
 		e = add_edge(v1, v4, g).first;
 		g[e].weight = 1;
 		g[e].len = d34;
-
+		g[e].is_mig = false;
 	}
 	}
 
 }
 
+void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descriptor v2){
+	/*
+	 *   take the tree below v1p, attach it above v2
+	 *   if v2 is the root, there's a special case
+	 *   do not do anything is v1 or v1p is the root
+	 *
+	 *   otherwise:
+	 *
+	 *             v1pp
+	 *             /  \
+	 *            /    \
+	 *          v1p                  v2p
+	 *          / \                  / \
+	 *         /   \                /   \
+	 *        v1   v1s            v2
+	 *       / \
+	 *      /   \
+	 *
+	 *      goes to
+	 *
+	 *
+	 *      v1pp                     v2p
+	 *      / \                      /  \
+	 *     /   \                    /    \
+	 *    v1s                      v1p
+	 *                            / \
+	 *                           /   \
+	 *                          v2   v1
+	 */
+	 Graph::vertex_descriptor v1p, v1pp, v1s, v2p;
+	 Graph::edge_descriptor e;
+	 if (!g[v1].is_root && !g[v2].is_root && !g[get_parent_node(v1).first].is_root){
+		 v1p = get_parent_node(v1).first;
+		 v1pp = get_parent_node(v1p).first;
+		 v2p = get_parent_node(v2).first;
+		 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> d_v1p = get_child_nodes(v1p);
+		 if (d_v1p.first == v1) v1s = d_v1p.second;
+		 else v1s = d_v1p.first;
+
+		 // take care of the tree with v1
+		 remove_edge(v1pp, v1p, g);
+		 remove_edge(v1p, v1s, g);
+		 e = add_edge(v1pp, v1s, g).first;
+		 g[e].weight = 1;
+		 g[e].len = 1;
+		 g[e].is_mig = false;
+
+		 //and the tree with v2
+		 remove_edge(v2p, v2, g);
+		 e = add_edge(v2p, v1p, g).first;
+		 g[e].weight = 1;
+		 g[e].len = 1;
+		 g[e].is_mig = false;
+
+		 e = add_edge(v1p, v2, g).first;
+		 g[e].weight = 1;
+		 g[e].len = 1;
+		 g[e].is_mig = false;
+	 }
+	 else if (g[v2].is_root){
+		 /*
+		  *      go to
+		  *
+		  *
+		  *      v1pp
+		  *      / \
+		  *     /   \
+		  *    v1s                      v1p
+		  *                            / \
+		  *                           /   \
+		  *                          v2   v1
+		  *
+		  *
+		  *
+		  */
+		 v1p = get_parent_node(v1).first;
+		 v1pp = get_parent_node(v1p).first;
+		 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> d_v1p = get_child_nodes(v1p);
+		 if (d_v1p.first == v1) v1s = d_v1p.second;
+		 else v1s = d_v1p.first;
+
+		 // take care of the tree with v1
+		 remove_edge(v1pp, v1p, g);
+		 remove_edge(v1p, v1s, g);
+		 e = add_edge(v1pp, v1s, g).first;
+		 g[e].weight = 1;
+		 g[e].len = 1;
+		 g[e].is_mig = false;
+
+		 //and the tree with v2
+		 e = add_edge(v1p, v2, g).first;
+		 g[e].weight = 1;
+		 g[e].len = 1;
+		 g[e].is_mig = false;
+		 set_root(v1p);
+	 }
+
+
+
+}
 
 void PopGraph::set_root(Graph::vertex_descriptor v){
 	g[root].is_root = false;
@@ -1063,8 +1204,9 @@ bool PopGraph::does_mig_exist(Graph::vertex_descriptor st, Graph::vertex_descrip
 }
 
 bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
-	if ( does_mig_exist( st, sp)) return false;
+	if (g[st].is_root || g[sp].is_root) return false;
 	if ( get_parent_node(st) == get_parent_node(sp)) return false;
+	if ( does_mig_exist( st, sp)) return false;
 	set<pair<double, set<Graph::vertex_descriptor> > > paths = get_paths_to_root(st);
 	for (set<pair<double, set<Graph::vertex_descriptor> > >::iterator it = paths.begin(); it!= paths.end(); it++){
 		if (it->second.find(sp) != it->second.end()) return false;
