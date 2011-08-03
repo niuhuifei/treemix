@@ -57,11 +57,12 @@ public:
 	// for a given topology by least squares
 	void set_branches_ls();
 	void set_branches_ls_wmig();
+	void set_branch_coefs(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	//functions used by the above least squares fitting
 	map<Graph::vertex_descriptor, int> get_v2index();
 
 	//maximize the weights on the branches. This will be iterative on each individual weight
-	void optimize_wights();
+	void optimize_weights();
 
 
 	//likelihoods

@@ -49,11 +49,13 @@ int main(int argc, char *argv[]){
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
+    string cov_sefile = outstem+".covse.gz";
 
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
     CountData counts(infile, &p);
     counts.print_cov(covfile);
+    counts.print_cov_var(cov_sefile);
     GraphState2 state(&counts, &p);
     if (p.readtree) state.set_graph_from_file(p.treefile);
 
