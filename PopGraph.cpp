@@ -457,7 +457,6 @@ void PopGraph::copy(PopGraph * s){
 		g[ed].len = s->g[*it].len;
 		g[ed].is_mig = s->g[*it].is_mig;
 	}
-	//cout << "done\n";
 }
 
 PopGraph::PopGraph(string p_newickString){

@@ -519,3 +519,16 @@ void CountData::print_cov(string outfile){
 
 }
 
+
+void CountData::print_cov_var(string outfile){
+	ogzstream out(outfile.c_str());
+	vector<string> pops = list_pops();
+	for (int i = 0; i < pops.size(); i++) out << pops.at(i)<< " ";
+	out << "\n";
+	for (int i = 0; i < pops.size(); i++){
+		out << pops.at(i);
+		for(int j = 0; j < pops.size(); j++)	 out << " "<< gsl_matrix_get(cov_var, pop2id[pops[i]], pop2id[pops[j]]);
+		out << "\n";
+	}
+
+}

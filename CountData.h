@@ -39,6 +39,7 @@ public:
 	double get_cov_var(string, string);
 	double get_scatter(string, string);
 	void print_cov(string);
+	void print_cov_var(string);
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 };
