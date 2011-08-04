@@ -599,10 +599,7 @@ void PopGraph::set_graph(string p_newickString){
 		}
 		else if( *I == ')' )// Subtree finished, get back
 		{
-
 			v = index2father[g[v].index];
-			//e = add_edge( index2father[g[v].index], v, g).first;
-
 		}
 		else if( *I == ',' )// insert brother
 		{
@@ -724,6 +721,14 @@ void PopGraph::inorder_traverse(Graph::vertex_descriptor rootIterator, int* i, v
  	}
 }
 
+vector<Graph::edge_descriptor> PopGraph::get_mig_edges(){
+	vector<Graph::edge_descriptor> toreturn;
+	for (Graph::edge_iterator it = edges(g).first; it != edges(g).second; it++){
+		if (g[*it].is_mig == true) toreturn.push_back(*it);
+	}
+	return toreturn;
+
+}
 Graph::vertex_descriptor PopGraph::get_LCA(Graph::vertex_descriptor root_v,
 		Graph::vertex_descriptor tip1_v, Graph::vertex_descriptor tip2_v){
 		//cout << "in get_LCA "<< g[root_v].index << " "<< g[tip1_v].index << " "<< g[tip2_v].index << "\n"; cout.flush();

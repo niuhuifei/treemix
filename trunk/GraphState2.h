@@ -29,6 +29,7 @@ public:
 	double current_llik;
 	double scatter_det, scatter_gamma;
 	gsl_matrix *scatter; //current scatter matrix
+	double phi, resphi;
 
 	//set the graph structure to a Newick string
 	void set_graph(string);
@@ -63,7 +64,8 @@ public:
 
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
-
+	double optimize_weight(Graph::edge_descriptor);
+	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
 
 	//likelihoods
 	double llik();
@@ -76,6 +78,5 @@ public:
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();
 };
-
 
 #endif /* GRAPHSTATE2_H_ */

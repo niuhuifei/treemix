@@ -21,11 +21,11 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
-	GraphState2 state(&tmpcount, &p);
-	state.set_graph_from_file("phylopop_treein");
+	///CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
+	//GraphState2 state(&tmpcount, &p);
+	//state.set_graph_from_file("phylopop_treein");
 
-	/*
+
 	CountData tmpcount("testin_counts.gz", &p);
 	for( map<string, int>::iterator it = tmpcount.pop2id.begin(); it != tmpcount.pop2id.end() ; it++){
 		cout << it->first << " "<< tmpcount.mean_hzy[it->second]<< " "<< tmpcount.mean_ninds[it->second] << " "<< tmpcount.id2nsnp[it->second]<< "\n";
@@ -52,22 +52,23 @@ int main (void)
 		cout << i << " "<< state.tree->g[*it].index << "\n";
 		i++;
 	}
-	state.many_global_hillclimb();
+	//state.many_global_hillclimb();
 	//state.tree->global_rearrange(inorder[10], inorder[8]);
 	//state.tree->print();
-*/
 
-	/*
+
+
 	cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
 	cout << "legal? "<< state.tree->is_legal_migration(inorder[10], inorder[6]) <<"\n";
 	state.tree->add_mig_edge(inorder[10], inorder[6]);
 	cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
 	state.tree->print();
-	state.set_branches_ls();
+	state.optimize_weights();
+	//state.set_branches_ls();
 	state.tree->print();
 	cout << "llik: "<< state.llik()<<"\n";
 	state.print_sigma();
-*/
+
 	//state.set_graph("(((((pop0:0.1,pop1:0.1):0.1,pop2:0.1):0.1,pop3:0.1):0.1,pop4:0.1):0.1,pop5:0.1);");
 	//state.tree->print();
 	//state.set_branches_ls();

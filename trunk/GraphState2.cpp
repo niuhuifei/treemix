@@ -33,6 +33,8 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	local_hillclimb(3);
 	cout << "Starting from:\n";
 	cout << tree->get_newick_format() << "\n";
+	phi = (1+sqrt(5))/2;
+	resphi = 2-phi;
 }
 
 
@@ -107,6 +109,23 @@ void GraphState2::set_graph_from_file(string infile){
     cout << "Reading tree topology from file:\n";
     cout << st << "\n";
 	tree->set_graph(st);
+
+	map<string, Graph::vertex_descriptor> tips = tree->get_tips(tree->root);
+	//cerr << "ERROR: Input Newick string with "<< tips.size() << " populations. Input file has "<< current_npops  <<"\n";
+	//for (map<string, Graph::vertex_descriptor>::iterator it = tips.begin(); it != tips.end(); it++){
+	//	cout << it->first << " "<< tree->g[it->second].name << "\n";
+	//}
+	if (tips.size()  != current_npops){
+		cerr << "ERROR: Input Newick string with "<< tips.size() << " populations. Input file has "<< current_npops  <<"\n";
+		exit(1);
+	}
+	for ( vector<string>::iterator it = allpopnames.begin(); it != allpopnames.end(); it++){
+		if (tips.find(*it) == tips.end() ){
+			cerr << "ERROR: No population "<< *it << " in Newick string\n";
+			exit(1);
+		}
+	}
+	//tree->print();
 	set_branches_ls();
 	cout << "ln(lk): "<< llik() << "\n";
 }
@@ -145,7 +164,7 @@ map<Graph::vertex_descriptor, int> GraphState2::get_v2index(){
 	return vertex2index;
 
 }
-void GraphState2::set_branches_ls_wmig(){
+void GraphState2::set_branches_ls(){
 
 	/* one parameter for each non-migration node (minus 1 for the root and 1 for the unidentifiable branch length next to the root), one for each migration nodde
 	 *
@@ -366,6 +385,14 @@ void GraphState2::set_branches_ls_wmig(){
 
 void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge_descriptor, int>* edge2index, map<Graph::edge_descriptor, double>* edge2frac){
 
+	//
+	// y = Xc
+	//
+	// y is the observed matrix, X contains the contribution of each branch length to each entry in y
+	//
+	//
+
+	gsl_matrix_set_zero(X);
 	// get all the paths to the root from each tip
 
 	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
@@ -471,12 +498,72 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 }
 
 void GraphState2::optimize_weights(){
+	/*
+	 *  Go through each migration node, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *
+	 */
 
-
+	// get list of migration edges
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	double start_llik = current_llik;
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
+			double min, max, guess;
+			guess = tree->g[*it].weight;
+			if (guess < 0) guess = 1e-4;
+			else if (guess > 1) guess = 1;
+			guess = exp(guess) / (1+exp(guess));
+			min = guess -2;
+			max = guess+2;
+			if (nit = 0){
+				min = -8;
+				max = 8;
+			}
+			golden_section_weight( *it, min, guess, max, 0.1);
+		}
+		if (current_llik < start_llik+1E-8) done = true;
+		nit++;
+	}
 
 }
 
-void GraphState2::set_branches_ls(){
+int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, double guess, double max, double tau){
+	double x;
+	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
+	else x = guess - resphi *(guess-min);
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+		double new_logweight = (min+max)/2;
+		double neww = 1/ (1+exp(-new_logweight));
+		tree->g[e].weight = neww;
+		set_branches_ls_wmig();
+		current_llik = llik();
+		return 0;
+	}
+
+	double w = 1/(1+exp(-x));
+	tree->g[e].weight = w;
+	set_branches_ls_wmig();
+	double f_x = llik();
+
+	w = 1/(1+exp(-guess));
+	tree->g[e].weight = w;
+	set_branches_ls_wmig();
+	double f_guess = llik();
+
+	if (f_x < f_guess){
+		if ( (max-guess) > (guess-min) ) return golden_section_weight(e, guess, x, max, tau);
+		else return golden_section_weight(e, min, x, guess, tau);
+	}
+	else{
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
+		else return golden_section_weight(e, x, guess, max, tau);
+	}
+}
+
+
+void GraphState2::set_branches_ls_wmig(){
 
 	/* one parameter for each non-migration node (minus 1 for the root and 1 for the unidentifiable branch length next to the root), one for each migration node
 
@@ -484,7 +571,6 @@ void GraphState2::set_branches_ls(){
 	   Many edge lengths are not identifiable, so have a single parameter which is their sum. Need to figure out which edge goes with which parameter, how to weight them.
     */
 	map<Graph::vertex_descriptor, int> vertex2index;
-
 	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
 	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
 	vector<Graph::vertex_descriptor> i_nodes2;  //remove the ones next to the root
@@ -503,7 +589,7 @@ void GraphState2::set_branches_ls(){
 
 	for(set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++) vertex2index[*it] = joint_index;
 	index++;
-		//get all the migration nodes
+
 	vector<Graph::vertex_descriptor> mig_nodes;
 	for(Graph::vertex_iterator it = vertices(tree->g).first; it != vertices(tree->g).second; it++){
 		if ( tree->g[*it].is_mig ) {
@@ -632,6 +718,7 @@ int GraphState2::local_hillclimb(int inorder_index){
 	llik2 =  llik();
 	tree->copy(tree_bk);
 
+	//cout << current_llik << " "<< llik1 << " "<< llik2 << "\n";
 	inorder = tree->get_inorder_traversal(current_npops);
 	if (current_llik < llik1 || current_llik < llik2){
 		if (llik1 > llik2){
