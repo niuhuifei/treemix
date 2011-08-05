@@ -21,6 +21,9 @@ public:
 	//optimization of weights
 	double tau; //stopping criterion
 	double minweight, maxweight;
+
+	int nmig; //number of migration edges to add
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

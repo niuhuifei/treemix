@@ -29,7 +29,7 @@ struct Dist
 	bool is_mig;
 };
 
-typedef adjacency_list<vecS, listS, boost::bidirectionalS, Node, Dist> Graph;
+typedef adjacency_list<listS, listS, boost::bidirectionalS, Node, Dist> Graph;
 typedef pair<int, int> Edge;
 typedef boost::property_map<Graph, int Node::*>::type IndexMap;
 typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
@@ -88,6 +88,7 @@ public:
 
 	//local rearrangement
 	void local_rearrange(Graph::vertex_descriptor, int);
+	Graph::vertex_descriptor local_rearrange_wmig(Graph::vertex_descriptor, int);
 	void move_root(gsl_rng*);
 
 	//global rearrangement
@@ -95,8 +96,9 @@ public:
 
 	//Newick format
 	string get_newick_format();
-	void newick_helper( Graph::vertex_descriptor, string*);
+	string get_newick_format(Graph::vertex_descriptor);
 	string get_newick_format(map<string, double>*);
+	void newick_helper( Graph::vertex_descriptor, string*);
 	void newick_helper( Graph::vertex_descriptor, string*, map<string, double>*);
 
 	//MIGRATION GRAPH

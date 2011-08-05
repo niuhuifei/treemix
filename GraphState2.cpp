@@ -109,7 +109,7 @@ void GraphState2::set_graph_from_file(string infile){
 	gsl_matrix_set_zero(sigma_cor);
 
     cout << "Reading tree topology from file:\n";
-    cout << st << "\n";
+    cout << st << "\n"; cout.flush();
 	tree->set_graph(st);
 
 	map<string, Graph::vertex_descriptor> tips = tree->get_tips(tree->root);
@@ -1022,6 +1022,7 @@ bool GraphState2::add_mig_targeted(){
 		}
 	}
 	cout << "Targeting migration to "<< pop1 <<" and "<< pop2 << "\n"; cout.flush();
+
 	//2. Get the paths to the root for both
 	map<string, Graph::vertex_descriptor> p2node = tree->get_tips(tree->root);
 	set< pair< double, set<Graph::vertex_descriptor> > > p1 = tree->get_paths_to_root(p2node[pop1]);
@@ -1039,37 +1040,38 @@ bool GraphState2::add_mig_targeted(){
 	}
 
 	//3. try migration to all the pairwise combinations
+
 	double max_llik = current_llik;
 	tree_bk->copy(tree);
-	Graph::vertex_descriptor max_1, max_2;
+
 	for (set<Graph::vertex_descriptor>::iterator it = p1_s.begin(); it != p1_s.end(); it++){
 		for (set<Graph::vertex_descriptor>::iterator it2 = p2_s.begin(); it2 != p2_s.end(); it2++){
 			if ( tree->is_legal_migration(*it, *it2)){
+
 				Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
 				optimize_weights();
 				if (current_llik > max_llik){
-					max_1 = *it;
-					max_2 = *it2;
+					tree_bk->copy(tree);
 					max_llik = current_llik;
 				}
-				//remove_vertex( source(e, tree->g), tree->g);
-				//remove_edge(e, tree->g);
+
+				tree->remove_mig_edge(e);
+
 			}
+
 			if ( tree->is_legal_migration(*it2, *it)){
 				Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
 				optimize_weights();
 				if (current_llik > max_llik){
-					max_1 = *it;
-					max_2 = *it2;
+					tree_bk->copy(tree);
 					max_llik = current_llik;
 				}
-				//remove_vertex( source(e, tree->g), tree->g);
-				//remove_edge(e, tree->g);
+				tree->remove_mig_edge(e);
 			}
 		}
 	}
 	if (toreturn == true)	{
-		tree->add_mig_edge(max_1, max_2);
+		tree->copy(tree_bk);
 		optimize_weights();
 	}
 	return toreturn;

@@ -23,6 +23,7 @@ void printopts(){
 	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global (Do a round of global rearrangements after adding all populations)\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
+	cout << "-m [int] number of migration edges to add (0)\n";
 }
 
 
@@ -46,6 +47,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
+    if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
@@ -60,7 +62,7 @@ int main(int argc, char *argv[]){
     cout.precision(10);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
-    	state.iterate_hillclimb();
+    	//state.iterate_hillclimb();
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
@@ -74,8 +76,26 @@ int main(int argc, char *argv[]){
     	cout << "Testing global rearrangements\n"; cout.flush();
     	state.iterate_global_hillclimb();
     }
+    for (int i = 0; i < p.nmig; i++){
+    	bool added = state.add_mig_targeted();
+    }
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
+
+    pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);
+    Graph::edge_iterator it = eds.first;
+    while (it != eds.second){
+    	if ( state.tree->g[*it].is_mig){
+    		treeout << state.tree->g[*it].weight<< " "<< state.tree->g[*it].len << " ";
+    		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
+    		p1 = state.tree->get_child_node_mig(p1);
+    		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
+    		cout << state.tree->get_newick_format(p1) << " ";
+    		cout << state.tree->get_newick_format(p2) << "\n";
+    	}
+		it++;
+    }
+
     state.print_sigma_cor(modelcovfile);
 	return 0;
 }
