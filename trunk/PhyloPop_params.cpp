@@ -17,4 +17,5 @@ PhyloPop_params::PhyloPop_params(){
 	tau = 0.1;
 	minweight = -10;
 	maxweight = 10;
+	nmig = 0;
 }

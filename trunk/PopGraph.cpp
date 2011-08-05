@@ -281,6 +281,7 @@ set<pair<double, set<Graph::vertex_descriptor> > > PopGraph::get_paths_to_root(G
 
 
 	double wsum = 0;
+
 	Graph::edge_descriptor nonmig;
 	for (Graph::in_edge_iterator it = in_edges(v, g).first; it != in_edges(v, g).second; it++){
 		if (g[*it].is_mig == false) nonmig = *it;
@@ -291,7 +292,7 @@ set<pair<double, set<Graph::vertex_descriptor> > > PopGraph::get_paths_to_root(G
 	while (init != in_edges(v, g).second){
 
 		double w = g[*init].weight;
-		//scout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
+		//cout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
 		set<Graph::vertex_descriptor> tmpset;
 		tmpset.insert(v);
 		Graph::vertex_descriptor parent = source(*init, g);
@@ -783,6 +784,10 @@ void PopGraph::move_root(gsl_rng* r){
 
 }
 
+Graph::vertex_descriptor PopGraph::local_rearrange_wmig(Graph::vertex_descriptor, int i){
+
+
+}
 
 void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 	/*
@@ -994,6 +999,13 @@ string PopGraph::get_newick_format(){
  }
 
 
+string PopGraph::get_newick_format(Graph::vertex_descriptor v){
+ 	string toreturn = "";
+ 	newick_helper(v, &toreturn);
+ 	return toreturn;
+ }
+
+
 
 void PopGraph::print(){
 	IndexMap index = get(&Node::index, g);
@@ -1027,6 +1039,8 @@ string PopGraph::get_newick_format(map<string, double>* trim){
  	newick_helper(root, &toreturn, trim);
  	return toreturn;
  }
+
+
 
 void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
 	if (node != NULL){
@@ -1225,8 +1239,31 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 
 void PopGraph::remove_mig_edge(Graph::edge_descriptor e){
 	if ( !g[e].is_mig){
-		cerr < "ERROR: Calling remove_mig_edge on a non-migrations edge\n";
+		cerr << "ERROR: Calling remove_mig_edge on a non-migrations edge\n";
 		exit(1);
 	}
-	Graph::vertex_descriptor v;
+
+	//remove the edge
+	Graph::vertex_descriptor v = source(e, g);
+	remove_edge(e, g);
+
+	//remove the node (ensure that everything remains linked up)
+
+	Graph::vertex_descriptor parent, child;
+	double len;
+	Graph::in_edge_iterator init = in_edges(v, g).first;
+	Graph::out_edge_iterator outit = out_edges(v, g).first;
+	len = g[*init].len +g[*outit].len;
+
+	parent = source(*init, g);
+	child = target(*outit, g);
+
+	Graph::edge_descriptor newe = add_edge(parent, child, g).first;
+
+	g[newe].weight = 1;
+	g[newe].len = len;
+	g[newe].is_mig = false;
+	clear_vertex(v, g);
+
+	remove_vertex(v, g);
 }
