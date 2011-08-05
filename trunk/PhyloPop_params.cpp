@@ -14,4 +14,7 @@ PhyloPop_params::PhyloPop_params(){
 	global = false;
 	readtree = false;
 	treefile = "NA";
+	tau = 0.1;
+	minweight = -10;
+	maxweight = 10;
 }

@@ -100,10 +100,11 @@ public:
 	void newick_helper( Graph::vertex_descriptor, string*, map<string, double>*);
 
 	//MIGRATION GRAPH
-	Graph::vertex_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
+	Graph::edge_descriptor add_mig_edge(Graph::vertex_descriptor, Graph::vertex_descriptor);
 	set<pair<double, set<Graph::vertex_descriptor> > > get_paths_to_root(Graph::vertex_descriptor);
 	set<pair<double, set<Graph::edge_descriptor> > > get_paths_to_root_edge(Graph::vertex_descriptor);
 	vector<Graph::edge_descriptor> get_mig_edges();
+	void remove_mig_edge(Graph::edge_descriptor);
 
 	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes(Graph::vertex_descriptor); // skips over migration nodes
 	Graph::vertex_descriptor get_child_node_mig(Graph::vertex_descriptor); //input a migration node, get the next non-migration node (along non-migration edges)

@@ -17,6 +17,10 @@ public:
 	string treefile;
 	int window_size;
 	int alfreq_scaling; // 0 = no scaling, 1 = asin(sqrt(f))
+
+	//optimization of weights
+	double tau; //stopping criterion
+	double minweight, maxweight;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

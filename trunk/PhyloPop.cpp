@@ -58,7 +58,10 @@ int main(int argc, char *argv[]){
     counts.print_cov_var(cov_sefile);
     GraphState2 state(&counts, &p);
     cout.precision(10);
-    if (p.readtree) state.set_graph_from_file(p.treefile);
+    if (p.readtree) {
+    	state.set_graph_from_file(p.treefile);
+    	state.iterate_hillclimb();
+    }
 
     while (!p.readtree && counts.npop > state.current_npops){
     	//cout << counts.npop << " "<< state.current_npops << "\n";

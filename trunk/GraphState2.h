@@ -20,6 +20,8 @@ public:
 	PhyloPop_params* params; //paramters for run
 	PopGraph* tree;
 	PopGraph* tree_bk;
+	PopGraph* tree_bk2;
+	PopGraph* tree_bk3;
 
 	gsl_matrix *sigma;
 	gsl_matrix *sigma_cor;
@@ -74,6 +76,7 @@ public:
 
 	//migration
 	void add_mig();
+	bool add_mig_targeted();
 
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();
