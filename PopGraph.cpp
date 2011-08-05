@@ -203,7 +203,7 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 	}
 }
 
-Graph::vertex_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
+Graph::edge_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
 	//
 	//
 	//
@@ -271,7 +271,7 @@ Graph::vertex_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Gra
 	g[e].len = 1;
 	g[e].is_mig = true;
 
-	return p2;
+	return e;
 
 }
 
@@ -1011,9 +1011,12 @@ void PopGraph::print(){
 
     std::cout << "edges(g) = ";
     graph_traits<Graph>::edge_iterator ei, ei_end;
-    for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
+    for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei){
         std::cout << "(" << index[source(*ei, g)]
-                  << "," << index[target(*ei, g)] << ","<< g[*ei].len <<  ") ";
+                  << "," << index[target(*ei, g)] << ","<< g[*ei].len << ","<< g[*ei].weight;
+		if (g[*ei].is_mig) cout << ",MIG";
+		cout << ") ";
+    }
     std::cout << std::endl;
 
 }
@@ -1208,6 +1211,8 @@ bool PopGraph::does_mig_exist(Graph::vertex_descriptor st, Graph::vertex_descrip
 }
 
 bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
+	if (g[st].is_mig || g[sp].is_mig) return false;
+	if (st == sp) return false;
 	if (g[st].is_root || g[sp].is_root) return false;
 	if ( get_parent_node(st) == get_parent_node(sp)) return false;
 	if ( does_mig_exist( st, sp)) return false;
@@ -1216,4 +1221,12 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 		if (it->second.find(sp) != it->second.end()) return false;
 	}
 	return true;
+}
+
+void PopGraph::remove_mig_edge(Graph::edge_descriptor e){
+	if ( !g[e].is_mig){
+		cerr < "ERROR: Calling remove_mig_edge on a non-migrations edge\n";
+		exit(1);
+	}
+	Graph::vertex_descriptor v;
 }

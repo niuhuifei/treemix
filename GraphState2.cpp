@@ -17,6 +17,8 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 
 	tree = new PopGraph(startpops);
 	tree_bk = new PopGraph(startpops);
+	tree_bk2 =new PopGraph(startpops);
+	tree_bk3 = new PopGraph(startpops);
 
 	current_npops = 3;
 	sigma = gsl_matrix_alloc(current_npops, current_npops);
@@ -499,7 +501,7 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 
 void GraphState2::optimize_weights(){
 	/*
-	 *  Go through each migration node, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *  Go through each migration edge, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
 	 *
 	 */
 
@@ -512,18 +514,13 @@ void GraphState2::optimize_weights(){
 		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
 			double min, max, guess;
 			guess = tree->g[*it].weight;
-			if (guess < 0) guess = 1e-4;
-			else if (guess > 1) guess = 1;
 			guess = exp(guess) / (1+exp(guess));
-			min = guess -2;
-			max = guess+2;
-			if (nit = 0){
-				min = -8;
-				max = 8;
-			}
-			golden_section_weight( *it, min, guess, max, 0.1);
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_weight( *it, min, guess, max, params->tau);
 		}
 		if (current_llik < start_llik+1E-8) done = true;
+		else start_llik = current_llik;
 		nit++;
 	}
 
@@ -531,6 +528,8 @@ void GraphState2::optimize_weights(){
 
 int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, double guess, double max, double tau){
 	double x;
+
+
 	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
 	else x = guess - resphi *(guess-min);
 	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
@@ -541,16 +540,15 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 		current_llik = llik();
 		return 0;
 	}
-
 	double w = 1/(1+exp(-x));
 	tree->g[e].weight = w;
 	set_branches_ls_wmig();
-	double f_x = llik();
+	double f_x = -llik();
 
 	w = 1/(1+exp(-guess));
 	tree->g[e].weight = w;
 	set_branches_ls_wmig();
-	double f_guess = llik();
+	double f_guess = -llik();
 
 	if (f_x < f_guess){
 		if ( (max-guess) > (guess-min) ) return golden_section_weight(e, guess, x, max, tau);
@@ -640,6 +638,7 @@ void GraphState2::set_branches_ls_wmig(){
 	gsl_matrix * cov = gsl_matrix_alloc(p, p);
 	double chisq;
 	gsl_matrix_set_zero(X);
+
 	set_branch_coefs(X, y, &edge2index, &edge2frac);
 
 	// fit the least squares estimates
@@ -703,34 +702,36 @@ int GraphState2::local_hillclimb(int inorder_index){
 	//
 
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
-	double llik1, llik2;
+	double llik1, llik2, llik3;
 
 	tree_bk->copy(tree);
+
+
+	llik1 = current_llik;
+
 	tree->local_rearrange(inorder[inorder_index], 1);
 	set_branches_ls();
-	llik1 =  llik();
+	llik2 =  llik();
+	tree_bk2->copy(tree);
+
 
 	tree->copy(tree_bk);
 	inorder = tree->get_inorder_traversal(current_npops);
 	tree->local_rearrange(inorder[inorder_index], 2);
 
 	set_branches_ls();
-	llik2 =  llik();
+	llik3 =  llik();
+	tree_bk3->copy(tree);
 	tree->copy(tree_bk);
-
-	//cout << current_llik << " "<< llik1 << " "<< llik2 << "\n";
-	inorder = tree->get_inorder_traversal(current_npops);
-	if (current_llik < llik1 || current_llik < llik2){
-		if (llik1 > llik2){
-			tree->local_rearrange(inorder[inorder_index], 1);
-			set_branches_ls();
-			current_llik = llik1;
+	if (llik1 < llik2 || llik1 < llik3){
+		if (llik2 > llik3){
+			tree->copy(tree_bk2);
+			current_llik = llik2;
 			return 1;
 		}
 		else{
-			tree->local_rearrange(inorder[inorder_index], 2);
-			set_branches_ls();
-			current_llik = llik2;
+			tree->copy(tree_bk3);
+			current_llik = llik3;
 			return 1;
 		}
 	}
@@ -799,7 +800,11 @@ int GraphState2::many_global_hillclimb(){
 
 void GraphState2::iterate_hillclimb(){
 	int changes = many_local_hillclimb();
-	while (changes > 0) changes = many_local_hillclimb();
+	//cout << "Hill climbing "<< changes << " changes\n";
+	while (changes > 0) {
+		changes = many_local_hillclimb();
+		//cout << "Hill climbing "<< changes << " changes\n";
+	}
 }
 
 
@@ -953,7 +958,124 @@ void GraphState2::print_sigma_cor(string outfile){
 
 
 void GraphState2::add_mig(){
+	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
+	int maxst;
+	int maxsp;
+	int size = inorder.size();
+	tree_bk->copy(tree);
+	double maxllk = current_llik;
+
+	for (int i = 0; i < size; i++){
+		for (int j = 0; j < size; j++){
+
+			inorder = tree->get_inorder_traversal(current_npops);
+			if (tree->is_legal_migration(inorder[i], inorder[j])){
+				Graph::edge_descriptor e = tree->add_mig_edge( inorder[i], inorder[j]);
+				optimize_weights();
+				//Graph::vertex_descriptor v = target(e, tree->g);
+				//Graph::in_edge_iterator it = in_edges(v, tree->g).first;
+				//bool neg = false;
+				//while (it != in_edges(v, tree->g).second){
+				//	if (tree->g[*it].len < 0)	neg = true;
+				//	it++;
+				//}
+				//if (neg) {
+				//	tree->copy(tree_bk);
+				//	continue;
+				// }
+				if (current_llik > maxllk){
+					maxst = i;
+					maxsp = j;
+					maxllk = current_llik;
+				}
+
+			}
+			tree->copy(tree_bk);
+		}
+	}
+	cout << "here2\n"; cout.flush();
+	cout << maxst <<  " "<< maxsp << " here\n";
+	inorder = tree->get_inorder_traversal(current_npops);
+	cout << tree->g[ inorder[maxst]].index <<  " "<< tree->g[ inorder[maxsp]].index<< " here2\n";
+	tree->add_mig_edge(inorder[maxst], inorder[maxsp]);
+	optimize_weights();
 }
+
+bool GraphState2::add_mig_targeted(){
+	// find the largest residual, try migration events in the vicinity
+	// return true if an event is added, false otw
+
+	//1. find the largest residual
+	bool toreturn =false;
+	string pop1, pop2;
+	double max = 0;
+	for (int i = 0; i < current_npops; i++){
+		for (int j = i; j < current_npops; j++){
+			if( i == j) continue;
+			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
+			double fitted = gsl_matrix_get(sigma_cor, i, j);
+			double diff = cov-fitted;
+			if (diff > max){
+				pop1 = allpopnames[i];
+				pop2 = allpopnames[j];
+			}
+		}
+	}
+	cout << "Targeting migration to "<< pop1 <<" and "<< pop2 << "\n"; cout.flush();
+	//2. Get the paths to the root for both
+	map<string, Graph::vertex_descriptor> p2node = tree->get_tips(tree->root);
+	set< pair< double, set<Graph::vertex_descriptor> > > p1 = tree->get_paths_to_root(p2node[pop1]);
+	set< pair< double, set<Graph::vertex_descriptor> > > p2 = tree->get_paths_to_root(p2node[pop2]);
+	set<Graph::vertex_descriptor> p1_s, p2_s;
+	for (set< pair< double, set<Graph::vertex_descriptor> > >::iterator it = p1.begin(); it != p1.end(); it++){
+		for (set<Graph::vertex_descriptor>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+			if (!tree->g[*it2].is_mig) p1_s.insert(*it2);
+		}
+	}
+	for (set< pair< double, set<Graph::vertex_descriptor> > >::iterator it = p2.begin(); it != p2.end(); it++){
+		for (set<Graph::vertex_descriptor>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+			if (!tree->g[*it2].is_mig) p2_s.insert(*it2);
+		}
+	}
+
+	//3. try migration to all the pairwise combinations
+	double max_llik = current_llik;
+	tree_bk->copy(tree);
+	Graph::vertex_descriptor max_1, max_2;
+	for (set<Graph::vertex_descriptor>::iterator it = p1_s.begin(); it != p1_s.end(); it++){
+		for (set<Graph::vertex_descriptor>::iterator it2 = p2_s.begin(); it2 != p2_s.end(); it2++){
+			if ( tree->is_legal_migration(*it, *it2)){
+				Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
+				optimize_weights();
+				if (current_llik > max_llik){
+					max_1 = *it;
+					max_2 = *it2;
+					max_llik = current_llik;
+				}
+				//remove_vertex( source(e, tree->g), tree->g);
+				//remove_edge(e, tree->g);
+			}
+			if ( tree->is_legal_migration(*it2, *it)){
+				Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
+				optimize_weights();
+				if (current_llik > max_llik){
+					max_1 = *it;
+					max_2 = *it2;
+					max_llik = current_llik;
+				}
+				//remove_vertex( source(e, tree->g), tree->g);
+				//remove_edge(e, tree->g);
+			}
+		}
+	}
+	if (toreturn == true)	{
+		tree->add_mig_edge(max_1, max_2);
+		optimize_weights();
+	}
+	return toreturn;
+
+}
+
 
 string GraphState2::get_trimmed_newick(){
 	map<string, double> trim;
