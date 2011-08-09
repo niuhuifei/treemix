@@ -1018,6 +1018,7 @@ bool GraphState2::add_mig_targeted(){
 			if (diff > max){
 				pop1 = allpopnames[i];
 				pop2 = allpopnames[j];
+				max = diff;
 			}
 		}
 	}
