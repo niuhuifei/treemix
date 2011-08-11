@@ -293,6 +293,7 @@ set<pair<double, set<Graph::vertex_descriptor> > > PopGraph::get_paths_to_root(G
 
 		double w = g[*init].weight;
 		//cout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
+		cout.flush();
 		set<Graph::vertex_descriptor> tmpset;
 		tmpset.insert(v);
 		Graph::vertex_descriptor parent = source(*init, g);
@@ -333,6 +334,7 @@ set<pair<double, set<Graph::edge_descriptor> > > PopGraph::get_paths_to_root_edg
 
 		double w = g[*init].weight;
 		//scout << "here2 " << w << " "<< g[v].index << "\n"; cout.flush();
+		cout.flush();
 		set<Graph::edge_descriptor> tmpset;
 		tmpset.insert(*init);
 		Graph::vertex_descriptor parent = source(*init, g);
@@ -784,10 +786,6 @@ void PopGraph::move_root(gsl_rng* r){
 
 }
 
-Graph::vertex_descriptor PopGraph::local_rearrange_wmig(Graph::vertex_descriptor, int i){
-
-
-}
 
 void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 	/*
@@ -884,6 +882,39 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 	}
 
 }
+
+
+void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v){
+	/*
+	 *             vppp
+	 *            /  \
+	 *           /
+	 *          vpp
+	 *    \    /  \
+	 *     \  /    \
+	 *       vp    vu
+	 *  \   / \
+	 *   \ /   \
+	 *    v     vs
+	 *
+	 *
+	 *    to
+	 *
+	 *           vppp
+	 *            /
+	 *           /
+	 *         vnew
+	 *    \    / \
+	 *     \  /   \
+	 *      v     vpp
+	 *         \   /
+	 *          \ /
+	 *           vs
+	 */
+
+	Graph::vertex_descriptor vp, vpp, vppp, vs;
+}
+
 
 void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descriptor v2){
 	/*
@@ -1043,68 +1074,60 @@ string PopGraph::get_newick_format(map<string, double>* trim){
 
 
 void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
-	if (node != NULL){
-		graph_traits<Graph>::out_edge_iterator out_i = out_edges(node, g).first;
-		graph_traits<Graph>::out_edge_iterator out_end = out_edges(node, g).second;
-		if (out_i != out_end){
-			s->append("(");
-			newick_helper(target(*out_i, g), s);
-			s->append(",");
-			++out_i;
-			newick_helper(target(*out_i, g), s);
-			s->append(")");
-			if (g[node].is_root == false){
-				graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
-				s->append(":");
-				stringstream ss;
-				ss<< g[*in_i].len;
-				s->append(ss.str());
-			}
-			else s->append(";");
-		}
-		else{
-			graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
+	if (out_degree(node, g) !=  0){
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children = get_child_nodes(node);
+		s->append("(");
+		newick_helper(children.first, s);
+		s->append(",");
+		newick_helper(children.second, s);
+		s->append(")");
+		if (g[node].is_root == false){
+
+			s->append(":");
+
 			stringstream ss;
-			ss << g[node].name;
-			ss << ":";
-			ss<< g[*in_i].len;
+			ss<< get_parent_node(node).second;
 			s->append(ss.str());
 		}
+		else s->append(";");
 	}
+	else{
+		stringstream ss;
+		ss << g[node].name;
+		ss << ":";
+		ss<< get_parent_node(node).second;
+		s->append(ss.str());
+	}
+
 }
 
 
 void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s, map<string, double>* trim){
-	if (node != NULL){
-		graph_traits<Graph>::out_edge_iterator out_i = out_edges(node, g).first;
-		graph_traits<Graph>::out_edge_iterator out_end = out_edges(node, g).second;
-		if (out_i != out_end){
-			s->append("(");
-			newick_helper(target(*out_i, g), s, trim);
-			s->append(",");
-			++out_i;
-			newick_helper(target(*out_i, g), s, trim);
-			s->append(")");
-			if (g[node].is_root == false){
-				graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
-				s->append(":");
-				stringstream ss;
-				ss<< g[*in_i].len;
-				s->append(ss.str());
-			}
-			else s->append(";");
-		}
-		else{
-			graph_traits<Graph>::in_edge_iterator in_i = in_edges(node, g).first;
-			stringstream ss;
-			ss << g[node].name;
-			ss << ":";
+	if (out_degree(node, g) !=  0){
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children = get_child_nodes(node);
+		s->append("(");
+		newick_helper(children.first, s);
+		s->append(",");
+		newick_helper(children.second, s);
+		s->append(")");
+		if (g[node].is_root == false){
 
-			double trimmedlen = g[*in_i].len - trim->find( g[node].name )->second;
-			if (trimmedlen < 0) trimmedlen = 0;
-			ss<< trimmedlen;
+			s->append(":");
+
+			stringstream ss;
+			ss<< get_parent_node(node).second;
 			s->append(ss.str());
 		}
+		else s->append(";");
+	}
+	else{
+		stringstream ss;
+		ss << g[node].name;
+		ss << ":";
+		double trimmedlen = get_parent_node(node).second - trim->find( g[node].name )->second;
+		if (trimmedlen < 0) trimmedlen = 0;
+		ss<< trimmedlen;
+		s->append(ss.str());
 	}
 }
 
@@ -1117,8 +1140,7 @@ set<Graph::vertex_descriptor> PopGraph::get_path_to_root(Graph::vertex_descripto
 	set<Graph::vertex_descriptor> toreturn;
 	while (g[v].is_root == false){
 		toreturn.insert(v);
-		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
-		v = source(*in_i, g);
+		v = get_parent_node(v).first;
 	}
 	return toreturn;
 }
