@@ -25,6 +25,10 @@ public:
 
 	gsl_matrix *sigma;
 	gsl_matrix *sigma_cor;
+
+	PopGraph* scratch_tree;
+	gsl_matrix *scratch_sigma_cor;
+
 	CountData* countdata; //pointer to the data
 	vector<string> allpopnames; //names of populations, will be added one at a time after the first 3
 	int current_npops; //current total number of populations
@@ -76,7 +80,8 @@ public:
 
 	//migration
 	void add_mig();
-	bool add_mig_targeted();
+	pair<bool, Graph::vertex_descriptor> add_mig_targeted();
+
 
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();

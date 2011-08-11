@@ -53,15 +53,26 @@ int main (void)
 		cout << i << " "<< state.tree->g[*it].index << "\n";
 		i++;
 	}
-	//state.many_global_hillclimb();
-	//state.tree->global_rearrange(inorder[10], inorder[8]);
-	//state.tree->print();
 
 
 	state.add_mig_targeted();
 	state.tree->print();
 	cout << state.llik()<<"\n";
 	state.print_sigma();
+
+	pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);
+	Graph::edge_iterator it = eds.first;
+	while (it != eds.second){
+		if ( state.tree->g[*it].is_mig){
+			cout << state.tree->g[*it].weight<< " "<< state.tree->g[*it].len << " ";
+			Graph::vertex_descriptor p1 = source( *it, state.tree->g);
+			p1 = state.tree->get_child_node_mig(p1);
+			Graph::vertex_descriptor p2 = target(*it, state.tree->g);
+			cout << state.tree->get_newick_format(p1) << " ";
+			cout << state.tree->get_newick_format(p2) << "\n";
+		}
+		it++;
+	}
 	//vector<Graph::edge_descriptor> m = state.tree->get_mig_edges();
 	//Graph::edge_descriptor e = m[0];
 

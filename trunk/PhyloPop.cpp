@@ -77,7 +77,7 @@ int main(int argc, char *argv[]){
     	state.iterate_global_hillclimb();
     }
     for (int i = 0; i < p.nmig; i++){
-    	bool added = state.add_mig_targeted();
+    	state.add_mig_targeted();
     }
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
@@ -90,8 +90,8 @@ int main(int argc, char *argv[]){
     		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
     		p1 = state.tree->get_child_node_mig(p1);
     		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
-    		cout << state.tree->get_newick_format(p1) << " ";
-    		cout << state.tree->get_newick_format(p2) << "\n";
+    		treeout << state.tree->get_newick_format(p1) << " ";
+    		treeout << state.tree->get_newick_format(p2) << "\n";
     	}
 		it++;
     }
