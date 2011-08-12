@@ -8,6 +8,7 @@
 #include "CountData.h"
 #include "PopGraph.h"
 #include "GraphState2.h"
+#include "GraphState3.h"
 #include "PhyloPop_params.h"
 
 int main (void)
@@ -40,9 +41,6 @@ int main (void)
 	state.iterate_hillclimb();
 
 
-	state.print_sigma();
-	cout << "llik: "<< state.llik()<<"\n";
-	cout << state.tree->get_newick_format() <<"\n";
 
 
 	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
@@ -53,8 +51,13 @@ int main (void)
 		cout << i << " "<< state.tree->g[*it].index << "\n";
 		i++;
 	}
+	GraphState3 s3(&state, &p);
+	s3.add_mig_targeted();
+	//string newick =  state.tree->get_newick_subtrees( inorder[0], inorder[5] );
+	//state.set_graph_from_string(newick);
+	//cout << state.tree->get_newick_format() << "\n";
 
-
+	/*
 	state.add_mig_targeted();
 	state.tree->print();
 	cout << state.llik()<<"\n";
@@ -73,63 +76,7 @@ int main (void)
 		}
 		it++;
 	}
-	//vector<Graph::edge_descriptor> m = state.tree->get_mig_edges();
-	//Graph::edge_descriptor e = m[0];
-
-	//for (double w = 0; w < 1 ; w+=0.01){
-	//	state.tree->g[e].weight = w;
-	//	state.set_branches_ls_wmig();
-	//	cout << w << " "<< state.llik()<< " "<< state.tree->g[e].len << " "<< (state.tree->g[e].len-0.0187)/ -9 << "\n";
-	//}
-	//cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
-	//cout << "legal? "<< state.tree->is_legal_migration(inorder[10], inorder[6]) <<"\n";
-	//state.tree->add_mig_edge(inorder[10], inorder[6]);
-	//cout << state.tree->does_mig_exist(inorder[10], inorder[6]) <<"\n";
-
-
-/*
-	state.tree->print();
-	cout << "before setting branches\n"; cout.flush();
-	state.set_branches_ls_wmig();
-	cout << "after setting branches\n"; cout.flush();
-	state.tree->print();
-	//state.print_sigma();
-	state.optimize_weights();
-	state.tree->print();
-	cout << "llik: "<< state.llik()<<"\n";
-	state.print_sigma();
-*/
-	//state.set_graph("(((((pop0:0.1,pop1:0.1):0.1,pop2:0.1):0.1,pop3:0.1):0.1,pop4:0.1):0.1,pop5:0.1);");
-	//state.tree->print();
-	//state.set_branches_ls();
-	//cout << state.tree->get_newick_format() <<"\n";
-	//state.print_sigma();
-	//cout << state.llik() << "\n";
-
-	//state.set_graph("((pop0:0.1,(pop1:0.1,pop2:0.1):0.1):0.1,(pop5:0.1,(pop3:0.1,pop4:0.1):0.1));");
-	//state.set_branches_ls();
-	//cout << "\n";
-	//state.print_sigma();
-	//cout << state.llik() << "\n";
-	/*
-	vector<string> tmpnames;
-	tmpnames.push_back("pop1"); tmpnames.push_back("pop2");tmpnames.push_back("pop3");
-	PopGraph tmp(tmpnames);
-
-	tmp.print();
-
-	vector<Graph::vertex_descriptor> inord = tmp.get_inorder_traversal_noroot(3);
-	cout << "here\n";
-	for (int i = 0; i < inord.size(); i++){
-		cout << tmp.g[ inord[i]].index << " "<< tmp.g[ inord[i]].name << "\n";
-	}
-
-	Graph::vertex_descriptor n = tmp.add_tip(inord[1], "pop4");
-	tmp.print();
-
-	tmp.remove_tip(n);
-	cout << "\n";
-	tmp.print();
 	*/
+
     return 0;
 }

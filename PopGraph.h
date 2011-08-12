@@ -98,7 +98,9 @@ public:
 	string get_newick_format();
 	string get_newick_format(Graph::vertex_descriptor);
 	string get_newick_format(map<string, double>*);
+	string get_newick_subtrees(Graph::vertex_descriptor, Graph::vertex_descriptor); //join two subtrees (for migrations)
 	void newick_helper( Graph::vertex_descriptor, string*);
+	void newick_helper( Graph::vertex_descriptor, string*, int);
 	void newick_helper( Graph::vertex_descriptor, string*, map<string, double>*);
 
 	//MIGRATION GRAPH

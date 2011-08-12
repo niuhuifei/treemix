@@ -15,6 +15,7 @@
 
 class GraphState2{
 public:
+	GraphState2();
 	GraphState2(CountData*, PhyloPop_params*);
 
 	PhyloPop_params* params; //paramters for run
@@ -40,6 +41,7 @@ public:
 	//set the graph structure to a Newick string
 	void set_graph(string);
 	void set_graph_from_file(string);
+	void set_graph_from_string(string);
 
 	//covariance matrix
 	void compute_sigma();
@@ -79,6 +81,7 @@ public:
 	double llik_wishart();
 
 	//migration
+	pair<string, string> get_max_resid();
 	void add_mig();
 	pair<bool, Graph::vertex_descriptor> add_mig_targeted();
 

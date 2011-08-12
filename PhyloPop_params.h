@@ -24,6 +24,8 @@ public:
 
 	int nmig; //number of migration edges to add
 
+	int m_neigh; //"neighborhood" size for addition of migration events
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

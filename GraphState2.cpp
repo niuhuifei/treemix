@@ -7,6 +7,8 @@
 
 #include "GraphState2.h"
 
+GraphState2::GraphState2(){
+}
 
 GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	params = pa;
@@ -27,10 +29,6 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 
 	scatter = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_set_zero(sigma);
-
-	scratch_tree = new PopGraph(startpops);
-	scratch_sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
-	gsl_matrix_set_zero(scratch_sigma_cor);
 
 	set_branches_ls();
 	current_llik = llik();
@@ -132,6 +130,34 @@ void GraphState2::set_graph_from_file(string infile){
 			exit(1);
 		}
 	}
+	//tree->print();
+	set_branches_ls();
+	current_llik = llik();
+	cout << "ln(lk): "<< current_llik << "\n";
+}
+
+
+
+void GraphState2::set_graph_from_string(string newick){
+	set_graph(newick);
+	map<string, Graph::vertex_descriptor> tips = tree->get_tips(tree->root);
+	allpopnames.clear();
+	for (map<string, Graph::vertex_descriptor>::iterator it = tips.begin(); it != tips.end(); it++){
+		allpopnames.push_back(it->first);
+		if (countdata->pop2id.find(it->first) == countdata->pop2id.end()){
+			cerr << "ERROR: cannot find population "<< it->first<< "\n";
+			exit(1);
+		}
+
+	}
+    current_npops = allpopnames.size();
+	gsl_matrix_free(sigma);
+	sigma = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma_cor);
+
 	//tree->print();
 	set_branches_ls();
 	current_llik = llik();
@@ -402,14 +428,14 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 
 	gsl_matrix_set_zero(X);
 	// get all the paths to the root from each tip
-	cout << "here1\n"; cout.flush();
+
 	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
 	map<string, set<pair<double, set<Graph::edge_descriptor> > > > name2paths;
 	for( map<string, Graph::vertex_descriptor>::iterator it = popname2tip.begin(); it != popname2tip.end(); it++){
 		set<pair<double, set<Graph::edge_descriptor> > > tmpset = tree->get_paths_to_root_edge(it->second);
 		name2paths.insert(make_pair(it->first, tmpset));
 	}
-	cout << "here2\n"; cout.flush();
+
 	double inv_total = 1.0/ (double) countdata->npop;
 	double inv_total2 = 1.0/ ( (double) countdata->npop * (double) countdata->npop);
 
@@ -446,7 +472,7 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 			index++;
 		}
 	}
-	cout << "here3\n"; cout.flush();
+
 /*
 	for(int i = 0; i < n ; i ++){
 		cout << gsl_vector_get(y, i) << " ";
@@ -502,7 +528,7 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 
 	}
 
-	cout << "here4\n"; cout.flush();
+
 
 }
 
@@ -1007,6 +1033,26 @@ void GraphState2::add_mig(){
 	optimize_weights();
 }
 
+pair<string, string> GraphState2::get_max_resid(){
+	string pop1, pop2;
+	double max = 0;
+	for (int i = 0; i < current_npops; i++){
+		for (int j = i; j < current_npops; j++){
+			if( i == j) continue;
+			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
+			double fitted = gsl_matrix_get(sigma_cor, i, j);
+			double diff = cov-fitted;
+			if (diff > max){
+				pop1 = allpopnames[i];
+				pop2 = allpopnames[j];
+				max = diff;
+			}
+		}
+	}
+	return make_pair(pop1, pop2);
+}
+
+
 pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 	// find the largest residual, try migration events in the vicinity
 	// return true if an event is added, false otw
@@ -1044,7 +1090,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 	pair<int, int> best_edge;
 	for (set<Graph::vertex_descriptor>::iterator it = p1_s.begin(); it != p1_s.end(); it++){
 		for (set<Graph::vertex_descriptor>::iterator it2 = p2_s.begin(); it2 != p2_s.end(); it2++){
-			cout << tree->g[*it].index << " "<< tree->g[*it2].index << "\n";
+			//cout << tree->g[*it].index << " "<< tree->g[*it2].index << "\n";
 			if ( tree->is_legal_migration(*it, *it2)){
 
 				Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
