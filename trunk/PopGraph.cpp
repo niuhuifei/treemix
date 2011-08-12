@@ -670,10 +670,15 @@ set<Graph::vertex_descriptor> PopGraph::get_root_adj(){
 
 double PopGraph::get_dist_to_root(Graph::vertex_descriptor v){
 	double toreturn = 0;
-	while (g[v].is_root == false){
-		graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
-		toreturn += g[*in_i].len;
-		v = source(*in_i, g);
+	if (g[v].is_root) return 0;
+	set<pair<double, set<Graph::edge_descriptor> > > paths = get_paths_to_root_edge(v);
+	for (set<pair<double, set<Graph::edge_descriptor> > >::iterator it = paths.begin(); it!= paths.end(); it++){
+		double w = it->first;
+		double l = 0;
+		for (set<Graph::edge_descriptor>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++){
+			l += g[*it2].len;
+		}
+		toreturn += w*l;
 	}
 	return toreturn;
 }
@@ -693,10 +698,10 @@ void PopGraph::flip_sons(Graph::vertex_descriptor v, gsl_rng* r){
 }
 
 vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal(int nodes){
-        	vector<Graph::vertex_descriptor> toreturn(2*nodes-1);
-        	int count = 0;
-        	inorder_traverse(root, &count, &toreturn);
-        	return toreturn;
+	vector<Graph::vertex_descriptor> toreturn(2*nodes-1);
+	int count = 0;
+	inorder_traverse(root, &count, &toreturn);
+	return toreturn;
 }
 
 vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal_noroot(int nodes){
@@ -736,16 +741,17 @@ Graph::vertex_descriptor PopGraph::get_LCA(Graph::vertex_descriptor root_v,
 		Graph::vertex_descriptor tip1_v, Graph::vertex_descriptor tip2_v){
 		//cout << "in get_LCA "<< g[root_v].index << " "<< g[tip1_v].index << " "<< g[tip2_v].index << "\n"; cout.flush();
 		if (g[root_v].is_tip == true) return NULL;
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children = get_child_nodes(root_v);
+		Graph::vertex_descriptor c1 = children.first;
+		Graph::vertex_descriptor c2 = children.second;
 		graph_traits<Graph>::out_edge_iterator out_i = out_edges(root_v, g).first;
 		bool found = false;
-       	if (g[target(*out_i, g)].index == g[tip1_v].index || g[target(*out_i, g)].index == g[tip2_v].index) found = true;
-       	++out_i;
-       	if (g[target(*out_i, g)].index == g[tip1_v].index || g[target(*out_i, g)].index == g[tip2_v].index) found = true;
+       	if (g[c1].index == g[tip1_v].index || g[c1].index == g[tip2_v].index) found = true;
+       	if (g[c2].index == g[tip1_v].index || g[c2].index == g[tip2_v].index) found = true;
        	if (found)  return root_v;
        	else{
-       		Graph::vertex_descriptor firstit = get_LCA(target(*out_i, g), tip1_v, tip2_v);
-       		--out_i;
-       		Graph::vertex_descriptor lastit = get_LCA(target(*out_i, g), tip1_v, tip2_v);
+       		Graph::vertex_descriptor firstit = get_LCA(c2, tip1_v, tip2_v);
+       		Graph::vertex_descriptor lastit = get_LCA(c1, tip1_v, tip2_v);
        		if (firstit && lastit) return root_v;
        		else if (firstit) return firstit;
        		else return lastit;
@@ -1037,6 +1043,35 @@ string PopGraph::get_newick_format(Graph::vertex_descriptor v){
  }
 
 
+string PopGraph::get_newick_subtrees(Graph::vertex_descriptor v1, Graph::vertex_descriptor v2){
+ 	string toreturn1 = "";
+ 	string toreturn2 = "";
+ 	stringstream ss;
+ 	set<Graph::vertex_descriptor> p1 = get_path_to_root(v1);
+ 	set<Graph::vertex_descriptor> p2 = get_path_to_root(v2);
+
+ 	if ( p1.find(v2) != p1.end()){
+ 	 	newick_helper(v2, &toreturn2, g[v2].index);
+ 	 	ss<< toreturn2 << ";";
+ 	 	return ss.str();
+ 	}
+ 	else if ( p2.find(v1) != p2.end()){
+ 	 	newick_helper(v1, &toreturn1, g[v1].index);
+ 	 	ss<< toreturn1 << ";";
+ 	 	return ss.str();
+ 	}
+ 	else{
+ 		double d1 = get_dist_to_root(v1);
+ 		double d2 = get_dist_to_root(v2);
+ 		double d3 = get_dist_to_root(get_LCA(root, v1, v2));
+ 		newick_helper(v1, &toreturn1, g[v1].index);
+ 		newick_helper(v2, &toreturn2, g[v2].index);
+ 		ss << "(" << toreturn1 << ":"<< d1-d3 << ","<< toreturn2<< ":"<< d2-d3 << ");";
+ 		//cout << ss.str() <<"\n";
+ 		return ss.str();
+ 	}
+ }
+
 
 void PopGraph::print(){
 	IndexMap index = get(&Node::index, g);
@@ -1096,6 +1131,37 @@ void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s){
 		ss << g[node].name;
 		ss << ":";
 		ss<< get_parent_node(node).second;
+		s->append(ss.str());
+	}
+
+}
+
+
+void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s, int rootindex){
+	if (out_degree(node, g) !=  0){
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children = get_child_nodes(node);
+		s->append("(");
+		newick_helper(children.first, s, rootindex);
+		s->append(",");
+		newick_helper(children.second, s, rootindex);
+		s->append(")");
+		if (g[node].index != rootindex){
+
+			s->append(":");
+
+			stringstream ss;
+			ss<< get_parent_node(node).second;
+			s->append(ss.str());
+		}
+		//else s->append(";");
+	}
+	else{
+		stringstream ss;
+		ss << g[node].name;
+		if (g[node].index != rootindex) {
+			ss << ":";
+			ss<< get_parent_node(node).second;
+		}
 		s->append(ss.str());
 	}
 
