@@ -1100,6 +1100,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
 					tree_bk->copy(tree);
+
 					max_llik = current_llik;
 					best_edge.first = tree->g[*it].index;
 					best_edge.second = tree->g[*it2].index;
@@ -1117,6 +1118,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
 					tree_bk->copy(tree);
+
 					max_llik = current_llik;
 					best_edge.first = tree->g[*it2].index;
 					best_edge.second = tree->g[*it].index;
@@ -1130,6 +1132,73 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 		tree->copy(tree_bk);
 		set_branches_ls_wmig();
 		for (pair<vertex_iter, vertex_iter> vp = vertices(tree->g); vp.first != vp.second; ++vp.first)	if (tree->g[*vp.first].index == best_edge.second) toreturn.second = *vp.first;
+
+	}
+	return toreturn;
+
+}
+
+
+pair< pair<bool, bool>, pair<double, pair<int, int> > > GraphState2::add_mig_targeted(string p1, string p2){
+	// find the largest residual, try migration events in the vicinity
+	// return true if an event is added, false otw
+
+	//2. Get the paths to the root for both
+	pair< pair<bool, bool>, pair<double, pair<int, int> > > toreturn;
+	toreturn.first.first = false;
+	toreturn.first.second = false;
+	map<string, Graph::vertex_descriptor> p2node = tree->get_tips(tree->root);
+
+	vector<Graph::vertex_descriptor> p1_s = tree->get_path_to_root_vec(p2node[p1]);
+	vector<Graph::vertex_descriptor> p2_s = tree->get_path_to_root_vec(p2node[p2]);
+
+	//3. try migration to all the pairwise combinations
+	double max_llik = current_llik;
+	tree_bk->copy(tree);
+	double migw = 0;
+	pair<int, int> best_edge;
+	for(int i = 0; i < p1_s.size(); i++){
+		for (int j = 0; j < p2_s.size(); j++){
+
+			if ( tree->is_legal_migration(p1_s[i], p2_s[j])){
+				Graph::edge_descriptor e = tree->add_mig_edge( p1_s[i] , p2_s[j]);
+
+				optimize_weights();
+
+				if (current_llik > max_llik){
+					tree_bk->copy(tree);
+					max_llik = current_llik;
+					best_edge.first = i;
+					best_edge.second = j;
+					toreturn.first.first = true;
+					migw = tree->g[e].weight;
+				}
+
+				tree->remove_mig_edge(e);
+			}
+			if ( tree->is_legal_migration(p2_s[j], p1_s[i])){
+				Graph::edge_descriptor e = tree->add_mig_edge( p2_s[j], p1_s[i]);
+
+				optimize_weights();
+				if (current_llik > max_llik){
+					tree_bk->copy(tree);
+					max_llik = current_llik;
+					best_edge.first = i;
+					best_edge.second = j;
+					toreturn.first.first = true;
+					toreturn.first.second = true;
+					migw = tree->g[e].weight;
+				}
+				tree->remove_mig_edge(e);
+			}
+		}
+	}
+	if (toreturn.first.first == true)	{
+
+		tree->copy(tree_bk);
+		set_branches_ls_wmig();
+		toreturn.second.first = migw;
+		toreturn.second.second = best_edge;
 
 	}
 	return toreturn;
@@ -1152,3 +1221,16 @@ string GraphState2::get_trimmed_newick(){
 	toreturn = tree->get_newick_format(&trim);
 	return toreturn;
 }
+
+Graph::vertex_descriptor GraphState2::get_neighborhood(Graph::vertex_descriptor v){
+	Graph::vertex_descriptor toreturn = v;
+	int i = 0;
+	while (i < params->m_neigh && tree->g[ tree->get_parent_node(toreturn).first ].is_root == false){
+		toreturn = tree->get_parent_node(toreturn).first;
+		i++;
+	}
+	return toreturn;
+}
+
+
+

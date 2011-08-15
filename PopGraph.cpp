@@ -657,6 +657,7 @@ void PopGraph::set_graph(string p_newickString){
               popnames.push_back(name);
       }
       }
+	indexcounter = i+1;
 }
 
 
@@ -1199,6 +1200,16 @@ void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s, map<strin
 
 double PopGraph::get_height(Graph::vertex_descriptor v){
 	return g[v].height;
+}
+
+
+vector<Graph::vertex_descriptor> PopGraph::get_path_to_root_vec(Graph::vertex_descriptor v){
+	vector<Graph::vertex_descriptor> toreturn;
+	while (g[v].is_root == false){
+		toreturn.push_back(v);
+		v = get_parent_node(v).first;
+	}
+	return toreturn;
 }
 
 

@@ -53,6 +53,7 @@ int main (void)
 	}
 	GraphState3 s3(&state, &p);
 	s3.add_mig_targeted();
+	s3.state->tree->print();
 	//string newick =  state.tree->get_newick_subtrees( inorder[0], inorder[5] );
 	//state.set_graph_from_string(newick);
 	//cout << state.tree->get_newick_format() << "\n";

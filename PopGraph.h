@@ -85,6 +85,7 @@ public:
 
 	//get the path to the root for a vertex
 	set<Graph::vertex_descriptor> get_path_to_root(Graph::vertex_descriptor);
+	vector<Graph::vertex_descriptor> get_path_to_root_vec(Graph::vertex_descriptor);
 
 	//local rearrangement
 	void local_rearrange(Graph::vertex_descriptor, int);
@@ -119,6 +120,8 @@ public:
 
 	//local rearrangements with migration
 	void local_rearrange_wmig(Graph::vertex_descriptor);
+
+
 };
 
 #endif /* POPGRAPH_H_ */
