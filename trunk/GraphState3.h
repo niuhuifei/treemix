@@ -18,7 +18,7 @@ public:
 	GraphState2 * scratch;
 	PhyloPop_params * params;
 
-	void add_mig_targeted();
+	bool add_mig_targeted();
 };
 
 #endif /* GRAPHSTATE3_H_ */

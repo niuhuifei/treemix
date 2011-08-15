@@ -6,7 +6,7 @@
  */
 
 #include "Settings.hpp"
-#include "GraphState2.h"
+#include "GraphState3.h"
 #include "PhyloPop_params.h"
 
 string infile;
@@ -24,6 +24,7 @@ void printopts(){
 	cout << "-global (Do a round of global rearrangements after adding all populations)\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 	cout << "-m [int] number of migration edges to add (0)\n";
+	cout << "-mn [int] depth of subtree to use in migration optimization (3)\n";
 }
 
 
@@ -48,6 +49,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
+    if (cmdline.HasSwitch("-mn"))	p.m_neigh = atoi(cmdline.GetArgument("-mn", 0).c_str());
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
@@ -59,6 +61,7 @@ int main(int argc, char *argv[]){
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
     GraphState2 state(&counts, &p);
+    GraphState3 s3(&state, &p);
     cout.precision(10);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
@@ -77,7 +80,7 @@ int main(int argc, char *argv[]){
     	state.iterate_global_hillclimb();
     }
     for (int i = 0; i < p.nmig; i++){
-    	state.add_mig_targeted();
+    	s3.add_mig_targeted();
     }
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
