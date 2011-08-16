@@ -14,6 +14,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	params = pa;
 	countdata = counts;
 	allpopnames = counts->list_pops();
+	for (int i = 0; i <  allpopnames.size(); i++)	popname2index.insert(make_pair( allpopnames[i], i));
 	vector<string> startpops;
 	startpops.push_back(allpopnames[0]); startpops.push_back(allpopnames[1]); startpops.push_back(allpopnames[2]);
 
@@ -559,6 +560,23 @@ void GraphState2::optimize_weights(){
 
 }
 
+void GraphState2::optimize_weight(Graph::edge_descriptor e){
+	double start_llik = current_llik;
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		double min, max, guess;
+		guess = tree->g[e].weight;
+		guess = exp(guess) / (1+exp(guess));
+		min = params->minweight;
+		max = params->maxweight;
+		golden_section_weight(e, min, guess, max, params->tau);
+		if (current_llik < start_llik+1E-8) done = true;
+		else start_llik = current_llik;
+		nit++;
+	}
+
+}
 int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, double guess, double max, double tau){
 	double x;
 
@@ -1056,6 +1074,9 @@ pair<string, string> GraphState2::get_max_resid(){
 pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 	// find the largest residual, try migration events in the vicinity
 	// return true if an event is added, false otw
+	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted, sigma_cor);
+
 
 	//1. find the largest residual
 	pair<bool, Graph::vertex_descriptor> toreturn;
@@ -1090,12 +1111,12 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 	pair<int, int> best_edge;
 	for (set<Graph::vertex_descriptor>::iterator it = p1_s.begin(); it != p1_s.end(); it++){
 		for (set<Graph::vertex_descriptor>::iterator it2 = p2_s.begin(); it2 != p2_s.end(); it2++){
-			//cout << tree->g[*it].index << " "<< tree->g[*it2].index << "\n";
+			if (!try_mig(*it, *it2, tmpfitted)) continue;
 			if ( tree->is_legal_migration(*it, *it2)){
 
 				Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
 
-				optimize_weights();
+				optimize_weight(e);
 
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
@@ -1114,7 +1135,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 			if ( tree->is_legal_migration(*it2, *it)){
 				Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
 
-				optimize_weights();
+				optimize_weight(e);
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
 					tree_bk->copy(tree);
@@ -1134,6 +1155,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 		for (pair<vertex_iter, vertex_iter> vp = vertices(tree->g); vp.first != vp.second; ++vp.first)	if (tree->g[*vp.first].index == best_edge.second) toreturn.second = *vp.first;
 
 	}
+	gsl_matrix_free(tmpfitted);
 	return toreturn;
 
 }
@@ -1233,4 +1255,19 @@ Graph::vertex_descriptor GraphState2::get_neighborhood(Graph::vertex_descriptor 
 }
 
 
+bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor v2, gsl_matrix * fitted){
+	map<string, Graph::vertex_descriptor> tips1 = tree->get_tips(v1);
+	map<string, Graph::vertex_descriptor> tips2 = tree->get_tips(v2);
+	for (map<string, Graph::vertex_descriptor>::iterator it1 = tips1.begin(); it1 != tips1.end(); it1++){
+		string p1 = it1->first;
+		int index1 = popname2index[p1];
+		for (map<string, Graph::vertex_descriptor>::iterator it2 = tips2.begin(); it2 != tips2.end(); it2++){
+			string p2 = it2->first;
+			int index2 = popname2index[p2];
+			double resid = countdata->get_cov(p1, p2) -  gsl_matrix_get(fitted, index1, index2);
+			if ( resid < 0) return false;
+		}
+	}
+	return true;
+}
 

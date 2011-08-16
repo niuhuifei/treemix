@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
     GraphState2 state(&counts, &p);
-    GraphState3 s3(&state, &p);
+    //GraphState3 s3(&state, &p);
     cout.precision(10);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
     	state.iterate_global_hillclimb();
     }
     for (int i = 0; i < p.nmig; i++){
-    	s3.add_mig_targeted();
+    	state.add_mig_targeted();
     }
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
