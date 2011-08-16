@@ -32,6 +32,7 @@ public:
 
 	CountData* countdata; //pointer to the data
 	vector<string> allpopnames; //names of populations, will be added one at a time after the first 3
+	map<string, int> popname2index; //go from the population name to the index in the above vector
 	int current_npops; //current total number of populations
 	double current_llik;
 	double scatter_det, scatter_gamma;
@@ -72,7 +73,7 @@ public:
 
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
-	double optimize_weight(Graph::edge_descriptor);
+	void optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
 
 	//likelihoods
@@ -82,6 +83,7 @@ public:
 
 	//migration
 	pair<string, string> get_max_resid();
+	bool try_mig(Graph::vertex_descriptor, Graph::vertex_descriptor, gsl_matrix*);
 	void add_mig();
 	pair<bool, Graph::vertex_descriptor> add_mig_targeted();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
