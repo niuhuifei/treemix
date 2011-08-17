@@ -51,6 +51,7 @@ public:
 
 	//local hill-climbing
 	int local_hillclimb(int);
+	int local_hillclimb_root();
 	int many_local_hillclimb();
 	void iterate_hillclimb();
 

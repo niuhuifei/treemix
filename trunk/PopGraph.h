@@ -89,6 +89,7 @@ public:
 
 	//local rearrangement
 	void local_rearrange(Graph::vertex_descriptor, int);
+	void move_root(int);
 
 	void move_root(gsl_rng*);
 

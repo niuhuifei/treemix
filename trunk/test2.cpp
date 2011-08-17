@@ -43,17 +43,13 @@ int main (void)
 
 
 
-	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
+	state.tree->print();
+	state.tree->move_root(3);
+	state.tree->print();
+	state.tree->move_root(1);
+	cout <<  "\n";
 	state.tree->print();
 
-	int i = 0;
-	for(vector<Graph::vertex_descriptor>::iterator it = inorder.begin(); it != inorder.end(); it++){
-		cout << i << " "<< state.tree->g[*it].index << "\n";
-		i++;
-	}
-	GraphState3 s3(&state, &p);
-	s3.add_mig_targeted();
-	s3.state->tree->print();
 	//string newick =  state.tree->get_newick_subtrees( inorder[0], inorder[5] );
 	//state.set_graph_from_string(newick);
 	//cout << state.tree->get_newick_format() << "\n";
