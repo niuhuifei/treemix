@@ -268,7 +268,7 @@ Graph::edge_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph
 
 	e = add_edge(p2, sp, g).first;
 	g[e].weight = 0.25;
-	g[e].len = 1;
+	g[e].len = 0;
 	g[e].is_mig = true;
 
 	return e;
@@ -823,73 +823,250 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 	 */
 	if (!g[v3].is_root){
 
-	// set up descriptors and edge lengths
-	Graph::in_edge_iterator tmp = in_edges(v3, g).first;
-	Graph::edge_descriptor ed = *tmp;
-	Graph::vertex_descriptor v1, v2, v4, v5;
-	double d12, d13, d34, d35;
-	double l2, l4, l5;
-	d13 = g[ed].len;
-	v1 = source(ed, g);
-	Graph::out_edge_iterator out3 = out_edges(v3, g).first;
-	v4 = target(*out3, g);
-	d34 = g[*out3].len;
+		// set up descriptors and edge lengths
+		Graph::in_edge_iterator tmp = in_edges(v3, g).first;
+		Graph::edge_descriptor ed = *tmp;
+		Graph::vertex_descriptor v1, v2, v4, v5;
+		double d12, d13, d34, d35;
+		double l2, l4, l5;
+		d13 = g[ed].len;
+		v1 = source(ed, g);
+		Graph::out_edge_iterator out3 = out_edges(v3, g).first;
+		v4 = target(*out3, g);
+		d34 = g[*out3].len;
 
-	++out3;
-	v5 = target(*out3, g);
-	d35 = g[*out3].len;
+		++out3;
+		v5 = target(*out3, g);
+		d35 = g[*out3].len;
 
-	Graph::out_edge_iterator out1 = out_edges(v1, g).first;
-	if (target(*out1, g) == v3) {
-		out1++;
-		v2 = target(*out1, g);
-		d12 = g[*out1].len;
-	}
-	else {
-		v2 = target(*out1, g);
-		d12 = g[*out1].len;
-	}
-	l2 = d12;
-	l4 = d13+d34;
-	l5 = d13+d35;
-	double min = l2;
-	if (l4 < min) min = l4;
-	if (l5 < min) min = l5;
+		Graph::out_edge_iterator out1 = out_edges(v1, g).first;
+		if (target(*out1, g) == v3) {
+			out1++;
+			v2 = target(*out1, g);
+			d12 = g[*out1].len;
+		}
+		else {
+			v2 = target(*out1, g);
+			d12 = g[*out1].len;
+		}
+		l2 = d12;
+		l4 = d13+d34;
+		l5 = d13+d35;
+		double min = l2;
+		if (l4 < min) min = l4;
+		if (l5 < min) min = l5;
 
-	if (i == 1){
+		if (i == 1){
 		// go to ((2,4),5)
 
-		remove_edge(v1, v2, g);
-		remove_edge(v3, v5, g);
-		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
-		g[e].weight = 1;
-		g[e].len = d12;
-		g[e].is_mig = false;
-		e = add_edge(v1, v5, g).first;
-		g[e].weight = 1;
-		g[e].len = d35;
-		g[e].is_mig = false;
+			remove_edge(v1, v2, g);
+			remove_edge(v3, v5, g);
+			Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+			g[e].weight = 1;
+			g[e].len = d12;
+			g[e].is_mig = false;
+			e = add_edge(v1, v5, g).first;
+			g[e].weight = 1;
+			g[e].len = d35;
+			g[e].is_mig = false;
 
-	}
-	else{
-		//go to (4,(2,5))
+		}
+		else{
+			//go to (4,(2,5))
 
-		remove_edge(v1, v2, g);
-		remove_edge(v3, v4, g);
-		Graph::edge_descriptor e = add_edge(v3, v2, g).first;
-		g[e].weight = 1;
-		g[e].len = d12;
-		g[e].is_mig = false;
+			remove_edge(v1, v2, g);
+			remove_edge(v3, v4, g);
+			Graph::edge_descriptor e = add_edge(v3, v2, g).first;
+			g[e].weight = 1;
+			g[e].len = d12;
+			g[e].is_mig = false;
 
-		e = add_edge(v1, v4, g).first;
-		g[e].weight = 1;
-		g[e].len = d34;
-		g[e].is_mig = false;
-	}
+			e = add_edge(v1, v4, g).first;
+			g[e].weight = 1;
+			g[e].len = d34;
+			g[e].is_mig = false;
+		}
 	}
 
 }
 
+void PopGraph::move_root(int i){
+	/*
+	 *  go from
+	 *        root
+	 *         / \
+	 *        /   \
+	 *       v1    v2
+	 *      / \    / \
+	 *     /   \  v5  v6
+	 *    v3   v4
+	 *
+
+	 *
+	 */
+
+	Graph::vertex_descriptor v1, v2, v3, v4, v5, v6;
+	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children = get_child_nodes(root);
+	Graph::edge_descriptor er1, er2;
+	double lr1, lr2;
+	v1 = children.first;
+	v2 = children.second;
+	if ( !g[v1].is_tip ){
+		children = get_child_nodes(v1);
+		v3 = children.first;
+		v4 = children.second;
+	}
+	if ( !g[v2].is_tip ){
+		children = get_child_nodes(v2);
+		v5 = children.first;
+		v6 = children.second;
+	}
+	er1 = edge(root, v1, g).first;
+	er2 = edge(root, v2, g).first;
+	lr1 = g[er1].len;
+	lr2 = g[er2].len;
+
+	 /*      to
+		 *
+		 *   i == 1
+		 *
+		 *    root
+		 *     / \
+		 *    /   \
+		 *   v3    v1
+		 *        / \
+		 *       /   \
+		 *      v4    v2
+*/
+
+	if ( i == 1 && !g[v1].is_tip){
+		double l13;
+		Graph::edge_descriptor e13 = edge(v1, v3, g).first;
+		l13 = g[e13].len;
+		remove_edge( er1, g);
+		remove_edge( er2, g);
+		remove_edge( e13, g);
+		Graph::edge_descriptor e = add_edge(v1, v2, g).first;
+		g[e].len = lr1+lr2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v3, g).first;
+		g[e].len = l13/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v1, g).first;
+		g[e].len = l13/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+	}
+
+	 /*
+	 *   i == 2
+	 *
+	 *    root
+	 *     / \
+	 *    /   \
+	 *   v4    v1
+	 *        / \
+	 *       /   \
+	 *      v3    v2
+	 */
+	else if ( i == 2 && !g[v1].is_tip){
+		double l14;
+		Graph::edge_descriptor e14 = edge(v1, v4, g).first;
+		l14 = g[e14].len;
+		remove_edge( er1, g);
+		remove_edge( er2, g);
+		remove_edge( e14, g);
+		Graph::edge_descriptor e = add_edge(v1, v2, g).first;
+		g[e].len = lr1+lr2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v4, g).first;
+		g[e].len = l14/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v1, g).first;
+		g[e].len = l14/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+	}
+
+	/*   i == 3
+	 *
+	 *    root
+	 *     / \
+	 *    /   \
+	 *   v5    v2
+	 *        / \
+	 *       /   \
+	 *      v1    v6
+	 */
+	else if ( i == 3 && !g[v2].is_tip){
+		double l25;
+		Graph::edge_descriptor e25 = edge(v2, v5, g).first;
+		l25 = g[e25].len;
+		remove_edge( er1, g);
+		remove_edge( er2, g);
+		remove_edge( e25, g);
+		Graph::edge_descriptor e = add_edge(v2, v1, g).first;
+		g[e].len = lr1+lr2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v5, g).first;
+		g[e].len = l25/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v2, g).first;
+		g[e].len = l25/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+	}
+
+
+	 /*   i == 4
+	 *
+	 *    root
+	 *     / \
+	 *    /   \
+	 *   v6    v2
+	 *        / \
+	 *       /   \
+	 *      v1    v5
+	 */
+
+	else if ( i == 4 && !g[v2].is_tip){
+		double l26;
+		Graph::edge_descriptor e26 = edge(v2, v6, g).first;
+		l26 = g[e26].len;
+		remove_edge( er1, g);
+		remove_edge( er2, g);
+		remove_edge( e26, g);
+		Graph::edge_descriptor e = add_edge(v2, v1, g).first;
+		g[e].len = lr1+lr2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v6, g).first;
+		g[e].len = l26/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+		e = add_edge(root, v2, g).first;
+		g[e].len = l26/2;
+		g[e].is_mig = false;
+		g[e].weight = 1;
+
+	}
+}
 
 void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v){
 	/*

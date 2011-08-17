@@ -332,7 +332,7 @@ void CountData::set_cov(){
 			vector<double> all_covs = cov_block[i][j];
 			double sum = 0;
 			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= *it;
-			double mean = sum/all_covs.size();
+			double mean = sum/nblock;
 			gsl_matrix_set(cov, i, j, mean);
 			gsl_matrix_set(cov, j, i, mean);
 

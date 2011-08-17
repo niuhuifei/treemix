@@ -81,6 +81,7 @@ int main(int argc, char *argv[]){
     }
     for (int i = 0; i < p.nmig; i++){
     	state.add_mig_targeted();
+    	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
