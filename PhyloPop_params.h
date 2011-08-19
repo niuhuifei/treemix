@@ -21,6 +21,7 @@ public:
 	//optimization of weights
 	double tau; //stopping criterion
 	double minweight, maxweight;
+	int maxit; //maximum number of iterations when maximizing weights
 
 	int nmig; //number of migration edges to add
 

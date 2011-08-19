@@ -567,7 +567,7 @@ void GraphState2::optimize_weight(Graph::edge_descriptor e){
 	double start_llik = current_llik;
 	bool done = false;
 	int nit = 0;
-	while(!done){
+	while(!done && nit < params->maxit){
 		//cout << nit << "\n"; cout.flush();
 		double min, max, guess;
 		guess = tree->g[e].weight;
@@ -577,6 +577,7 @@ void GraphState2::optimize_weight(Graph::edge_descriptor e){
 		golden_section_weight(e, min, guess, max, params->tau);
 		if (current_llik < start_llik+1E-8) done = true;
 		else start_llik = current_llik;
+		//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
 		nit++;
 	}
 
@@ -885,34 +886,54 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(int index){
 		map<int, Graph::vertex_descriptor> vindex = tree->index2vertex();
 		Graph::vertex_descriptor v = vindex[index];
 		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
+		//cout << "here\n"; cout.flush();
 		for (set<Graph::edge_descriptor>::iterator it = inm.begin(); it != inm.end(); it++) optimize_weight(*it);
+		//cout << "not here\n"; cout.flush();
 		moving = iterate_local_hillclimb_wmig(index);
+		//cout <<"or here\n"; cout.flush();
+
 	}
 }
 
 
 int GraphState2::local_hillclimb_wmig(int index){
 	double max = current_llik;
+	double lik_bk = current_llik;
 	tree_bk->copy(tree);
 	tree_bk2->copy(tree);
+	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted, sigma_cor);
 	int toreturn = 0;
 	for (int i = 1; i <=3; i++){
 		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
 		Graph::vertex_descriptor v = index2v[index];
-		tree->local_rearrange_wmig(v, i);
-		set_branches_ls_wmig();
-		double lk = llik();
-		if (lk > max){
-			max = lk;
-			toreturn = 1;
-			tree_bk2->copy(tree);
+		bool rearr = tree->local_rearrange_wmig(v, i);
+		if (rearr){
+			set_branches_ls_wmig();
+			double lk = llik();
+			if (lk > max){
+				max = lk;
+				//cout << i << "\n";
+				toreturn = 1;
+				tree_bk2->copy(tree);
+				gsl_matrix_memcpy( tmpfitted, sigma_cor);
+			}
+			tree->copy(tree_bk);
 		}
-		tree->copy(tree_bk);
 	}
 	if (toreturn == 1){
 		tree->copy(tree_bk2);
 		current_llik = max;
+		//cout << lik_bk << " "<< max << "\n";
+		//cout << "moving from"<< tree_bk->get_newick_format() <<"\n";
+		//cout << "to "<< tree->get_newick_format()<<"\n";
+		gsl_matrix_memcpy( sigma_cor, tmpfitted);
 	}
+	else{
+		current_llik = lik_bk;
+		gsl_matrix_memcpy( sigma_cor, tmpfitted);
+	}
+	gsl_matrix_free(tmpfitted);
 	return toreturn;
 }
 int GraphState2::many_local_hillclimb(){
@@ -940,6 +961,7 @@ void GraphState2::iterate_hillclimb(){
 		changes = many_local_hillclimb();
 		//cout << "Hill climbing "<< changes << " changes\n";
 	}
+	set_branches_ls();
 }
 
 
@@ -1149,10 +1171,16 @@ pair<string, string> GraphState2::get_max_resid(){
 pair<bool, int> GraphState2::add_mig_targeted(){
 	// find the largest residual, try migration events in the vicinity
 	// return true if an event is added, false otw
+
+	// tmpfitted will have a backup of the current covariance matrix
 	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_memcpy( tmpfitted, sigma_cor);
 
+	//tmpfitted2 will hold the covariance matrix at the tree with the max likelihood
+	gsl_matrix *tmpfitted2 = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted2, sigma_cor);
 
+	double llik_bk = current_llik;
 	//1. find the largest residual
 	pair<bool, int> toreturn;
 	toreturn.first = false;
@@ -1164,6 +1192,7 @@ pair<bool, int> GraphState2::add_mig_targeted(){
 			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
 			double fitted = gsl_matrix_get(sigma_cor, i, j);
 			double diff = cov-fitted;
+			//cout << allpopnames[i] << " "<< allpopnames[j] << " "<< diff << "\n";
 			if (diff > max){
 				pop1 = allpopnames[i];
 				pop2 = allpopnames[j];
@@ -1171,6 +1200,7 @@ pair<bool, int> GraphState2::add_mig_targeted(){
 			}
 		}
 	}
+
 	cout << "Targeting migration to "<< pop1 <<" and "<< pop2 << "\n"; cout.flush();
 
 	//2. Get the paths to the root for both
@@ -1189,16 +1219,19 @@ pair<bool, int> GraphState2::add_mig_targeted(){
 			if (!try_mig(*it, *it2, tmpfitted)) continue;
 			cout << tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
 			if ( tree->is_legal_migration(*it, *it2)){
+
+				//cout << "trying "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
 				Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
 				optimize_weight(e);
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
 					tree_bk->copy(tree);
-
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
 					max_llik = current_llik;
 					best_edge.first = tree->g[*it].index;
 					best_edge.second = tree->g[*it2].index;
 					toreturn.first = true;
+
 				}
 
 				tree->remove_mig_edge(e);
@@ -1206,13 +1239,14 @@ pair<bool, int> GraphState2::add_mig_targeted(){
 			}
 
 			if ( tree->is_legal_migration(*it2, *it)){
+				//cout << "trying "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< " rev\n";
 				Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
 
 				optimize_weight(e);
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
 					tree_bk->copy(tree);
-
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
 					max_llik = current_llik;
 					best_edge.first = tree->g[*it2].index;
 					best_edge.second = tree->g[*it].index;
@@ -1222,14 +1256,24 @@ pair<bool, int> GraphState2::add_mig_targeted(){
 			}
 		}
 	}
+	//cout << "here1!\n"; cout.flush();
 	if (toreturn.first == true)	{
+		//cout << "doing something\n"; cout.flush();
 		tree->copy(tree_bk);
-		set_branches_ls_wmig();
-		current_llik = llik();
+		gsl_matrix_memcpy( sigma_cor, tmpfitted2);
+		current_llik = max_llik;
 		toreturn.second = best_edge.second;
 
 	}
+	else {
+		gsl_matrix_memcpy( sigma_cor, tmpfitted);
+		current_llik = llik_bk;
+	}
+
+	//cout << "here!\n"; cout.flush();
+	////tree->print();
 	gsl_matrix_free(tmpfitted);
+	gsl_matrix_free(tmpfitted2);
 	return toreturn;
 
 }

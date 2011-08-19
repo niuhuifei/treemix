@@ -121,7 +121,7 @@ public:
 	bool is_legal_migration(Graph::vertex_descriptor, Graph::vertex_descriptor); //is migration between these two nodes legal? (no migration already, not the same parent, not creating loop)
 
 	//local rearrangements with migration
-	void local_rearrange_wmig(Graph::vertex_descriptor, int);
+	bool local_rearrange_wmig(Graph::vertex_descriptor, int);
 
 
 };
