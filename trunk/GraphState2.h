@@ -86,9 +86,12 @@ public:
 	pair<string, string> get_max_resid();
 	bool try_mig(Graph::vertex_descriptor, Graph::vertex_descriptor, gsl_matrix*);
 	void add_mig();
-	pair<bool, Graph::vertex_descriptor> add_mig_targeted();
+	pair<bool, int> add_mig_targeted();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
 	Graph::vertex_descriptor get_neighborhood(Graph::vertex_descriptor); // get the vertex descriptor at the LCA of the neighborhood of a vertex
+	int local_hillclimb_wmig(int);
+	int iterate_local_hillclimb_wmig(int);
+	void iterate_mig_hillclimb_and_optimweight(int);
 
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();

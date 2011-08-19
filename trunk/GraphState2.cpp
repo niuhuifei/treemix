@@ -568,6 +568,7 @@ void GraphState2::optimize_weight(Graph::edge_descriptor e){
 	bool done = false;
 	int nit = 0;
 	while(!done){
+		//cout << nit << "\n"; cout.flush();
 		double min, max, guess;
 		guess = tree->g[e].weight;
 		guess = exp(guess) / (1+exp(guess));
@@ -583,7 +584,7 @@ void GraphState2::optimize_weight(Graph::edge_descriptor e){
 int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, double guess, double max, double tau){
 	double x;
 
-
+	//cout << guess << "\n"; cout.flush();
 	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
 	else x = guess - resphi *(guess-min);
 	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
@@ -596,12 +597,16 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 	}
 	double w = 1/(1+exp(-x));
 	tree->g[e].weight = w;
+	//cout << "here\n"; cout.flush();
 	set_branches_ls_wmig();
+	//cout << "not here\n"; cout.flush();
 	double f_x = -llik();
 
 	w = 1/(1+exp(-guess));
 	tree->g[e].weight = w;
+	//cout << "here2\n"; cout.flush();
 	set_branches_ls_wmig();
+	//cout << "not here2\n"; cout.flush();
 	double f_guess = -llik();
 
 	if (f_x < f_guess){
@@ -622,8 +627,10 @@ void GraphState2::set_branches_ls_wmig(){
 	   Complication when doing this: paths to root in terms of edges (migration coming into nodes makes nodes not possible).
 	   Many edge lengths are not identifiable, so have a single parameter which is their sum. Need to figure out which edge goes with which parameter, how to weight them.
     */
+
 	map<Graph::vertex_descriptor, int> vertex2index;
 	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
+
 	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
 	vector<Graph::vertex_descriptor> i_nodes2;  //remove the ones next to the root
 
@@ -641,7 +648,7 @@ void GraphState2::set_branches_ls_wmig(){
 
 	for(set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++) vertex2index[*it] = joint_index;
 	index++;
-
+	//cout << "here1\n"; cout.flush();
 	vector<Graph::vertex_descriptor> mig_nodes;
 	for(Graph::vertex_iterator it = vertices(tree->g).first; it != vertices(tree->g).second; it++){
 		if ( tree->g[*it].is_mig ) {
@@ -650,7 +657,7 @@ void GraphState2::set_branches_ls_wmig(){
 			index++;
 		}
 	}
-
+	//cout << "here2\n"; cout.flush();
 	// now get the edge to index and edge to fraction maps
 	map<Graph::edge_descriptor, int> edge2index;
 	map<Graph::edge_descriptor, double> edge2frac;
@@ -658,12 +665,15 @@ void GraphState2::set_branches_ls_wmig(){
 		Graph::vertex_descriptor index_vertex, t;
 		double f = 1.0;
 		t = target(*it, tree->g);
+		//cout << tree->g[t].index << "\n";
 		if (tree->g[*it].is_mig) continue;
 		else if ( tree->g[t].is_mig) {
 			index_vertex = tree->get_child_node_mig(t);
 			f = tree->g[*it].len / tree->get_parent_node(index_vertex).second;
 		}
+
 		else index_vertex = t;
+		//cout << tree->g[t].index << "\n";
 		if (root_adj.find(index_vertex) != root_adj.end()) f = f/2;
 		int i;
 		if (vertex2index.find(index_vertex) == vertex2index.end()){
@@ -674,7 +684,7 @@ void GraphState2::set_branches_ls_wmig(){
 		edge2index.insert(make_pair(*it, i));
 		edge2frac.insert(make_pair(*it, f));
 	}
-
+	//cout << "here3\n"; cout.flush();
 	//initialize the workspace
 	int n = current_npops * current_npops; //n is the total number of entries in the covariance matrix
 	int p = 2*current_npops -3; // p is the number of branches lengths to be estimated
@@ -694,6 +704,7 @@ void GraphState2::set_branches_ls_wmig(){
 	gsl_matrix_set_zero(X);
 
 	set_branch_coefs(X, y, &edge2index, &edge2frac);
+	//cout << "here4\n"; cout.flush();
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
 	//and put in the solutions in the graph
@@ -856,6 +867,53 @@ int GraphState2::global_hillclimb(int inorder_index){
 	}
 	return toreturn;
 
+}
+
+int GraphState2::iterate_local_hillclimb_wmig(int index){
+	int moving = local_hillclimb_wmig(index);
+	if (moving  == 0 ) return 0;
+	while (moving > 0) {
+		cout << moving << "\n";
+		moving = local_hillclimb_wmig(index);
+	}
+	return 1;
+}
+
+void GraphState2::iterate_mig_hillclimb_and_optimweight(int index){
+	int moving = iterate_local_hillclimb_wmig(index);
+	while (moving > 0){
+		map<int, Graph::vertex_descriptor> vindex = tree->index2vertex();
+		Graph::vertex_descriptor v = vindex[index];
+		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
+		for (set<Graph::edge_descriptor>::iterator it = inm.begin(); it != inm.end(); it++) optimize_weight(*it);
+		moving = iterate_local_hillclimb_wmig(index);
+	}
+}
+
+
+int GraphState2::local_hillclimb_wmig(int index){
+	double max = current_llik;
+	tree_bk->copy(tree);
+	tree_bk2->copy(tree);
+	int toreturn = 0;
+	for (int i = 1; i <=3; i++){
+		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
+		Graph::vertex_descriptor v = index2v[index];
+		tree->local_rearrange_wmig(v, i);
+		set_branches_ls_wmig();
+		double lk = llik();
+		if (lk > max){
+			max = lk;
+			toreturn = 1;
+			tree_bk2->copy(tree);
+		}
+		tree->copy(tree_bk);
+	}
+	if (toreturn == 1){
+		tree->copy(tree_bk2);
+		current_llik = max;
+	}
+	return toreturn;
 }
 int GraphState2::many_local_hillclimb(){
 	int leninorder = 2*current_npops -1;
@@ -1088,7 +1146,7 @@ pair<string, string> GraphState2::get_max_resid(){
 }
 
 
-pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
+pair<bool, int> GraphState2::add_mig_targeted(){
 	// find the largest residual, try migration events in the vicinity
 	// return true if an event is added, false otw
 	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
@@ -1096,7 +1154,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 
 
 	//1. find the largest residual
-	pair<bool, Graph::vertex_descriptor> toreturn;
+	pair<bool, int> toreturn;
 	toreturn.first = false;
 	string pop1, pop2;
 	double max = 0;
@@ -1129,12 +1187,10 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 	for (set<Graph::vertex_descriptor>::iterator it = p1_s.begin(); it != p1_s.end(); it++){
 		for (set<Graph::vertex_descriptor>::iterator it2 = p2_s.begin(); it2 != p2_s.end(); it2++){
 			if (!try_mig(*it, *it2, tmpfitted)) continue;
+			cout << tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
 			if ( tree->is_legal_migration(*it, *it2)){
-
 				Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
-
 				optimize_weight(e);
-
 				cout << current_llik << " "<< max_llik << "\n";
 				if (current_llik > max_llik){
 					tree_bk->copy(tree);
@@ -1170,7 +1226,7 @@ pair<bool, Graph::vertex_descriptor> GraphState2::add_mig_targeted(){
 		tree->copy(tree_bk);
 		set_branches_ls_wmig();
 		current_llik = llik();
-		for (pair<vertex_iter, vertex_iter> vp = vertices(tree->g); vp.first != vp.second; ++vp.first)	if (tree->g[*vp.first].index == best_edge.second) toreturn.second = *vp.first;
+		toreturn.second = best_edge.second;
 
 	}
 	gsl_matrix_free(tmpfitted);
