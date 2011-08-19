@@ -1068,35 +1068,174 @@ void PopGraph::move_root(int i){
 	}
 }
 
-void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v){
+void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 	/*
-	 *             vppp
-	 *            /  \
+	 *  take a node, move it up above the parent, or down below the children nodes (depending on the argument)
+	 *  this is the same as the global rearrangement, except move migrations initially to v1p to v1s
+	 *  move all migration nodes above v1 as well
+	 *
+	 *               v1ppp
+	 *              /   \
+	 *             v1pp
+	 *             /  \
+	 *           v1pm  \
 	 *           /
-	 *          vpp
-	 *    \    /  \
-	 *     \  /    \
-	 *       vp    vu
-	 *  \   / \
-	 *   \ /   \
-	 *    v     vs
+	 *          v1p
+	 *          / \
+	 *        v1m  v1pm2
+	 *        /     \
+	 *       v1     v1s
+	 *      / \      / \
+	 *     /   \    /   \
+	 *            v1sm1 v1sm2
+	 *             /       \
+	 *            v1sc1   v1sc2
 	 *
 	 *
-	 *    to
-	 *
-	 *           vppp
-	 *            /
-	 *           /
-	 *         vnew
-	 *    \    / \
-	 *     \  /   \
-	 *      v     vpp
-	 *         \   /
-	 *          \ /
-	 *           vs
 	 */
+	 Graph::vertex_descriptor v1sc1, v1sc2, v1p, v1pp, v1s, v2p, v1m, v1pm, v1pm2, v1ppp, v1sm1, v1sm2;
+	 Graph::edge_descriptor e;
 
-	Graph::vertex_descriptor vp, vpp, vppp, vs;
+	 /* which ==1
+	  *
+	  *      v1ppp
+	  *      /  \
+	  *        v1p
+	  *        /  \
+	  *     v1m   v1pp
+	  *      /      \
+	  *     v1      v1pp
+	  *             / \
+	  *            /  v1pm
+	  *               v1pm2
+	  *                 \
+	  *                 v1s
+	  */
+
+	 if (which ==1){
+		 v1p = get_parent_node(v1).first;
+		 v1m = get_parent_node_wmig(v1).first;
+		 if (!g[v1p].is_root){
+			 v1pp = get_parent_node(v1p).first;
+			 v1pm = get_parent_node_wmig(v1p).first;
+			 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
+			 if ( g[ch.first].index == g[v1].index) {
+				 v1m = ch.first;
+				 v1pm2 = ch.second;
+			 }
+			 else if (g[ch.second].index == g[v1].index){
+				 v1m = ch.second;
+				 v1pm2 = ch.first;
+			 }
+			 else if ( g[ch.first].is_mig ){
+				 if (g[ get_child_node_mig(ch.first) ].index == g[v1].index){
+					 v1m = ch.first;
+					 v1pm2 = ch.second;
+				 }
+			 }
+			 else if ( g[ch.second].is_mig ){
+				 if (g[ get_child_node_mig(ch.second) ].index == g[v1].index){
+					 v1m = ch.second;
+					 v1pm2 = ch.first;
+				 }
+			 }
+			 //cout << g[v1p].index << " "<< g[v1pm].index << " "<< g[v1pm2].index << "\n";
+			 remove_edge( edge(v1pm, v1p, g).first, g);
+			 remove_edge( edge(v1p, v1pm2, g).first, g);
+			 e = add_edge( v1pm, v1pm2, g).first;
+			 g[e].is_mig = 0;
+			 g[e].weight = 1;
+			 g[e].len = 1;
+
+			 e = add_edge( v1p, v1pp, g).first;
+			 g[e].is_mig = 0;
+			 g[e].weight = 1;
+			 g[e].len = 1;
+
+			 if (g[v1pp].is_root) set_root(v1p);
+			 else{
+				 v1ppp = get_parent_node_wmig(v1pp).first;
+				 remove_edge( edge(v1ppp, v1pp, g).first, g);
+				 e = add_edge( v1ppp, v1p, g).first;
+				 g[e].is_mig = 0;
+				 g[e].weight = 1;
+				 g[e].len = 1;
+			 }
+		 }
+	 }
+
+
+		 /* which ==2/3
+		  *
+		  *        v1pp
+		  *        /  \
+		  *           v1pm
+		  *           v1pm2
+		  *              \
+		  *              v1s
+		  *              / \
+		  *             /   \
+		  *           v1p   v1sm2
+		  *           / \
+		  *          v1  v1sm1
+		  */
+	 else if (which == 2 || which ==3){
+		 v1p = get_parent_node(v1).first;
+		 v1m = get_parent_node_wmig(v1).first;
+		 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes(v1p);
+		 if ( g[ch.first].index == g[v1].index) v1s = ch.second;
+		 else if (g[ch.second].index == g[v1].index) v1s = ch.first;
+		 //cout << g[v1p].index << " "<< g[v1m].index << " "<< g[v1s].index << "\n";
+		 if (!g[v1s].is_tip & !g[v1p].is_root){
+			 v1pm = get_parent_node_wmig(v1p).first;
+			 ch = get_child_nodes_wmig(v1s);
+			 v1sm1 = ch.first;
+			 v1sm2 = ch.second;
+			 if (which == 3){
+				 v1sm1 = ch.second;
+				 v1sm2 = ch.first;
+			 }
+			 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
+			 if ( g[ch.first].index == g[v1].index) {
+				 v1m = ch.first;
+				 v1pm2 = ch.second;
+			 }
+			 else if (g[ch.second].index == g[v1].index){
+				 v1m = ch.second;
+				 v1pm2 = ch.first;
+			 }
+			 else if ( g[ch.first].is_mig ){
+				 if (g[ get_child_node_mig(ch.first) ].index == g[v1].index){
+					 v1m = ch.first;
+					 v1pm2 = ch.second;
+				 }
+			 }
+			 else if ( g[ch.second].is_mig ){
+				 if (g[ get_child_node_mig(ch.second) ].index == g[v1].index){
+					 v1m = ch.second;
+					 v1pm2 = ch.first;
+				 }
+			 }
+			 //cout << g[v1sm1].index << " "<< g[v1sm2].index << " "<< g[v1m].index << " "<< g[v1pm].index <<  "\n";
+			 remove_edge( edge(v1pm, v1p, g).first, g);
+			 remove_edge( edge(v1p, v1pm2, g).first, g);
+			 e = add_edge( v1pm, v1pm2, g).first;
+			 g[e].is_mig = 0;
+			 g[e].weight = 1;
+			 g[e].len = 1;
+
+			 remove_edge( edge(v1s, v1sm1, g).first, g);
+			 e = add_edge( v1p, v1sm1, g).first;
+			 g[e].is_mig = 0;
+			 g[e].weight = 1;
+			 g[e].len = 1;
+
+			 e = add_edge( v1s, v1p, g).first;
+			 g[e].is_mig = 0;
+			 g[e].weight = 1;
+			 g[e].len = 1;
+		 }
+	 }
 }
 
 
@@ -1104,7 +1243,7 @@ void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descr
 	/*
 	 *   take the tree below v1p, attach it above v2
 	 *   if v2 is the root, there's a special case
-	 *   do not do anything is v1 or v1p is the root
+	 *   do not do anything if v1 or v1p is the root
 	 *
 	 *   otherwise:
 	 *
@@ -1399,6 +1538,19 @@ set<Graph::vertex_descriptor> PopGraph::get_path_to_root(Graph::vertex_descripto
 	return toreturn;
 }
 
+pair<Graph::vertex_descriptor, Graph::vertex_descriptor> PopGraph::get_child_nodes_wmig(Graph::vertex_descriptor v){
+	Graph::vertex_descriptor c1 = v;
+	Graph::vertex_descriptor c2 = v;
+	if (out_degree(v, g) != 2){
+		return make_pair(c1, c2);
+	}
+	graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
+	c1 = target(*out_i, g);
+	out_i++;
+	c2 = target(*out_i, g);
+	return make_pair(c1, c2);
+}
+
 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> PopGraph::get_child_nodes(Graph::vertex_descriptor v){
 	Graph::vertex_descriptor c1 = v;
 	Graph::vertex_descriptor c2 = v;
@@ -1448,7 +1600,7 @@ Graph::vertex_descriptor PopGraph::get_child_node_mig(Graph::vertex_descriptor v
 		return toreturn;
 	}
 	while( g[toreturn].is_mig){
-		graph_traits<Graph>::out_edge_iterator out_i = out_edges(v, g).first;
+		graph_traits<Graph>::out_edge_iterator out_i = out_edges(toreturn, g).first;
 		if ( g[*out_i].is_mig == false) toreturn = target(*out_i, g);
 		else{
 			out_i++;
@@ -1463,7 +1615,7 @@ pair<Graph::vertex_descriptor, double> PopGraph::get_parent_node_wmig(Graph::ver
 	toreturn.first = v;
 	toreturn.second = 0;
 	graph_traits<Graph>::in_edge_iterator in_i = in_edges(v, g).first;
-	while (in_i != in_edges(v, g).second){
+	while (in_i != in_edges(toreturn.first, g).second){
 		if (g[*in_i].is_mig == false) {
 			toreturn.first = source(*in_i, g);
 			toreturn.second = g[*in_i].len;
@@ -1483,6 +1635,7 @@ pair<Graph::vertex_descriptor, double> PopGraph::get_parent_node(Graph::vertex_d
 	}
 	toreturn = get_parent_node_wmig(v);
 	while (g[toreturn.first].is_mig == true) {
+		//cout << "here2!\n"; cout.flush();
 		pair<Graph::vertex_descriptor, double> tmp = get_parent_node_wmig(toreturn.first);
 		toreturn.first = tmp.first;
 		toreturn.second += tmp.second;
@@ -1504,7 +1657,7 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 	if (g[st].is_mig || g[sp].is_mig) return false;
 	if (st == sp) return false;
 	if (g[st].is_root || g[sp].is_root) return false;
-	if ( get_parent_node(st) == get_parent_node(sp)) return false;
+	if ( get_parent_node(st).first == get_parent_node(sp).first) return false;
 	if ( does_mig_exist( st, sp)) return false;
 	set<pair<double, set<Graph::vertex_descriptor> > > paths = get_paths_to_root(st);
 	for (set<pair<double, set<Graph::vertex_descriptor> > >::iterator it = paths.begin(); it!= paths.end(); it++){
@@ -1542,4 +1695,26 @@ void PopGraph::remove_mig_edge(Graph::edge_descriptor e){
 	clear_vertex(v, g);
 
 	remove_vertex(v, g);
+}
+
+set<Graph::edge_descriptor> PopGraph::get_in_mig_edges(Graph::vertex_descriptor v){
+	set<Graph::edge_descriptor> toreturn;
+	pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(v, g);
+	while (ine.first != ine.second){
+		if ( g[*ine.first].is_mig) toreturn.insert(*ine.first);
+		ine.first++;
+	}
+	return toreturn;
+
+
+}
+
+map<int, Graph::vertex_descriptor> PopGraph::index2vertex(){
+	map<int, Graph::vertex_descriptor> toreturn;
+	pair<Graph::vertex_iterator, Graph::vertex_iterator> v = vertices(g);
+	while (v.first != v.second){
+		toreturn.insert(make_pair( g[*v.first].index, *v.first ));
+		v.first++;
+	}
+	return toreturn;
 }

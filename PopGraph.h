@@ -60,7 +60,7 @@ public:
 	vector<Graph::vertex_descriptor> index2father;
 	vector<string> popnames;
 	Graph::vertex_descriptor root;
-
+	map<int, Graph::vertex_descriptor> index2vertex();
 
 	Graph::vertex_descriptor add_tip(Graph::vertex_descriptor, string);
 	void remove_tip(Graph::vertex_descriptor);
@@ -111,8 +111,9 @@ public:
 	set<pair<double, set<Graph::edge_descriptor> > > get_paths_to_root_edge(Graph::vertex_descriptor);
 	vector<Graph::edge_descriptor> get_mig_edges();
 	void remove_mig_edge(Graph::edge_descriptor);
-
+	set<Graph::edge_descriptor> get_in_mig_edges(Graph::vertex_descriptor);
 	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes(Graph::vertex_descriptor); // skips over migration nodes
+	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes_wmig(Graph::vertex_descriptor);
 	Graph::vertex_descriptor get_child_node_mig(Graph::vertex_descriptor); //input a migration node, get the next non-migration node (along non-migration edges)
 	pair<Graph::vertex_descriptor, double> get_parent_node(Graph::vertex_descriptor); //skips over migration nodes
 	pair<Graph::vertex_descriptor, double> get_parent_node_wmig(Graph::vertex_descriptor); // skips migration edges, but will return a migration node. returns the node and distance
@@ -120,7 +121,7 @@ public:
 	bool is_legal_migration(Graph::vertex_descriptor, Graph::vertex_descriptor); //is migration between these two nodes legal? (no migration already, not the same parent, not creating loop)
 
 	//local rearrangements with migration
-	void local_rearrange_wmig(Graph::vertex_descriptor);
+	void local_rearrange_wmig(Graph::vertex_descriptor, int);
 
 
 };
