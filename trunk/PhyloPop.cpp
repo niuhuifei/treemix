@@ -81,9 +81,14 @@ int main(int argc, char *argv[]){
     }
     for (int i = 0; i < p.nmig; i++){
     	pair<bool, int> add = state.add_mig_targeted();
-    	state.iterate_mig_hillclimb_and_optimweight(add.second);
+    	//cout << "Added? "<< add.first << "\n";
+    	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
+
+    //cout << state.tree->get_newick_format() << "\n";
+    //state.set_branches_ls_wmig();
+    //cout << state.tree->get_newick_format() << "\n";
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
 

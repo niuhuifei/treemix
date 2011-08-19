@@ -1068,7 +1068,7 @@ void PopGraph::move_root(int i){
 	}
 }
 
-void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
+bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 	/*
 	 *  take a node, move it up above the parent, or down below the children nodes (depending on the argument)
 	 *  this is the same as the global rearrangement, except move migrations initially to v1p to v1s
@@ -1111,11 +1111,14 @@ void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 	  *                 \
 	  *                 v1s
 	  */
-
+	 //cout << get_newick_format(v1) <<"\n";
+	 //print();
+	 bool toreturn = false;
 	 if (which ==1){
 		 v1p = get_parent_node(v1).first;
 		 v1m = get_parent_node_wmig(v1).first;
 		 if (!g[v1p].is_root){
+			 toreturn = true;
 			 v1pp = get_parent_node(v1p).first;
 			 v1pm = get_parent_node_wmig(v1p).first;
 			 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
@@ -1186,7 +1189,8 @@ void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 		 if ( g[ch.first].index == g[v1].index) v1s = ch.second;
 		 else if (g[ch.second].index == g[v1].index) v1s = ch.first;
 		 //cout << g[v1p].index << " "<< g[v1m].index << " "<< g[v1s].index << "\n";
-		 if (!g[v1s].is_tip & !g[v1p].is_root){
+		 if (!g[v1s].is_tip && !g[v1p].is_root){
+			 toreturn = true;
 			 v1pm = get_parent_node_wmig(v1p).first;
 			 ch = get_child_nodes_wmig(v1s);
 			 v1sm1 = ch.first;
@@ -1236,6 +1240,7 @@ void PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 			 g[e].len = 1;
 		 }
 	 }
+	 return toreturn;
 }
 
 
@@ -1489,9 +1494,9 @@ void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s, map<strin
 	if (out_degree(node, g) !=  0){
 		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children = get_child_nodes(node);
 		s->append("(");
-		newick_helper(children.first, s);
+		newick_helper(children.first, s, trim);
 		s->append(",");
-		newick_helper(children.second, s);
+		newick_helper(children.second, s, trim);
 		s->append(")");
 		if (g[node].is_root == false){
 
@@ -1504,6 +1509,7 @@ void PopGraph::newick_helper(Graph::vertex_descriptor node, string* s, map<strin
 		else s->append(";");
 	}
 	else{
+		//cout << "here!\n";
 		stringstream ss;
 		ss << g[node].name;
 		ss << ":";
@@ -1658,6 +1664,7 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 	if (st == sp) return false;
 	if (g[st].is_root || g[sp].is_root) return false;
 	if ( get_parent_node(st).first == get_parent_node(sp).first) return false;
+	if ( st == get_parent_node(sp).first || sp == get_parent_node(st).first ) return false;
 	if ( does_mig_exist( st, sp)) return false;
 	set<pair<double, set<Graph::vertex_descriptor> > > paths = get_paths_to_root(st);
 	for (set<pair<double, set<Graph::vertex_descriptor> > >::iterator it = paths.begin(); it!= paths.end(); it++){

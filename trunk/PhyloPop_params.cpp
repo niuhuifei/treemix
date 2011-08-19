@@ -19,4 +19,5 @@ PhyloPop_params::PhyloPop_params(){
 	maxweight = 10;
 	nmig = 0;
 	m_neigh = 3;
+	maxit = 10;
 }
