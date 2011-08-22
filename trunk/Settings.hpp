@@ -43,7 +43,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
-
+#include <boost/algorithm/string.hpp>
 
 using std::string;
 using std::vector;

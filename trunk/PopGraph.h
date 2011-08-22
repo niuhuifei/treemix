@@ -69,6 +69,7 @@ public:
 	void set_root(Graph::vertex_descriptor);
 	set<Graph::vertex_descriptor> get_root_adj();
 	void print();
+	void print(string);
 	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);
 
 	double get_height(Graph::vertex_descriptor);
@@ -90,8 +91,8 @@ public:
 	//local rearrangement
 	void local_rearrange(Graph::vertex_descriptor, int);
 	void move_root(int);
-
 	void move_root(gsl_rng*);
+	void place_root(string);
 
 	//global rearrangement
 	void global_rearrange(Graph::vertex_descriptor, Graph::vertex_descriptor);

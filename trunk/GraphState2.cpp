@@ -1389,3 +1389,10 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 	return true;
 }
 
+void GraphState2::place_root(string r){
+	tree->place_root(r);
+	cout << "Set root above "<< r << "\n"; cout.flush();
+	set_branches_ls();
+	current_llik = llik();
+	cout << tree->get_newick_format()<< "\n"; cout.flush();
+}

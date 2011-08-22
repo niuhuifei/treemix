@@ -20,4 +20,6 @@ PhyloPop_params::PhyloPop_params(){
 	nmig = 0;
 	m_neigh = 3;
 	maxit = 10;
+	set_root = false;
+	root = "NA";
 }
