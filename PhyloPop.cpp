@@ -25,6 +25,7 @@ void printopts(){
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 	cout << "-m [int] number of migration edges to add (0)\n";
 	cout << "-mn [int] depth of subtree to use in migration optimization (3)\n";
+	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 }
 
 
@@ -50,6 +51,10 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-mn"))	p.m_neigh = atoi(cmdline.GetArgument("-mn", 0).c_str());
+    if (cmdline.HasSwitch("-root")) {
+    	p.set_root = true;
+    	p.root = cmdline.GetArgument("-root", 0);
+    }
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
@@ -79,6 +84,7 @@ int main(int argc, char *argv[]){
     	cout << "Testing global rearrangements\n"; cout.flush();
     	state.iterate_global_hillclimb();
     }
+    if (p.set_root) state.place_root(p.root);
     for (int i = 0; i < p.nmig; i++){
     	pair<bool, int> add = state.add_mig_targeted();
     	//cout << "Added? "<< add.first << "\n";
@@ -105,7 +111,7 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
-
+    state.tree->print(outstem);
     state.print_sigma_cor(modelcovfile);
 	return 0;
 }

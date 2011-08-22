@@ -1421,7 +1421,32 @@ void PopGraph::print(){
 
 }
 
+void PopGraph::print(string stem){
+	string outvfile = stem+".vertices.gz";
+	string outefile = stem+".edges.gz";
+	ogzstream outv(outvfile.c_str());
+	ogzstream oute(outefile.c_str());
 
+	IndexMap index = get(&Node::index, g);
+	pair<vertex_iter, vertex_iter> vp;
+	for (vp = vertices(g); vp.first != vp.second; ++vp.first){
+		outv << index[*vp.first] <<  " "<< g[*vp.first].name << " ";
+		if (g[*vp.first].is_root) outv << "ROOT ";
+		else outv << "NOT_ROOT ";
+		if (g[*vp.first].is_mig) outv << "MIG ";
+		else outv << "NOT_MIG ";
+		if (g[*vp.first].is_tip) outv << "TIP\n";
+		else outv << "NOT_TIP\n";
+	}
+
+    graph_traits<Graph>::edge_iterator ei, ei_end;
+    for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei){
+        oute << index[source(*ei, g)] << " "<< index[target(*ei, g)] << " "<< g[*ei].len << " "<< g[*ei].weight << " ";
+		if (g[*ei].is_mig) oute << "MIG\n";
+		else oute << "NOT_MIG\n";
+    }
+
+}
 string PopGraph::get_newick_format(map<string, double>* trim){
  	string toreturn = "";
  	newick_helper(root, &toreturn, trim);
@@ -1724,4 +1749,88 @@ map<int, Graph::vertex_descriptor> PopGraph::index2vertex(){
 		v.first++;
 	}
 	return toreturn;
+}
+
+void PopGraph::place_root(string pops){
+	// pops is a comma-delimited list of populations in a clade on one side of the root
+	vector<string> strs;
+	boost::split(strs, pops, boost::is_any_of(","));
+	bool found = false;
+	Graph::vertex_descriptor v;
+	pair<Graph::vertex_iterator, Graph::vertex_iterator> vit = vertices(g);
+	while (!found && vit.first != vit.second){
+		map<string, Graph::vertex_descriptor> tips = get_tips(*vit.first);
+		if ( tips.size() == strs.size() ){
+			bool all = true;
+			for ( vector<string>::iterator it = strs.begin(); it!= strs.end(); it++ ){
+				if ( tips.find(*it) == tips.end() ) all = false;
+			}
+			if (all == true) {
+				found = true;
+				v = *vit.first;
+			}
+		}
+		vit.first++;
+	}
+	if ( !found ){
+		cerr << "ERROR in placing root: no clade "<< pops << "\n";
+		exit(1);
+	}
+
+	// reverse edges on path to root
+	set<pair<double, set<Graph::edge_descriptor> > > p2root = get_paths_to_root_edge(v);
+	set<Graph::edge_descriptor> path = (*p2root.begin()).second;
+	Graph::edge_descriptor last, first;
+	for (set<Graph::edge_descriptor>::iterator it = path.begin(); it!= path.end(); it++){
+		Graph::edge_descriptor e = *it;
+		double w = g[e].weight;
+		double l = g[e].len;
+		Graph::vertex_descriptor v1 = source(e, g);
+		Graph::vertex_descriptor v2 = target(e, g);
+		remove_edge(e, g);
+		Graph::edge_descriptor n = add_edge(v2, v1, g).first;
+		g[n].weight = w;
+		g[n].len = l;
+		g[n].is_mig = false;
+		if (g[v1].is_root) last = n;
+		if (v2 == v) first = n;
+	}
+	// move root
+	//
+	Graph::vertex_descriptor newroot = add_vertex(g);
+	Graph::vertex_descriptor v2 = target(first, g);
+	g[newroot].is_root = true;
+	g[newroot].is_mig = false;
+	g[newroot].index = indexcounter;
+	g[newroot].name = "NA";
+	g[newroot].height = 0;
+	g[newroot].is_tip = false;
+	g[newroot].mig_frac = 0;
+	g[newroot].rev = false;
+	indexcounter++;
+	Graph::vertex_descriptor oldroot = root;
+	root = newroot;
+
+	double l = g[first].len;
+	remove_edge(first, g);
+	Graph::edge_descriptor e = add_edge( newroot, v, g).first;
+	g[e].is_mig = false;
+	g[e].weight = 1;
+	g[e].len = l/2;
+
+	e = add_edge( newroot, v2, g ).first;
+	g[e].is_mig = false;
+	g[e].weight = 1;
+	g[e].len = l/2;
+
+	Graph::out_edge_iterator oute = out_edges(oldroot, g).first;
+	v2 = target(*oute, g);
+	Graph::vertex_descriptor v1 = source(last, g);
+	e = add_edge(v1, v2, g).first;
+	g[e].len = g[last].len + g[*oute].len;
+	g[e].weight = 1;
+	g[e].is_mig = false;
+	clear_vertex(oldroot, g);
+	remove_vertex(oldroot, g);
+
 }

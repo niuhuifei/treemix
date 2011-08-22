@@ -41,20 +41,10 @@ int main (void)
 	state.iterate_hillclimb();
 
 	state.tree->print();
-	state.add_mig_targeted();
-	state.tree->print();
-
 	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
 	for (int i = 0; i < inorder.size(); i++)	cout << i << " "<< state.tree->g[ inorder[i]].index<<"\n";
-
-	state.tree->add_mig_edge(inorder[0], inorder[7]);
-	cout << "\n";
+	state.tree->place_root("pop6,pop3");
 	state.tree->print();
-
-	cout <<"\n";
-	state.tree->local_rearrange_wmig(inorder[7], 3);
-	state.tree->print();
-
 	//string newick =  state.tree->get_newick_subtrees( inorder[0], inorder[5] );
 	//state.set_graph_from_string(newick);
 	//cout << state.tree->get_newick_format() << "\n";

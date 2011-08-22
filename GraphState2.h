@@ -44,6 +44,9 @@ public:
 	void set_graph_from_file(string);
 	void set_graph_from_string(string);
 
+	//set the root to a given clade
+	void place_root(string);
+
 	//covariance matrix
 	void compute_sigma();
 	void print_sigma();

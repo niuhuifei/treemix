@@ -27,6 +27,10 @@ public:
 
 	int m_neigh; //"neighborhood" size for addition of migration events
 
+	// setting root
+	bool set_root;
+	string root;
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
