@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
     }
     if (p.set_root) state.place_root(p.root);
     for (int i = 0; i < p.nmig; i++){
-    	pair<bool, int> add = state.add_mig_targeted();
+    	pair<bool, pair<int, int> > add = state.add_mig_targeted();
     	//cout << "Added? "<< add.first << "\n";
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
     	cout << "ln(likelihood):" << state.current_llik << "\n";
@@ -111,6 +111,10 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
+    //cout << state.tree->get_newick_format();
+   // state.set_branches_ls_wmig();
+    //cout << state.tree->get_newick_format();
+    //state.tree->print();
     state.tree->print(outstem);
     state.print_sigma_cor(modelcovfile);
 	return 0;

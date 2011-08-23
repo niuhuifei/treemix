@@ -43,8 +43,11 @@ int main (void)
 	state.tree->print();
 	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
 	for (int i = 0; i < inorder.size(); i++)	cout << i << " "<< state.tree->g[ inorder[i]].index<<"\n";
-	state.tree->place_root("pop6,pop3");
+	state.add_mig_targeted();
 	state.tree->print();
+	state.local_hillclimb_wmig(51);
+	//state.tree->place_root("pop6,pop3");
+	//state.tree->print();
 	//string newick =  state.tree->get_newick_subtrees( inorder[0], inorder[5] );
 	//state.set_graph_from_string(newick);
 	//cout << state.tree->get_newick_format() << "\n";
