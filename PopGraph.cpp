@@ -1248,7 +1248,8 @@ void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descr
 	/*
 	 *   take the tree below v1p, attach it above v2
 	 *   if v2 is the root, there's a special case
-	 *   do not do anything if v1 or v1p is the root
+	 *   if v1p is the root there's another special case
+	 *   do not do anything if v1 is the root
 	 *
 	 *   otherwise:
 	 *
@@ -1339,6 +1340,55 @@ void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descr
 		 g[e].len = 1;
 		 g[e].is_mig = false;
 		 set_root(v1p);
+	 }
+
+	 /*
+	  *    v1p
+	  *    / \
+	  *   /   \           v2p
+	  *  v1    v1s        / \
+	  *        / \       /   \
+	  *       /   \      v2
+	  *
+	  *
+	  *  to
+	  *
+	  *     v1s (new root)     v2p
+	  *     / \                /  \
+	  *    /   \              v1p
+	  *                       /  \
+	  *                      v2   v1
+	  *
+	  */
+	 else if (!g[v1].is_root && !g[v2].is_root && g[get_parent_node(v1).first].is_root){
+		 cout << "HERE\n";
+		 print();
+		 cout << "\n";
+		 Graph::vertex_descriptor v1s;
+		 v1p = get_parent_node(v1).first;
+		 v2p = get_parent_node(v2).first;
+		 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes(v1p);
+		 if (ch.first == v1 ) v1s = ch.second;
+		 else v1s = ch.first;
+
+		 // tree 1
+		 remove_edge(v1p, v1s, g);
+		 set_root(v1s);
+
+		 // tree 2
+		 e = edge(v2p, v2, g).first;
+		 double l = g[e].len;
+		 remove_edge(e, g);
+		 e = add_edge(v2p, v1p, g).first;
+		 g[e].len = l/2;
+		 g[e].is_mig = false;
+		 g[e].weight = 1;
+
+		 e = add_edge(v1p, v2, g).first;
+		 g[e].len = l/2;
+		 g[e].is_mig = false;
+		 g[e].weight = 1;
+		 print();
 	 }
 
 

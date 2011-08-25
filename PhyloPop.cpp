@@ -117,5 +117,16 @@ int main(int argc, char *argv[]){
     //state.tree->print();
     state.tree->print(outstem);
     state.print_sigma_cor(modelcovfile);
+    //state.tree->print();
+   // map<int, Graph::vertex_descriptor> test = state.tree->index2vertex();
+   // Graph::vertex_descriptor moz = test[28];
+    //set<Graph::edge_descriptor> mig = state.tree->get_in_mig_edges(moz);
+    ////Graph::edge_descriptor mige = *(mig.begin());
+    //for(double m = 0.05; m < 0.95; m+=0.05){
+    //	state.tree->g[mige].weight = m;
+    //	state.set_branches_ls_wmig();
+    //	cout << m << "\n";
+    //	state.tree->print();
+   // }
 	return 0;
 }
