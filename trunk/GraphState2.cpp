@@ -1249,7 +1249,10 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 	//3. try migration to all the pairwise combinations
 
 	double max_llik = current_llik;
+
+	//tree_bk holds a backup of the current tree; bk_2 the best tree
 	tree_bk->copy(tree);
+	tree_bk2->copy(tree);
 	pair<int, int> best_edge;
 
 	for (set<pair<string, string> >::iterator pit = pops2test.begin(); pit != pops2test.end(); pit++){
@@ -1275,9 +1278,10 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					//cout << tree->get_newick_format()<< "\n";
 					//tree->print();
 					//exit(1);
-					cout << current_llik << " "<< max_llik << "\n";
+					//cout << "after "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
+					cout << tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
 					if (current_llik > max_llik){
-						tree_bk->copy(tree);
+						tree_bk2->copy(tree);
 						gsl_matrix_memcpy( tmpfitted2, sigma_cor);
 						max_llik = current_llik;
 						best_edge.first = tree->g[*it].index;
@@ -1285,36 +1289,37 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 						toreturn.first = true;
 					}
 
-				tree->remove_mig_edge(e);
-				tested.insert(make_pair( tree->g[*it].index, tree->g[*it2].index));
-			}
+					tree->remove_mig_edge(e);
+					tested.insert(make_pair( tree->g[*it].index, tree->g[*it2].index));
 
-			if ( tree->is_legal_migration(*it2, *it)){
-				//cout << "trying "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< " rev\n";
-				Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
-
-				optimize_weight(e);
-
-				cout << current_llik << " "<< max_llik << "\n";
-				if (current_llik > max_llik){
-					tree_bk->copy(tree);
-					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-					max_llik = current_llik;
-					best_edge.first = tree->g[*it2].index;
-					best_edge.second = tree->g[*it].index;
-					toreturn.first = true;
 				}
 
-				tree->remove_mig_edge(e);
-				tested.insert(make_pair( tree->g[*it2].index, tree->g[*it].index));
+				if ( tree->is_legal_migration(*it2, *it)){
+					//cout << "trying "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< " rev\n";
+					Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
+
+					optimize_weight(e);
+					//cout << "after "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
+					cout << tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+					if (current_llik > max_llik){
+						tree_bk2->copy(tree);
+						gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+						max_llik = current_llik;
+						best_edge.first = tree->g[*it2].index;
+						best_edge.second = tree->g[*it].index;
+						toreturn.first = true;
+					}
+
+					tree->remove_mig_edge(e);
+					tested.insert(make_pair( tree->g[*it2].index, tree->g[*it].index));
+				}
 			}
 		}
-	}
 	}
 	//cout << "here1!\n"; cout.flush();
 	if (toreturn.first == true)	{
 		//cout << "doing something\n"; cout.flush();
-		tree->copy(tree_bk);
+		tree->copy(tree_bk2);
 		gsl_matrix_memcpy( sigma_cor, tmpfitted2);
 		current_llik = max_llik;
 		toreturn.second.first = best_edge.first;
@@ -1324,6 +1329,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 	else {
 		gsl_matrix_memcpy( sigma_cor, tmpfitted);
 		current_llik = llik_bk;
+		tree->copy(tree_bk);
 	}
 
 	//cout << "here!\n"; cout.flush();
@@ -1438,6 +1444,7 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 		for (map<string, Graph::vertex_descriptor>::iterator it2 = tips2.begin(); it2 != tips2.end(); it2++){
 			string p2 = it2->first;
 			int index2 = popname2index[p2];
+			if (p1==p2) continue;
 			double resid = countdata->get_cov(p1, p2) -  gsl_matrix_get(fitted, index1, index2);
 			if ( resid < 0) return false;
 		}
