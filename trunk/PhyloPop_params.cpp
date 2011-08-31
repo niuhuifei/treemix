@@ -22,4 +22,7 @@ PhyloPop_params::PhyloPop_params(){
 	maxit = 10;
 	set_root = false;
 	root = "NA";
+	read_graph = false;
+	vfile = "NA";
+	efile = "NA";
 }

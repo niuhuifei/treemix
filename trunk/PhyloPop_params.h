@@ -31,6 +31,11 @@ public:
 	bool set_root;
 	string root;
 
+	// read from previous run
+	bool read_graph;
+	string vfile;
+	string efile;
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

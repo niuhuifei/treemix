@@ -19,13 +19,14 @@ void printopts(){
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz), [stem].modelcov.gz\n";
-	cout << "-arcsin (perform the arcsin square root transformation on the allele frequencies before centering)\n";
+	cout << "-arcsin perform the arcsin square root transformation on the allele frequencies before centering\n";
 	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
-	cout << "-global (Do a round of global rearrangements after adding all populations)\n";
+	cout << "-global Do a round of global rearrangements after adding all populations\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 	cout << "-m [int] number of migration edges to add (0)\n";
 	cout << "-mn [int] depth of subtree to use in migration optimization (3)\n";
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
+	cout << "-g [vertices file name] [edges file name] read the graph from a previous PhyloPop run\n";
 }
 
 
@@ -46,6 +47,11 @@ int main(int argc, char *argv[]){
     	p.treefile = cmdline.GetArgument("-tf", 0).c_str();
     	p.readtree = true;
     }
+    if (cmdline.HasSwitch("-g"))	{
+      	p.vfile = cmdline.GetArgument("-g", 0);
+      	p.efile = cmdline.GetArgument("-g", 1);
+      	p.read_graph = true;
+      }
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
@@ -70,7 +76,12 @@ int main(int argc, char *argv[]){
     cout.precision(10);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
+
     	//state.iterate_hillclimb();
+    }
+    else if (p.read_graph){
+    	state.set_graph(p.vfile, p.efile);
+    	cout << "Set tree to: "<< state.tree->get_newick_format() << "\n";
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
@@ -89,6 +100,7 @@ int main(int argc, char *argv[]){
     	pair<bool, pair<int, int> > add = state.add_mig_targeted();
     	//cout << "Added? "<< add.first << "\n";
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
+    	state.optimize_weights();
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 
@@ -117,16 +129,17 @@ int main(int argc, char *argv[]){
     //state.tree->print();
     state.tree->print(outstem);
     state.print_sigma_cor(modelcovfile);
-    //state.tree->print();
-   // map<int, Graph::vertex_descriptor> test = state.tree->index2vertex();
-   // Graph::vertex_descriptor moz = test[28];
-    //set<Graph::edge_descriptor> mig = state.tree->get_in_mig_edges(moz);
-    ////Graph::edge_descriptor mige = *(mig.begin());
-    //for(double m = 0.05; m < 0.95; m+=0.05){
-    //	state.tree->g[mige].weight = m;
-    //	state.set_branches_ls_wmig();
-    //	cout << m << "\n";
-    //	state.tree->print();
-   // }
+  //  state.tree->print();
+  //  map<int, Graph::vertex_descriptor> test = state.tree->index2vertex();
+  //  Graph::vertex_descriptor moz = test[28];
+  //  set<Graph::edge_descriptor> mig = state.tree->get_in_mig_edges(moz);
+  //  Graph::edge_descriptor mige = *(mig.begin());
+  //  for(double m = 0; m < 0.95; m+=0.05){
+  //  	state.tree->g[mige].weight = m;
+  //  	state.set_branches_ls_wmig();
+   // 	cout << m << "\n";
+  //  	state.tree->print();
+  //  	cout << state.llik() << "\n";
+  // }
 	return 0;
 }
