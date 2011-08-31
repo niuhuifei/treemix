@@ -91,6 +91,89 @@ void GraphState2::set_graph(string newick){
 	tree->set_graph(newick);
 }
 
+void GraphState2::set_graph(string vfile, string efile){
+	igzstream vin(vfile.c_str());
+	tree->g.clear();
+    vector<string> line;
+    struct stat stFileInfo;
+    int intStat;
+    current_npops = 0;
+    tree->popnames.clear();
+
+    intStat = stat(vfile.c_str(), &stFileInfo);
+    if (intStat !=0){
+            std::cerr<< "ERROR: cannot open file " << vfile << "\n";
+            exit(1);
+    }
+    string st;
+    while(getline(vin, st)){
+    	string buf;
+		stringstream ss(st);
+		line.clear();
+		while (ss>> buf){
+			line.push_back(buf);
+		}
+		int index = atoi(line[0].c_str());
+		if (index >= tree->indexcounter) tree->indexcounter = index+1;
+		string name = line[1];
+		string root = line[2];
+		string mig = line[3];
+		string tip = line[4];
+		Graph::vertex_descriptor v= add_vertex(tree->g);
+		tree->g[v].index = index;
+		tree->g[v].name = name;
+		if (root == "ROOT") {
+			tree->g[v].is_root = true;
+			tree->root = v;
+		}
+		else tree->g[v].is_root = false;
+		if (mig == "MIG") tree->g[v].is_mig = true;
+		else tree->g[v].is_mig = false;
+		if (tip == "TIP") {
+			tree->g[v].is_tip = true;
+			current_npops++;
+			tree->popnames.push_back(name);
+		}
+		else tree->g[v].is_tip = false;
+		tree->g[v].rev = false;
+     }
+
+	igzstream ein(efile.c_str());
+	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+    intStat = stat(efile.c_str(), &stFileInfo);
+    if (intStat !=0){
+            std::cerr<< "ERROR: cannot open file " << efile << "\n";
+            exit(1);
+    }
+    while(getline(ein, st)){
+    	string buf;
+		stringstream ss(st);
+		line.clear();
+		while (ss>> buf){
+			line.push_back(buf);
+		}
+		int index1 = atoi(line[0].c_str());
+		int index2 = atoi(line[1].c_str());
+		float len = atof(line[2].c_str());
+		float w = atof(line[3].c_str());
+		string mig= line[4];
+		Graph::edge_descriptor e = add_edge( i2v[index1], i2v[index2], tree->g).first;
+		tree->g[e].len = len;
+		tree->g[e].weight = w;
+		if (mig == "MIG") tree->g[e].is_mig = true;
+		else tree->g[e].is_mig = false;
+    }
+	gsl_matrix_free(sigma);
+	sigma = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma_cor);
+
+    set_branches_ls_wmig();
+
+    current_llik = llik();
+}
 
 void GraphState2::set_graph_from_file(string infile){
 	ifstream in(infile.c_str());
@@ -555,12 +638,32 @@ void GraphState2::optimize_weights(){
 			min = params->minweight;
 			max = params->maxweight;
 			golden_section_weight( *it, min, guess, max, params->tau);
+			cout << tree->g[*it].weight << "\n";
 			}
-		if (current_llik < start_llik+1E-8) done = true;
+		if (current_llik < start_llik+0.001) done = true;
 		else start_llik = current_llik;
 		nit++;
 	}
 
+}
+
+void GraphState2::quick_optimize_weight(Graph::edge_descriptor e){
+	tree->g[e].weight = 0.1;
+	set_branches_ls_wmig();
+	double best = 0.1;
+	double start_llik = llik();
+	for (double w = 0.3; w < 1; w+=0.2){
+		tree->g[e].weight = w;
+		set_branches_ls_wmig();
+		double test_llik = llik();
+		if (test_llik > start_llik){
+			start_llik  = test_llik;
+			best = w;
+		}
+	}
+	tree->g[e].weight = best;
+	set_branches_ls_wmig();
+	current_llik = llik();
 }
 
 void GraphState2::optimize_weight(Graph::edge_descriptor e){
@@ -611,7 +714,8 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 	double f_guess = -llik();
 
 	if (f_x < f_guess){
-		if ( (max-guess) > (guess-min) ) return golden_section_weight(e, guess, x, max, tau);
+		if ( (max-guess) > (guess-min) )	return golden_section_weight(e, guess, x, max, tau);
+
 		else return golden_section_weight(e, min, x, guess, tau);
 	}
 	else{
@@ -629,9 +733,9 @@ void GraphState2::set_branches_ls_wmig(){
 	   Many edge lengths are not identifiable, so have a single parameter which is their sum. Need to figure out which edge goes with which parameter, how to weight them.
     */
 
+
 	map<Graph::vertex_descriptor, int> vertex2index;
 	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
-
 	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
 	vector<Graph::vertex_descriptor> i_nodes2;  //remove the ones next to the root
 
@@ -705,9 +809,9 @@ void GraphState2::set_branches_ls_wmig(){
 	gsl_matrix * cov = gsl_matrix_alloc(p, p);
 	double chisq;
 	gsl_matrix_set_zero(X);
-
+	//cout << "here\n";
 	set_branch_coefs(X, y, &edge2index, &edge2frac);
-
+	//cout << "here2\n";
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
 	//and put in the solutions in the graph
@@ -718,7 +822,7 @@ void GraphState2::set_branches_ls_wmig(){
 		double l = gsl_vector_get(c, i);
 		tree->g[*it].len = l*frac;
 	}
-
+	//cout << "here3\n";
 	//and the corrected covariance matrix
 	index = 0;
 	for (int i = 0; i < current_npops; i++){
@@ -733,7 +837,7 @@ void GraphState2::set_branches_ls_wmig(){
 
 	}
 
-
+	//cout << "here4\n";
 	//free memory
 	gsl_multifit_linear_free(work);
 	gsl_matrix_free(X);
@@ -1133,6 +1237,29 @@ void GraphState2::print_sigma_cor(string outfile){
 	}
 }
 
+void GraphState2::add_mig(int index1, int index2){
+	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
+		Graph::edge_descriptor e = tree->add_mig_edge(i2v[index1], i2v[index2]);
+		//quick_optimize_weight(e);
+		//optimize_weight(e);
+		quick_optimize_weight(e);
+		cout << tree->g[e].weight <<"\n";
+
+	}
+	else{
+		cerr << "ERROR: not a legal migration between index " << index1 << " and "<< index2 << "\n";
+		exit(1);
+	}
+	current_llik = llik();
+}
+
+void GraphState2::rearrange(int index1, int index2){
+	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+	tree->global_rearrange(i2v[index1], i2v[index2]);
+	set_branches_ls_wmig();
+	current_llik = llik();
+}
 
 void GraphState2::add_mig(){
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);

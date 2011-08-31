@@ -44,6 +44,9 @@ public:
 	void set_graph_from_file(string);
 	void set_graph_from_string(string);
 
+	//set graph from files with the vertices and edges
+	void set_graph(string, string);
+
 	//set the root to a given clade
 	void place_root(string);
 
@@ -78,6 +81,7 @@ public:
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
 	void optimize_weight(Graph::edge_descriptor);
+	void quick_optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
 
 	//likelihoods
@@ -99,6 +103,10 @@ public:
 
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();
+
+	//alterations to the tree
+	void add_mig(int, int);
+	void rearrange(int, int);
 };
 
 #endif /* GRAPHSTATE2_H_ */

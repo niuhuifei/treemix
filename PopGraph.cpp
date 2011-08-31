@@ -1130,17 +1130,15 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 				 v1m = ch.second;
 				 v1pm2 = ch.first;
 			 }
-			 else if ( g[ch.first].is_mig ){
-				 if (g[ get_child_node_mig(ch.first) ].index == g[v1].index){
-					 v1m = ch.first;
-					 v1pm2 = ch.second;
-				 }
+			 else if ( g[ch.first].is_mig && g[ get_child_node_mig(ch.first) ].index == g[v1].index){
+				 v1m = ch.first;
+				 v1pm2 = ch.second;
+
 			 }
-			 else if ( g[ch.second].is_mig ){
-				 if (g[ get_child_node_mig(ch.second) ].index == g[v1].index){
-					 v1m = ch.second;
-					 v1pm2 = ch.first;
-				 }
+			 else if ( g[ch.second].is_mig && g[ get_child_node_mig(ch.second) ].index == g[v1].index){
+				 v1m = ch.second;
+				 v1pm2 = ch.first;
+
 			 }
 			 //cout << g[v1p].index << " "<< g[v1pm].index << " "<< g[v1pm2].index << "\n";
 			 remove_edge( edge(v1pm, v1p, g).first, g);
@@ -1208,17 +1206,13 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 				 v1m = ch.second;
 				 v1pm2 = ch.first;
 			 }
-			 else if ( g[ch.first].is_mig ){
-				 if (g[ get_child_node_mig(ch.first) ].index == g[v1].index){
-					 v1m = ch.first;
-					 v1pm2 = ch.second;
-				 }
+			 else if ( g[ch.first].is_mig && g[ get_child_node_mig(ch.first) ].index == g[v1].index){
+				 v1m = ch.first;
+				 v1pm2 = ch.second;
 			 }
-			 else if ( g[ch.second].is_mig ){
-				 if (g[ get_child_node_mig(ch.second) ].index == g[v1].index){
+			 else if ( g[ch.second].is_mig  && g[ get_child_node_mig(ch.second) ].index == g[v1].index){
 					 v1m = ch.second;
 					 v1pm2 = ch.first;
-				 }
 			 }
 			 //cout << g[v1sm1].index << " "<< g[v1sm2].index << " "<< g[v1m].index << " "<< g[v1pm].index <<  "\n";
 			 remove_edge( edge(v1pm, v1p, g).first, g);
@@ -1361,9 +1355,9 @@ void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descr
 	  *
 	  */
 	 else if (!g[v1].is_root && !g[v2].is_root && g[get_parent_node(v1).first].is_root){
-		 cout << "HERE\n";
-		 print();
-		 cout << "\n";
+		 //cout << "HERE\n";
+		 //print();
+		 //cout << "\n";
 		 Graph::vertex_descriptor v1s;
 		 v1p = get_parent_node(v1).first;
 		 v2p = get_parent_node(v2).first;
@@ -1454,6 +1448,7 @@ void PopGraph::print(){
 		std::cout << index[*vp.first] <<  ":"<< g[*vp.first].name << ":"<< get_dist_to_root(*vp.first);
 		if (g[*vp.first].is_root) std::cout << ":ROOT";
 		if (g[*vp.first].is_tip) std::cout << ":TIP";
+		if (g[*vp.first].is_mig) std::cout << ":MIG";
 		cout << " ";
 
 	}
@@ -1476,7 +1471,6 @@ void PopGraph::print(string stem){
 	string outefile = stem+".edges.gz";
 	ogzstream outv(outvfile.c_str());
 	ogzstream oute(outefile.c_str());
-
 	IndexMap index = get(&Node::index, g);
 	pair<vertex_iter, vertex_iter> vp;
 	for (vp = vertices(g); vp.first != vp.second; ++vp.first){
@@ -1485,8 +1479,10 @@ void PopGraph::print(string stem){
 		else outv << "NOT_ROOT ";
 		if (g[*vp.first].is_mig) outv << "MIG ";
 		else outv << "NOT_MIG ";
-		if (g[*vp.first].is_tip) outv << "TIP\n";
-		else outv << "NOT_TIP\n";
+		if (g[*vp.first].is_tip) outv << "TIP ";
+		else outv << "NOT_TIP ";
+		if ( g[*vp.first].is_mig ) outv << "NA\n";
+		else outv << get_newick_format(*vp.first) <<"\n";
 	}
 
     graph_traits<Graph>::edge_iterator ei, ei_end;
@@ -1636,7 +1632,8 @@ pair<Graph::vertex_descriptor, Graph::vertex_descriptor> PopGraph::get_child_nod
 	Graph::vertex_descriptor c1 = v;
 	Graph::vertex_descriptor c2 = v;
 	if (g[v].is_mig == true){
-		cerr << "Calling get_child_nodes on a migration node\n";
+		//cout << g[v].index << "\n";
+		cerr << "ERROR: Calling get_child_nodes on a migration node\n";
 		exit(1);
 	}
 	if (out_degree(v, g) != 2){
@@ -1674,7 +1671,7 @@ pair<Graph::vertex_descriptor, Graph::vertex_descriptor> PopGraph::get_child_nod
 Graph::vertex_descriptor PopGraph::get_child_node_mig(Graph::vertex_descriptor v){
 	Graph::vertex_descriptor toreturn = v;
 	if (g[v].is_mig == false){
-		cerr << "Calling get_child_node_mig on a non-migration node\n";
+		cerr << "ERROR: Calling get_child_node_mig on a non-migration node\n";
 		exit(1);
 	}
 	if (out_degree(v, g) != 2){
