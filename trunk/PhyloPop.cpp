@@ -65,6 +65,8 @@ int main(int argc, char *argv[]){
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
     string cov_sefile = outstem+".covse.gz";
+    string llikfile = outstem+".llik";
+    ofstream likout(llikfile.c_str());
 
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
@@ -96,11 +98,14 @@ int main(int argc, char *argv[]){
     	state.iterate_global_hillclimb();
     }
     if (p.set_root) state.place_root(p.root);
+    likout << "Tree likelihood: "<< state.llik() << "\n";
     for (int i = 0; i < p.nmig; i++){
+    	double st = state.llik();
     	pair<bool, pair<int, int> > add = state.add_mig_targeted();
     	//cout << "Added? "<< add.first << "\n";
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
     	state.optimize_weights();
+    	likout << st << " "<< state.current_llik << "\n";
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 
