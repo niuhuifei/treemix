@@ -28,7 +28,10 @@ int main (void)
 	//state.set_graph_from_file("phylopop_treein");
 	CountData tmpcount("/Users/pickrell/projects/phylopop/data/harvard_hgdp_yoruba_asc_noprimate_phylopop.gz", &p);
 	GraphState2 state(&tmpcount, &p);
-	state.set_graph("/Users/pickrell/projects/phylopop/data/yoruba_asc_4mig_afroot.vertices.gz", "/Users/pickrell/projects/phylopop/data/yoruba_asc_4mig_afroot.edges.gz");
+	state.set_graph("/Users/pickrell/projects/phylopop/data/yoruba_global_reroot.vertices.gz", "/Users/pickrell/projects/phylopop/data/yoruba_global_reroot.edges.gz");
+	cout << state.llik() <<"\n"; cout.flush();
+	state.add_mig(24, 11);
+	cout << state.llik() << "\n";
 	//state.add_mig_targeted();
 	//state.tree->place_root("Denisova,Neander,San,BiakaPygmy,MbutiPygmy,BantuKenya,BantuSouthAfrica,Mandenka,Yoruba");
 	//state.tree->print("test");
@@ -65,8 +68,8 @@ int main (void)
 	//state.add_mig(13, 25);
 	//state.add_mig(34, 13);
 	//cout << state.llik() << "\n";
-	state.optimize_weights();
-	cout << state.llik() << "\n";
+	//state.optimize_weights();
+	//cout << state.llik() << "\n";
 	cout << state.tree->get_newick_format() << "\n";
 
 
