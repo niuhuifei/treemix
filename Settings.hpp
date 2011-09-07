@@ -18,6 +18,8 @@
 #include <fstream>
 #include <ostream>
 #include <cstdlib>
+#include <algorithm>
+#include <ctime>
 #include <cmath>
 #include <stack>
 #include <valarray>

@@ -14,6 +14,10 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	params = pa;
 	countdata = counts;
 	allpopnames = counts->list_pops();
+	unsigned int seed = unsigned( time(NULL));
+	//cout << "SEED: "<< seed << "\n";
+	srand ( seed );
+	random_shuffle(allpopnames.begin(), allpopnames.end() );
 	for (int i = 0; i <  allpopnames.size(); i++)	popname2index.insert(make_pair( allpopnames[i], i));
 	vector<string> startpops;
 	startpops.push_back(allpopnames[0]); startpops.push_back(allpopnames[1]); startpops.push_back(allpopnames[2]);
