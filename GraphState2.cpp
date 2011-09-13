@@ -1607,7 +1607,7 @@ string GraphState2::get_trimmed_newick(){
 		double meanhzy = countdata->mean_hzy.find(id)->second;
 		double mean_n = countdata->mean_ninds.find(id)->second;
 		double t = meanhzy / (4.0* mean_n);
-		//cout << pop  << " "<< t << "\n";
+		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
 		trim.insert(make_pair(pop, t));
 	}
 	toreturn = tree->get_newick_format(&trim);
@@ -1648,4 +1648,33 @@ void GraphState2::place_root(string r){
 	set_branches_ls();
 	current_llik = llik();
 	cout << tree->get_newick_format()<< "\n"; cout.flush();
+	cout << "ln(lk) = "<< current_llik << "\n";
+}
+
+void GraphState2::flip_mig(){
+	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
+	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
+		double w = tree->g[*it].weight;
+		if (w > 0.6){
+			Graph::vertex_descriptor t = target(*it, tree->g);
+			Graph::vertex_descriptor s = source(*it, tree->g);
+			double totalw = 0;
+			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
+			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
+			double left = 1-totalw;
+			Graph::edge_descriptor inc;
+			pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(t, tree->gs);
+			while (ine.first != ine.second){
+				if (tree->g[*ine.first].is_mig == false) inc = *ine.first;
+				ine.first++;
+			}
+			tree->g[inc].is_mig = true;
+			tree->g[inc].weight = left;
+			tree->g[inc].len = 0;
+
+			tree->g[*it].is_mig = false;
+			set_branches_ls_wmig();
+			current_llik = llik();
+		}
+	}
 }

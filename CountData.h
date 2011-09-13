@@ -21,7 +21,7 @@ public:
 	map<int, double> mean_ninds;
 	map<int, int> id2nsnp;
 	vector<vector<pair<int, int> > > allele_counts;
-	int npop, nsnp;
+	int npop, nsnp, ef_nsnp;
 	string get_pops(); //in Newick format
 	vector<string> list_pops(); //simple list
 	gsl_matrix *alfreqs, *scatter, *cov, *cov_var;

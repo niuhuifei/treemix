@@ -7,8 +7,9 @@
 #include "CountData.h"
 
 CountData::CountData(string infile, PhyloPop_params* p){
-	read_counts(infile);
+
 	params = p;
+	read_counts(infile);
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
 	scatter = gsl_matrix_alloc(npop, npop);
