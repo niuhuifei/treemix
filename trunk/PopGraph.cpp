@@ -1481,8 +1481,19 @@ void PopGraph::print(string stem){
 		else outv << "NOT_MIG ";
 		if (g[*vp.first].is_tip) outv << "TIP ";
 		else outv << "NOT_TIP ";
-		if ( g[*vp.first].is_mig ) outv << "NA\n";
-		else outv << get_newick_format(*vp.first) <<"\n";
+		if ( g[*vp.first].is_mig ) {
+			outv << g[get_parent_node(*vp.first).first].index << " "<< g[get_child_node_mig(*vp.first)].index << " NA NA NA NA\n";
+		}
+		else{
+
+			outv << g[get_parent_node(*vp.first).first].index << " ";
+			if (g[*vp.first].is_tip) outv << "NA NA NA NA ";
+			else {
+				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes(*vp.first);
+				outv << g[ch.first].index << " "<< get_tips(ch.first).size() << " "<< g[ch.second].index << " "<< get_tips(ch.second).size()<< " ";
+			}
+			outv << get_newick_format(*vp.first) <<"\n";
+		}
 	}
 
     graph_traits<Graph>::edge_iterator ei, ei_end;
@@ -1491,8 +1502,9 @@ void PopGraph::print(string stem){
 		if (g[*ei].is_mig) oute << "MIG\n";
 		else oute << "NOT_MIG\n";
     }
-
 }
+
+
 string PopGraph::get_newick_format(map<string, double>* trim){
  	string toreturn = "";
  	newick_helper(root, &toreturn, trim);

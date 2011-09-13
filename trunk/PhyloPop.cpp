@@ -105,6 +105,7 @@ int main(int argc, char *argv[]){
     	//cout << "Added? "<< add.first << "\n";
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
     	state.optimize_weights();
+    	state.flip_mig();
     	likout << st << " "<< state.current_llik << "\n";
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
