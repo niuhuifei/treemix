@@ -15,6 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
+	seed = 10;
 	//cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -1656,6 +1657,7 @@ void GraphState2::flip_mig(){
 	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
 		double w = tree->g[*it].weight;
 		if (w > 0.6){
+			//cout << "flipping\n"; cout.flush();
 			Graph::vertex_descriptor t = target(*it, tree->g);
 			Graph::vertex_descriptor s = source(*it, tree->g);
 			double totalw = 0;
@@ -1663,17 +1665,27 @@ void GraphState2::flip_mig(){
 			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
 			double left = 1-totalw;
 			Graph::edge_descriptor inc;
-			pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(t, tree->gs);
+			pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(t, tree->g);
 			while (ine.first != ine.second){
 				if (tree->g[*ine.first].is_mig == false) inc = *ine.first;
 				ine.first++;
 			}
+			//cout << "left "<< left << "\n"; cout.flush();
+			Graph::vertex_descriptor newm = source(inc, tree->g);
+			tree->g[newm].is_mig = true;
+			tree->g[newm].mig_frac = 0.5;
+			tree->g[s].is_mig = false;
+			tree->g[s].mig_frac = 0;
+
 			tree->g[inc].is_mig = true;
 			tree->g[inc].weight = left;
 			tree->g[inc].len = 0;
 
 			tree->g[*it].is_mig = false;
+			tree->g[*it].len = 1;
+			//tree->print();
 			set_branches_ls_wmig();
+			//tree->print();
 			current_llik = llik();
 		}
 	}
