@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	seed = 10;
+	//seed = 10;
 	//cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -34,6 +34,9 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
 
 	scatter = gsl_matrix_alloc(current_npops, current_npops);
+	scatter_det = counts->scatter_det;
+	scatter_gamma = counts->scatter_gamma;
+	cout << scatter_det <<  " "<< scatter_gamma << " scatter\n";
 	gsl_matrix_set_zero(sigma);
 
 	set_branches_ls();
@@ -1164,43 +1167,90 @@ double GraphState2::llik_wishart(){
 	// 		and the ln of the relevant multiariate gamma is in scatter_gamma
 	//
 	// density is ( [n-p-1]/2 * scatter_det - [1/2] trace [sigma^-1 * scatter] - [np/2] ln(2) - [n/2] ln(det(sigma)) - scatter_gamma
-
+	gsl_matrix_free(scatter);
+	scatter = gsl_matrix_alloc(current_npops, current_npops);
+	for (int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			//cout << allpopnames[i] << " "<< allpopnames[j] << " "<< countdata->get_scatter(allpopnames[i], allpopnames[j]) << "\n";
+			gsl_matrix_set(scatter, i, j, countdata->get_scatter( allpopnames[i], allpopnames[j] ));
+		}
+	}
 	double toreturn = 0;
 	int s;
 	double ld;
 	int p = current_npops;
 	int n = countdata->nsnp -1;
 
-	//copy the covariance matrix over, declare inverse
+	//copy the covariance and scatter matrices over, declare inverse
 	gsl_matrix * work = gsl_matrix_alloc(p,p);
-	gsl_matrix_memcpy( work, sigma );
+	gsl_matrix * work2 = gsl_matrix_alloc(p,p);
+	gsl_matrix_memcpy( work, sigma_cor );
+	gsl_matrix_memcpy( work2, scatter );
+
+	//for (int i = 0; i < current_npops; i++){
+	//	for (int j = 0; j < current_npops; j++){
+	//		cout << allpopnames[i] << " "<< allpopnames[j] << " "<< gsl_matrix_get(scatter, i, j) << " "<< gsl_matrix_get(work, i, j) <<"\n";
+	//	}
+	//}
 	gsl_permutation * perm = gsl_permutation_alloc(p);
 	gsl_matrix * inv  = gsl_matrix_alloc(p, p);
 	gsl_matrix * ViU = gsl_matrix_alloc(p, p);
+	gsl_permutation * perm2 = gsl_permutation_alloc(p);
 
-	//do LU decomposition
+	//do LU decomposition of sigma
 	gsl_linalg_LU_decomp( work, perm, &s );
-
 	//invert sigma
 	gsl_linalg_LU_invert( work, perm, inv );
-
-	//get log of determinant
+	//get log of determinant of sigma
 	ld = gsl_linalg_LU_lndet( work );
+
+
+	//get determinant of scatter
+	gsl_linalg_LU_decomp( work2, perm2, &s );
+	scatter_det = gsl_linalg_LU_lndet( work2 );
+
+	for (int i = 0; i < current_npops; i++){
+
+		for (int j = 0; j < current_npops; j++){
+			cout << gsl_matrix_get(scatter, i, j) << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+
+	for (int i = 0; i < current_npops; i++){
+
+		for (int j = 0; j < current_npops; j++){
+			cout << gsl_matrix_get(sigma_cor, i, j) << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	for (int i = 0; i < current_npops; i++){
+
+		for (int j = 0; j < current_npops; j++){
+			cout << gsl_matrix_get(inv, i, j) << " ";
+		}
+		cout << "\n";
+	}
 
 	//multiply inverse of cov by scatter, get trace
 	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, inv, scatter, 0.0, ViU);
+
 	double trace = 0;
 	for (int i = 0; i < p ; i++) trace+= gsl_matrix_get(ViU, i, i);
-
+	cout << ld << " "<< trace << "\n";
 	toreturn+= ( (double) n- (double) p-1.0 )/2.0 * scatter_det - trace/2.0;
 	toreturn+= -( (double) n* (double) p/2.0) * log(2.0);
 	toreturn += -((double) n/2.0)*ld;
 	toreturn+= -scatter_gamma;
 
 	gsl_matrix_free(work);
+	gsl_matrix_free(work2);
 	gsl_matrix_free(inv);
 	gsl_matrix_free(ViU);
 	gsl_permutation_free(perm);
+	gsl_permutation_free(perm2);
 
 	return toreturn;
 }
@@ -1402,7 +1452,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 	tree_bk->copy(tree);
 	tree_bk2->copy(tree);
 	pair<int, int> best_edge;
-
+	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj();
 	for (set<pair<string, string> >::iterator pit = pops2test.begin(); pit != pops2test.end(); pit++){
 		cout << "Trying "<< pit->first<< " "<< pit->second << "\n"; cout.flush();
 		set<Graph::vertex_descriptor> p1_s = tree->get_path_to_root(p2node[pit->first]);
@@ -1415,17 +1465,10 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 				pair<int, int> totest = make_pair( tree->g[*it].index, tree->g[*it2].index);
 				if ( tested.find(totest) == tested.end() && tree->is_legal_migration(*it, *it2)){
 
-					//cout << "trying "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
 					Graph::edge_descriptor e = tree->add_mig_edge( *it, *it2);
-					//cout << tree->get_newick_format()<< "\n";
-					//tree->print();
-					//cout << "\n";
 					optimize_weight(e);
-					//cout << tree->get_newick_format()<< "\n";
-					//tree->print();
-					//exit(1);
-					//cout << "after "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
 					cout << "1->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+
 					if (current_llik > max_llik){
 						tree_bk2->copy(tree);
 						gsl_matrix_memcpy( tmpfitted2, sigma_cor);
@@ -1436,16 +1479,50 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					}
 
 					tree->remove_mig_edge(e);
+
+					if (root_adj.find(*it) != root_adj.end()){
+						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
+						if (tree->g[*rit].index == tree->g[*it].index) rit++;
+							Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it2);
+							optimize_weight(e);
+							cout << "1 (root) ->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+							if (current_llik > max_llik){
+								tree_bk2->copy(tree);
+								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+								max_llik = current_llik;
+								best_edge.first = tree->g[*rit].index;
+								best_edge.second = tree->g[*it2].index;
+								toreturn.first = true;
+							}
+
+							tree->remove_mig_edge(e);
+					}
+					if (root_adj.find(*it2) != root_adj.end()){
+						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
+						if (tree->g[*rit].index == tree->g[*it2].index) rit++;
+							Graph::edge_descriptor e = tree->add_mig_edge( *it, *rit);
+							optimize_weight(e);
+							cout << "1->2 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+							if (current_llik > max_llik){
+								tree_bk2->copy(tree);
+								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+								max_llik = current_llik;
+								best_edge.first = tree->g[*it].index;
+								best_edge.second = tree->g[*rit].index;
+								toreturn.first = true;
+							}
+
+							tree->remove_mig_edge(e);
+					}
 					tested.insert(make_pair( tree->g[*it].index, tree->g[*it2].index));
 				}
 
 				totest = make_pair( tree->g[*it2].index, tree->g[*it].index);
 				if ( tested.find(totest) == tested.end() && tree->is_legal_migration(*it2, *it)){
-					//cout << "trying "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< " rev\n";
-					Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
 
+					Graph::edge_descriptor e = tree->add_mig_edge( *it2, *it);
 					optimize_weight(e);
-					//cout << "after "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
+
 					cout << "2->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
 					if (current_llik > max_llik){
 						tree_bk2->copy(tree);
@@ -1457,6 +1534,42 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					}
 
 					tree->remove_mig_edge(e);
+
+					if (root_adj.find(*it) != root_adj.end()){
+						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
+						if (tree->g[*rit].index == tree->g[*it].index) rit++;
+							Graph::edge_descriptor e = tree->add_mig_edge( *it2, *rit);
+							optimize_weight(e);
+							cout << "2->1 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+							if (current_llik > max_llik){
+								tree_bk2->copy(tree);
+								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+								max_llik = current_llik;
+								best_edge.first = tree->g[*it2].index;
+								best_edge.second = tree->g[*rit].index;
+								toreturn.first = true;
+							}
+
+							tree->remove_mig_edge(e);
+					}
+					if (root_adj.find(*it2) != root_adj.end()){
+						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
+						if (tree->g[*rit].index == tree->g[*it2].index) rit++;
+							Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it);
+							optimize_weight(e);
+							cout << "2 (root) ->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+							if (current_llik > max_llik){
+								tree_bk2->copy(tree);
+								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+								max_llik = current_llik;
+								best_edge.first = tree->g[*rit].index;
+								best_edge.second = tree->g[*it].index;
+								toreturn.first = true;
+							}
+
+							tree->remove_mig_edge(e);
+					}
+
 					tested.insert(make_pair( tree->g[*it2].index, tree->g[*it].index));
 				}
 

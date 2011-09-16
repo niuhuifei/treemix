@@ -1,5 +1,5 @@
 /*
- * PhyloPop.cpp
+ * TreeMix.cpp
  *
  *  Created on: Apr 12, 2011
  *      Author: pickrell
@@ -10,15 +10,14 @@
 #include "PhyloPop_params.h"
 
 string infile;
-string outstem = "PhyloPop";
-int seed = 200;
+string outstem = "TreeMix";
 int nthread = 1;
 int norm_type = 3;
 void printopts(){
-	cout << "\nPhyloPop v.0.0 \n by JKP\n\n";
+	cout << "\nTreeMix v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
-	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz), [stem].modelcov.gz\n";
+	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
 	cout << "-arcsin perform the arcsin square root transformation on the allele frequencies before centering\n";
 	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global Do a round of global rearrangements after adding all populations\n";
@@ -26,7 +25,8 @@ void printopts(){
 	cout << "-m [int] number of migration edges to add (0)\n";
 	cout << "-mn [int] depth of subtree to use in migration optimization (3)\n";
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
-	cout << "-g [vertices file name] [edges file name] read the graph from a previous PhyloPop run\n";
+	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
+	cout << "\n";
 }
 
 
@@ -120,15 +120,27 @@ int main(int argc, char *argv[]){
     Graph::edge_iterator it = eds.first;
     while (it != eds.second){
     	if ( state.tree->g[*it].is_mig){
-    		treeout << state.tree->g[*it].weight<< " "<< state.tree->g[*it].len << " ";
-    		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
-    		p1 = state.tree->get_child_node_mig(p1);
-    		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
-    		treeout << state.tree->get_newick_format(p1) << " ";
-    		treeout << state.tree->get_newick_format(p2) << "\n";
+     		double w = state.tree->g[*it].weight;
+
+        		double lk = state.llik();
+        		treeout << state.tree->g[*it].weight<< " "<< state.tree->g[*it].len << " ";
+        		state.tree->g[*it].weight = 0;
+        		state.set_branches_ls_wmig();
+
+        		double lk0 = state.llik();
+        		treeout << lk0 << " "<< lk << " ";
+        		state.tree->g[*it].weight = w;
+        		state.set_branches_ls_wmig();
+
+        		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
+        		p1 = state.tree->get_child_node_mig(p1);
+        		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
+        		treeout << state.tree->get_newick_format(p1) << " ";
+        		treeout << state.tree->get_newick_format(p2) << "\n";
     	}
 		it++;
     }
+    cout << state.llik_wishart() << "\n";
     //cout << state.tree->get_newick_format();
    // state.set_branches_ls_wmig();
     //cout << state.tree->get_newick_format();

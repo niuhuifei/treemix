@@ -419,8 +419,11 @@ void CountData::process_scatter(){
 	gsl_linalg_LU_decomp( work, p, &s );
 	scatter_det = gsl_linalg_LU_lndet( work );
 	//get the log sum of the gammas
+	//cout << npop << " "<< n << "\n";
 	scatter_gamma = ( (double) npop * ( (double)  npop-1.0) /4.0) * log (M_PI);
+	//cout << scatter_gamma << " sg1\n";
 	for (int i = 1; i <= npop; i++) scatter_gamma+= gsl_sf_lngamma( (double) n/2.0 + (1.0- (double) i)/2.0);
+	//cout << scatter_gamma << " sg2\n";
 	//cout << "scatter_gamma "<< scatter_gamma << "\n";
 }
 
