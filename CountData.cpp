@@ -269,7 +269,10 @@ void CountData::scale_alfreqs(){
 		double m = total/ (double) npop;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
-			gsl_matrix_set(alfreqs, i, j, f-m);
+			if (params->alfreq_scaling == 3) {
+				gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
+			}
+			else gsl_matrix_set(alfreqs, i, j, f-m);
 		}
 	}
 }
@@ -319,6 +322,7 @@ void CountData::set_cov(){
 			for (int j = i; j < npop; j++){
 				double c = 0;
 				for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
+					if (isnan(gsl_matrix_get(alfreqs, n, i))) continue;
 					double toadd = gsl_matrix_get(alfreqs, n, i) * gsl_matrix_get(alfreqs, n, j);
 					c+= toadd;
 				}
