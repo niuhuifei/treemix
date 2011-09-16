@@ -18,7 +18,7 @@ void printopts(){
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
-	cout << "-arcsin perform the arcsin square root transformation on the allele frequencies before centering\n";
+	cout << "-noscale Do not rescale the allele frequencies\n";
 	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global Do a round of global rearrangements after adding all populations\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
@@ -53,6 +53,7 @@ int main(int argc, char *argv[]){
       	p.read_graph = true;
       }
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
+    if (cmdline.HasSwitch("-noscale")) p.alfreq_scaling = 0;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
@@ -140,7 +141,7 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
-    cout << state.llik_wishart() << "\n";
+   // cout << state.llik_wishart() << "\n";
     //cout << state.tree->get_newick_format();
    // state.set_branches_ls_wmig();
     //cout << state.tree->get_newick_format();

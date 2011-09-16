@@ -36,7 +36,6 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	scatter = gsl_matrix_alloc(current_npops, current_npops);
 	scatter_det = counts->scatter_det;
 	scatter_gamma = counts->scatter_gamma;
-	cout << scatter_det <<  " "<< scatter_gamma << " scatter\n";
 	gsl_matrix_set_zero(sigma);
 
 	set_branches_ls();
@@ -1175,48 +1174,59 @@ double GraphState2::llik_wishart(){
 			gsl_matrix_set(scatter, i, j, countdata->get_scatter( allpopnames[i], allpopnames[j] ));
 		}
 	}
+
 	double toreturn = 0;
 	int s;
 	double ld;
+	double lpseudodet_sigma = 0;
 	int p = current_npops;
 	int n = countdata->nsnp -1;
 
-	//copy the covariance and scatter matrices over, declare inverse
-	gsl_matrix * work = gsl_matrix_alloc(p,p);
-	gsl_matrix * work2 = gsl_matrix_alloc(p,p);
-	gsl_matrix_memcpy( work, sigma_cor );
-	gsl_matrix_memcpy( work2, scatter );
+	// Get pseudoinverse and pseudodeterminant of sigma_cor
+	// 1. Do SVD of sigma_cor
+	// sigma_cor = U S V^t
+	gsl_matrix * U = gsl_matrix_alloc(p,p);
+	gsl_matrix_memcpy( U, sigma_cor );
+	gsl_matrix * V = gsl_matrix_alloc(p, p);
+	gsl_vector * S = gsl_vector_alloc(p);
+	gsl_matrix * Smat = gsl_matrix_alloc(p, p);
+	gsl_matrix * Si = gsl_matrix_alloc(p, p);
+	gsl_matrix * VSi = gsl_matrix_alloc(p, p);
+	gsl_matrix * sigma_pinv = gsl_matrix_alloc(p, p);
+	gsl_matrix_set_zero(Smat);
+	gsl_matrix_set_zero(Si);
+	gsl_linalg_SV_decomp_jacobi( U, V, S );
+	for (int i = 0; i < p; i++) {
+		double eig = gsl_vector_get(S, i);
+		cout << "eig "<< eig <<"\n";
+		gsl_matrix_set(Smat, i, i, eig);
+		if (eig > 1E-8) {
+			lpseudodet_sigma += log( gsl_vector_get(S, i));
+			gsl_matrix_set(Si, i, i,  1/eig);
+		}
+	}
+	// 2. multiply matrices
+	gsl_matrix_transpose( Si ); // this is the pseudoinverse of S
+	gsl_matrix_transpose( U ); // the transpose of U
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, V, Si, 0.0, VSi);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, VSi, U, 0.0, sigma_pinv);
 
-	//for (int i = 0; i < current_npops; i++){
-	//	for (int j = 0; j < current_npops; j++){
-	//		cout << allpopnames[i] << " "<< allpopnames[j] << " "<< gsl_matrix_get(scatter, i, j) << " "<< gsl_matrix_get(work, i, j) <<"\n";
-	//	}
-	//}
+
+	// Get the determinant of the scatter matrix
+	gsl_matrix * work = gsl_matrix_alloc(p, p);
+	gsl_matrix_memcpy( work, scatter);
 	gsl_permutation * perm = gsl_permutation_alloc(p);
-	gsl_matrix * inv  = gsl_matrix_alloc(p, p);
-	gsl_matrix * ViU = gsl_matrix_alloc(p, p);
-	gsl_permutation * perm2 = gsl_permutation_alloc(p);
-
-	//do LU decomposition of sigma
 	gsl_linalg_LU_decomp( work, perm, &s );
-	//invert sigma
-	gsl_linalg_LU_invert( work, perm, inv );
-	//get log of determinant of sigma
-	ld = gsl_linalg_LU_lndet( work );
-
-
-	//get determinant of scatter
-	gsl_linalg_LU_decomp( work2, perm2, &s );
-	scatter_det = gsl_linalg_LU_lndet( work2 );
+	scatter_det = gsl_linalg_LU_lndet( work );
 
 	for (int i = 0; i < current_npops; i++){
 
 		for (int j = 0; j < current_npops; j++){
-			cout << gsl_matrix_get(scatter, i, j) << " ";
+			cout << gsl_matrix_get(sigma_pinv, i, j) << " ";
 		}
 		cout << "\n";
 	}
-	cout << "\n";
+
 
 	for (int i = 0; i < current_npops; i++){
 
@@ -1225,32 +1235,30 @@ double GraphState2::llik_wishart(){
 		}
 		cout << "\n";
 	}
-	cout << "\n";
-	for (int i = 0; i < current_npops; i++){
-
-		for (int j = 0; j < current_npops; j++){
-			cout << gsl_matrix_get(inv, i, j) << " ";
-		}
-		cout << "\n";
-	}
 
 	//multiply inverse of cov by scatter, get trace
-	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, inv, scatter, 0.0, ViU);
+	gsl_matrix * ViU = gsl_matrix_alloc(p, p);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, sigma_pinv, scatter, 0.0, ViU);
 
 	double trace = 0;
 	for (int i = 0; i < p ; i++) trace+= gsl_matrix_get(ViU, i, i);
-	cout << ld << " "<< trace << "\n";
+	cout << scatter_det << " "<< trace << " "<< lpseudodet_sigma << " "<< scatter_gamma << "\n";
 	toreturn+= ( (double) n- (double) p-1.0 )/2.0 * scatter_det - trace/2.0;
 	toreturn+= -( (double) n* (double) p/2.0) * log(2.0);
-	toreturn += -((double) n/2.0)*ld;
+	toreturn += -((double) n/2.0)*lpseudodet_sigma;
 	toreturn+= -scatter_gamma;
 
 	gsl_matrix_free(work);
-	gsl_matrix_free(work2);
-	gsl_matrix_free(inv);
+	gsl_matrix_free(U);
+	gsl_matrix_free(V);
+	gsl_vector_free(S);
+	gsl_matrix_free(Smat);
+	gsl_matrix_free(Si);
+	gsl_matrix_free(VSi);
+	gsl_matrix_free(sigma_pinv);
 	gsl_matrix_free(ViU);
 	gsl_permutation_free(perm);
-	gsl_permutation_free(perm2);
+
 
 	return toreturn;
 }
