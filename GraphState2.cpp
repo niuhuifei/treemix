@@ -678,21 +678,27 @@ void GraphState2::quick_optimize_weight(Graph::edge_descriptor e){
 }
 
 void GraphState2::optimize_weight(Graph::edge_descriptor e){
-	double start_llik = current_llik;
-	bool done = false;
-	int nit = 0;
-	while(!done && nit < params->maxit){
-		//cout << nit << "\n"; cout.flush();
-		double min, max, guess;
-		guess = tree->g[e].weight;
-		guess = exp(guess) / (1+exp(guess));
-		min = params->minweight;
-		max = params->maxweight;
-		golden_section_weight(e, min, guess, max, params->tau);
-		if (current_llik < start_llik+1E-8) done = true;
-		else start_llik = current_llik;
-		//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
-		nit++;
+
+	if (params->quick){
+		quick_optimize_weight(e);
+	}
+	else{
+		double start_llik = current_llik;
+		bool done = false;
+		int nit = 0;
+		while(!done && nit < params->maxit){
+			//cout << nit << "\n"; cout.flush();
+			double min, max, guess;
+			guess = tree->g[e].weight;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_weight(e, min, guess, max, params->tau);
+			if (current_llik < start_llik+1E-8) done = true;
+			else start_llik = current_llik;
+			//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
+			nit++;
+		}
 	}
 
 }
@@ -1491,36 +1497,40 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					if (root_adj.find(*it) != root_adj.end()){
 						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
 						if (tree->g[*rit].index == tree->g[*it].index) rit++;
-							Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it2);
-							optimize_weight(e);
-							cout << "1 (root) ->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-							if (current_llik > max_llik){
-								tree_bk2->copy(tree);
-								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-								max_llik = current_llik;
-								best_edge.first = tree->g[*rit].index;
-								best_edge.second = tree->g[*it2].index;
-								toreturn.first = true;
-							}
+							if (tree->is_legal_migration(*rit, *it2)){
+								Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it2);
+								optimize_weight(e);
+								cout << "1 (root) ->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+								if (current_llik > max_llik){
+									tree_bk2->copy(tree);
+									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+									max_llik = current_llik;
+									best_edge.first = tree->g[*rit].index;
+									best_edge.second = tree->g[*it2].index;
+									toreturn.first = true;
+								}
 
-							tree->remove_mig_edge(e);
+								tree->remove_mig_edge(e);
+							}
 					}
 					if (root_adj.find(*it2) != root_adj.end()){
 						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
 						if (tree->g[*rit].index == tree->g[*it2].index) rit++;
-							Graph::edge_descriptor e = tree->add_mig_edge( *it, *rit);
-							optimize_weight(e);
-							cout << "1->2 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-							if (current_llik > max_llik){
-								tree_bk2->copy(tree);
-								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-								max_llik = current_llik;
-								best_edge.first = tree->g[*it].index;
-								best_edge.second = tree->g[*rit].index;
-								toreturn.first = true;
-							}
+							if (tree->is_legal_migration(*it, *rit)){
+								Graph::edge_descriptor e = tree->add_mig_edge( *it, *rit);
+								optimize_weight(e);
+								cout << "1->2 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+								if (current_llik > max_llik){
+									tree_bk2->copy(tree);
+									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+									max_llik = current_llik;
+									best_edge.first = tree->g[*it].index;
+									best_edge.second = tree->g[*rit].index;
+									toreturn.first = true;
+								}
 
-							tree->remove_mig_edge(e);
+								tree->remove_mig_edge(e);
+							}
 					}
 					tested.insert(make_pair( tree->g[*it].index, tree->g[*it2].index));
 				}
@@ -1544,38 +1554,51 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					tree->remove_mig_edge(e);
 
 					if (root_adj.find(*it) != root_adj.end()){
+
 						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
 						if (tree->g[*rit].index == tree->g[*it].index) rit++;
-							Graph::edge_descriptor e = tree->add_mig_edge( *it2, *rit);
-							optimize_weight(e);
-							cout << "2->1 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-							if (current_llik > max_llik){
-								tree_bk2->copy(tree);
-								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-								max_llik = current_llik;
-								best_edge.first = tree->g[*it2].index;
-								best_edge.second = tree->g[*rit].index;
-								toreturn.first = true;
+							if (tree->is_legal_migration(*it2, *rit)){
+
+								Graph::edge_descriptor e = tree->add_mig_edge( *it2, *rit);
+
+								optimize_weight(e);
+								cout << "2->1 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+								if (current_llik > max_llik){
+									tree_bk2->copy(tree);
+									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+									max_llik = current_llik;
+									best_edge.first = tree->g[*it2].index;
+									best_edge.second = tree->g[*rit].index;
+									toreturn.first = true;
+								}
+
+								tree->remove_mig_edge(e);
 							}
 
-							tree->remove_mig_edge(e);
 					}
 					if (root_adj.find(*it2) != root_adj.end()){
+
 						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
 						if (tree->g[*rit].index == tree->g[*it2].index) rit++;
-							Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it);
-							optimize_weight(e);
-							cout << "2 (root) ->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-							if (current_llik > max_llik){
-								tree_bk2->copy(tree);
-								gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-								max_llik = current_llik;
-								best_edge.first = tree->g[*rit].index;
-								best_edge.second = tree->g[*it].index;
-								toreturn.first = true;
+							if (tree->is_legal_migration(*rit, *it)){
+
+								Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it);
+
+								optimize_weight(e);
+								cout << "2 (root) ->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+								if (current_llik > max_llik){
+									tree_bk2->copy(tree);
+									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+									max_llik = current_llik;
+									best_edge.first = tree->g[*rit].index;
+									best_edge.second = tree->g[*it].index;
+									toreturn.first = true;
+								}
+
+
+								tree->remove_mig_edge(e);
 							}
 
-							tree->remove_mig_edge(e);
 					}
 
 					tested.insert(make_pair( tree->g[*it2].index, tree->g[*it].index));

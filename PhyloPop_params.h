@@ -36,6 +36,9 @@ public:
 	string vfile;
 	string efile;
 
+	//quick optimization of weights
+	bool quick;
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
