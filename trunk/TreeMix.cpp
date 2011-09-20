@@ -26,6 +26,7 @@ void printopts(){
 	cout << "-mn [int] depth of subtree to use in migration optimization (3)\n";
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
+	cout << "-quick do fast optimization of migration weights\n";
 	cout << "\n";
 }
 
@@ -54,6 +55,7 @@ int main(int argc, char *argv[]){
       }
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     if (cmdline.HasSwitch("-noscale")) p.alfreq_scaling = 0;
+    if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
@@ -97,6 +99,7 @@ int main(int argc, char *argv[]){
     if (p.global){
     	cout << "Testing global rearrangements\n"; cout.flush();
     	state.iterate_global_hillclimb();
+    	state.set_branches_ls_wmig();
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << "\n";
@@ -105,9 +108,18 @@ int main(int argc, char *argv[]){
     	pair<bool, pair<int, int> > add = state.add_mig_targeted();
     	//cout << "Added? "<< add.first << "\n";
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
-    	state.optimize_weights();
+    	//cout << "Optim 1\n";
+    	if (p.quick){
+    		p.quick = false;
+    		state.optimize_weights();
+    		p.quick = true;
+    	}
+    	else{
+    		state.optimize_weights();
+    	}
+    	//cout << "Optim 2\n";
     	state.flip_mig();
-    	likout << st << " "<< state.current_llik << "\n";
+    	//likout << st << " "<< state.current_llik << "\n";
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 

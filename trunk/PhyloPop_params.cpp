@@ -1,3 +1,4 @@
+
 /*
  * PhyloPop_params.cpp
  *
@@ -25,4 +26,5 @@ PhyloPop_params::PhyloPop_params(){
 	read_graph = false;
 	vfile = "NA";
 	efile = "NA";
+	quick = false;
 }
