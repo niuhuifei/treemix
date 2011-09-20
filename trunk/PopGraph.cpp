@@ -237,6 +237,7 @@ Graph::edge_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph
 	Graph::vertex_descriptor p1, p2;
 	Graph::edge_descriptor e;
 	Graph::in_edge_iterator in_it = in_edges(st, g).first;
+	while( g[*in_it].is_mig) in_it++;
 	p1 = source(*in_it, g);
 	e = *in_it;
 	double oldlen = g[e].len;

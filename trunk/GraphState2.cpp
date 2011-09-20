@@ -1494,6 +1494,8 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 
 					tree->remove_mig_edge(e);
 
+
+					// test to see if one of these is around the root
 					if (root_adj.find(*it) != root_adj.end()){
 						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
 						if (tree->g[*rit].index == tree->g[*it].index) rit++;
