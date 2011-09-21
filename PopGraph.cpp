@@ -1121,57 +1121,60 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 		 v1p = get_parent_node(v1).first;
 		 v1m = get_parent_node_wmig(v1).first;
 		 if (!g[v1p].is_root){
-			 toreturn = true;
-			// print();
-			// cout << "1\n"; cout.flush();
 			 v1pp = get_parent_node(v1p).first;
-			 v1pm = get_parent_node_wmig(v1p).first;
-			 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
-			 if ( g[ch.first].index == g[v1].index) {
-				 v1m = ch.first;
-				 v1pm2 = ch.second;
-			 }
-			 else if (g[ch.second].index == g[v1].index){
-				 v1m = ch.second;
-				 v1pm2 = ch.first;
-			 }
-			 else if ( g[ch.first].is_mig && g[ get_child_node_mig(ch.first) ].index == g[v1].index){
-				 v1m = ch.first;
-				 v1pm2 = ch.second;
+				 if (!g[v1pp].is_root){
+					 toreturn = true;
+					 // print();
+					 // cout << "1\n"; cout.flush();
+					 v1pp = get_parent_node(v1p).first;
+					 v1pm = get_parent_node_wmig(v1p).first;
+					 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
+					 if ( g[ch.first].index == g[v1].index) {
+						 v1m = ch.first;
+						 v1pm2 = ch.second;
+					 }
+					 else if (g[ch.second].index == g[v1].index){
+						 v1m = ch.second;
+						 v1pm2 = ch.first;
+					 }
+					 else if ( g[ch.first].is_mig && g[ get_child_node_mig(ch.first) ].index == g[v1].index){
+						 v1m = ch.first;
+						 v1pm2 = ch.second;
 
-			 }
-			 else if ( g[ch.second].is_mig && g[ get_child_node_mig(ch.second) ].index == g[v1].index){
-				 v1m = ch.second;
-				 v1pm2 = ch.first;
+					 }
+					 else if ( g[ch.second].is_mig && g[ get_child_node_mig(ch.second) ].index == g[v1].index){
+						 v1m = ch.second;
+						 v1pm2 = ch.first;
 
-			 }
-			 //cout << g[v1p].index << " "<< g[v1pm].index << " "<< g[v1pm2].index << " "<< g[v1pp].index << "\n";
-			 remove_edge( edge(v1pm, v1p, g).first, g);
+					 }
+					 //cout << g[v1p].index << " "<< g[v1pm].index << " "<< g[v1pm2].index << " "<< g[v1pp].index << "\n";
+					 remove_edge( edge(v1pm, v1p, g).first, g);
 
-			 remove_edge( edge(v1p, v1pm2, g).first, g);
+					 remove_edge( edge(v1p, v1pm2, g).first, g);
 
-			 e = add_edge( v1pm, v1pm2, g).first;
-			 g[e].is_mig = 0;
-			 g[e].weight = 1;
-			 g[e].len = 1;
+					 e = add_edge( v1pm, v1pm2, g).first;
+					 g[e].is_mig = 0;
+					 g[e].weight = 1;
+					 g[e].len = 1;
 
-			 e = add_edge( v1p, v1pp, g).first;
-			 g[e].is_mig = 0;
-			 g[e].weight = 1;
-			 g[e].len = 1;
+					 e = add_edge( v1p, v1pp, g).first;
+					 g[e].is_mig = 0;
+					 g[e].weight = 1;
+					 g[e].len = 1;
 
 
-			 if (g[v1pp].is_root) set_root(v1p);
-			 else{
-				 v1ppp = get_parent_node_wmig(v1pp).first;
-				 //cout << "v1ppp "<< g[v1ppp].index << "\n";
-				 remove_edge( edge(v1ppp, v1pp, g).first, g);
-				 e = add_edge( v1ppp, v1p, g).first;
-				 g[e].is_mig = 0;
-				 g[e].weight = 1;
-				 g[e].len = 1;
-				 //print();
-				 //cout << "3\n"; cout.flush();
+					 if (g[v1pp].is_root) set_root(v1p);
+					 else{
+						 v1ppp = get_parent_node_wmig(v1pp).first;
+						 //cout << "v1ppp "<< g[v1ppp].index << "\n";
+						 remove_edge( edge(v1ppp, v1pp, g).first, g);
+						 e = add_edge( v1ppp, v1p, g).first;
+						 g[e].is_mig = 0;
+						 g[e].weight = 1;
+						 g[e].len = 1;
+						 //print();
+						 //cout << "3\n"; cout.flush();
+					 }
 			 }
 		 }
 	 }
