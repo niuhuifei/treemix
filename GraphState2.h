@@ -107,6 +107,8 @@ public:
 	//alterations to the tree
 	void add_mig(int, int);
 	void rearrange(int, int);
+
+	bool has_loop();
 };
 
 #endif /* GRAPHSTATE2_H_ */

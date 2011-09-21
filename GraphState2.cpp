@@ -1052,7 +1052,10 @@ int GraphState2::local_hillclimb_wmig(int index){
 	for (int i = 1; i <=3; i++){
 		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
 		Graph::vertex_descriptor v = index2v[index];
+		//tree->print("before_local");
 		bool rearr = tree->local_rearrange_wmig(v, i);
+		if ( has_loop() ) continue;
+		//tree->print("after_local");
 		//tree->print();
 		if (rearr){
 			set_branches_ls_wmig();
@@ -1806,6 +1809,7 @@ void GraphState2::flip_mig(){
 			//cout << "flipping\n"; cout.flush();
 			Graph::vertex_descriptor t = target(*it, tree->g);
 			Graph::vertex_descriptor s = source(*it, tree->g);
+			if ( tree->g[tree->get_parent_node(t).first].is_root) continue;
 			double totalw = 0;
 			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
 			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
@@ -1835,4 +1839,31 @@ void GraphState2::flip_mig(){
 			current_llik = llik();
 		}
 	}
+}
+
+
+
+bool GraphState2::has_loop(){
+	bool toreturn = false;
+	graph_traits<Graph>::edge_iterator ei, ei_end;
+	for (tie(ei, ei_end) = edges(tree->g); ei != ei_end; ++ei){
+		if (!tree->g[*ei].is_mig ) continue;
+		int si = tree->g[source(*ei, tree->g)].index;
+		int ti = tree->g[target(*ei, tree->g)].index;
+		tree_bk3->copy(tree);
+		Graph::edge_descriptor e;
+		graph_traits<Graph>::edge_iterator ei2, ei_end2;
+		Graph::vertex_descriptor t1;
+		Graph::vertex_descriptor t2;
+		for (tie(ei2, ei_end2) = edges(tree_bk3->g); ei2 != ei_end2; ++ei2){
+			if (tree_bk3->g[source(*ei2, tree_bk3->g)].index == si && tree_bk3->g[target(*ei2, tree_bk3->g)].index == ti) {
+				e = *ei2;
+				t1 = source(*ei2, tree_bk3->g);
+				t2 = target(*ei2, tree_bk3->g);
+			}
+		}
+		remove_edge(e, tree_bk3->g);
+		if (! tree_bk3->is_legal_migration(t1, t2)) return true;
+	}
+	return toreturn;
 }
