@@ -321,7 +321,7 @@ set<pair<double, set<Graph::edge_descriptor> > > PopGraph::get_paths_to_root_edg
 
 	set<pair<double, set<Graph::edge_descriptor> > > toreturn;
 
-
+	//cout << "getting path from "<< g[v].index << "\n";
 	double wsum = 0;
 	Graph::edge_descriptor nonmig;
 	for (Graph::in_edge_iterator it = in_edges(v, g).first; it != in_edges(v, g).second; it++){
@@ -329,7 +329,7 @@ set<pair<double, set<Graph::edge_descriptor> > > PopGraph::get_paths_to_root_edg
 		else wsum+= g[*it].weight;
 	}
 	g[nonmig].weight = 1-wsum;
-
+	//cout << "got nonmig\n"; cout.flush();
 	Graph::in_edge_iterator init = in_edges(v, g).first;
 	while (init != in_edges(v, g).second){
 
@@ -339,10 +339,12 @@ set<pair<double, set<Graph::edge_descriptor> > > PopGraph::get_paths_to_root_edg
 		set<Graph::edge_descriptor> tmpset;
 		tmpset.insert(*init);
 		Graph::vertex_descriptor parent = source(*init, g);
+		//cout << "got parent\n"; cout.flush();
 		if (g[parent].is_root){
 			toreturn.insert(make_pair(w, tmpset));
 		}
 		else{
+			//cout << "getting path from parent\n"; cout.flush();
 			set<pair<double, set<Graph::edge_descriptor> > > p_path = get_paths_to_root_edge(parent);
 			for (set<pair<double, set<Graph::edge_descriptor> > >::iterator it = p_path.begin(); it != p_path.end(); it++){
 				double w2 = w*it->first;
@@ -1120,6 +1122,8 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 		 v1m = get_parent_node_wmig(v1).first;
 		 if (!g[v1p].is_root){
 			 toreturn = true;
+			// print();
+			// cout << "1\n"; cout.flush();
 			 v1pp = get_parent_node(v1p).first;
 			 v1pm = get_parent_node_wmig(v1p).first;
 			 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
@@ -1141,9 +1145,11 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 				 v1pm2 = ch.first;
 
 			 }
-			 //cout << g[v1p].index << " "<< g[v1pm].index << " "<< g[v1pm2].index << "\n";
+			 //cout << g[v1p].index << " "<< g[v1pm].index << " "<< g[v1pm2].index << " "<< g[v1pp].index << "\n";
 			 remove_edge( edge(v1pm, v1p, g).first, g);
+
 			 remove_edge( edge(v1p, v1pm2, g).first, g);
+
 			 e = add_edge( v1pm, v1pm2, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
@@ -1154,14 +1160,18 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 			 g[e].weight = 1;
 			 g[e].len = 1;
 
+
 			 if (g[v1pp].is_root) set_root(v1p);
 			 else{
 				 v1ppp = get_parent_node_wmig(v1pp).first;
+				 //cout << "v1ppp "<< g[v1ppp].index << "\n";
 				 remove_edge( edge(v1ppp, v1pp, g).first, g);
 				 e = add_edge( v1ppp, v1p, g).first;
 				 g[e].is_mig = 0;
 				 g[e].weight = 1;
 				 g[e].len = 1;
+				 //print();
+				 //cout << "3\n"; cout.flush();
 			 }
 		 }
 	 }
@@ -1446,6 +1456,7 @@ void PopGraph::print(){
 	cout << "vertices(g) = ";
 	pair<vertex_iter, vertex_iter> vp;
 	for (vp = vertices(g); vp.first != vp.second; ++vp.first){
+		cout << "\n"<< g[*vp.first].name << " "<< index[*vp.first] << "\n";
 		std::cout << index[*vp.first] <<  ":"<< g[*vp.first].name << ":"<< get_dist_to_root(*vp.first);
 		if (g[*vp.first].is_root) std::cout << ":ROOT";
 		if (g[*vp.first].is_tip) std::cout << ":TIP";
@@ -1894,3 +1905,4 @@ void PopGraph::place_root(string pops){
 	remove_vertex(oldroot, g);
 
 }
+

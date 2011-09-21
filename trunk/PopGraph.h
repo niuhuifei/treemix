@@ -125,6 +125,7 @@ public:
 	bool local_rearrange_wmig(Graph::vertex_descriptor, int);
 
 
+
 };
 
 #endif /* POPGRAPH_H_ */
