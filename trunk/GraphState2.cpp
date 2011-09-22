@@ -651,7 +651,7 @@ void GraphState2::optimize_weights(){
 			golden_section_weight( *it, min, guess, max, params->tau);
 			cout << tree->g[*it].weight << "\n";
 			}
-		if (current_llik < start_llik+0.001) done = true;
+		if (current_llik < start_llik+0.01) done = true;
 		else start_llik = current_llik;
 		nit++;
 	}
@@ -1009,9 +1009,9 @@ int GraphState2::iterate_local_hillclimb_wmig(int index){
 	int moving = local_hillclimb_wmig(index);
 	if (moving  == 0 ) return 0;
 	while (moving > 0) {
-		//cout << "moving vertex "<< index << " "<< moving << "\n";
-		//cout << llik() << "\n";
-		//cout << tree->get_newick_format()<<"\n";
+		cout << "moving vertex "<< index << " "<< moving << "\n";
+		cout << llik() << "\n";
+		cout << tree->get_newick_format()<<"\n";
 		moving = local_hillclimb_wmig(index);
 	}
 	return 1;
@@ -1050,17 +1050,25 @@ int GraphState2::local_hillclimb_wmig(int index){
 	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_memcpy( tmpfitted, sigma_cor);
 	int toreturn = 0;
-	for (int i = 1; i <=3; i++){
+	for (int i = 1; i <=4; i++){
 		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
 		Graph::vertex_descriptor v = index2v[index];
-		//tree->print("before_local");
+		if (i == 4 && index == 751) {
+			tree->print("before_rearrange");
+		}
 		bool rearr = tree->local_rearrange_wmig(v, i);
-		if ( has_loop() ) continue;
-		//tree->print("after_local");
+		if ( has_loop() ) {
+			//cout << "has loop!\n";
+			tree->copy(tree_bk);
+			continue;
+		}
+
 		//tree->print();
 		if (rearr){
 			set_branches_ls_wmig();
 			double lk = llik();
+			if (i == 4 && index == 751) tree->print("after_rearrange");
+			cout << lk << " "<< max << " "<< index << " "<< i << "\n";
 			if (lk > max){
 				max = lk;
 				//cout << i << "\n";
@@ -1806,16 +1814,26 @@ void GraphState2::place_root(string r){
 void GraphState2::flip_mig(){
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
 	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
-		double w = tree->g[*it].weight;
+		Graph::vertex_descriptor v = target(*it, tree->g);
+		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
+		double w = 0;
+		double max = 0;
+		Graph::edge_descriptor e;
+		for (set<Graph::edge_descriptor>::iterator it3 = inm.begin(); it3!= inm.end(); it3++ ){
+			w += tree->g[*it3].weight;
+			if (tree->g[*it3].weight > max){
+				max = tree->g[*it3].weight;
+				e = *it3;
+			}
+		}
 		if (w > 0.6){
 
-			Graph::vertex_descriptor t = target(*it, tree->g);
-			Graph::vertex_descriptor s = source(*it, tree->g);
+			Graph::vertex_descriptor t = target(e, tree->g);
+			Graph::vertex_descriptor s = source(e, tree->g);
 			//cout << "flipping "<< tree->g[t].index << " "<< tree->g[s].index << "\n"; cout.flush();
 			if ( tree->g[tree->get_parent_node(t).first].is_root) continue;
 			double totalw = 0;
 			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
-			cout << "here2\n";
 			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
 			double left = 1-totalw;
 			Graph::edge_descriptor inc;
@@ -1839,8 +1857,8 @@ void GraphState2::flip_mig(){
 			tree->g[inc].weight = left;
 			tree->g[inc].len = 0;
 
-			tree->g[*it].is_mig = false;
-			tree->g[*it].len = 1;
+			tree->g[e].is_mig = false;
+			tree->g[e].len = 1;
 			//tree->print("after_flip");
 			set_branches_ls_wmig();
 			//cout << "here4\n";
@@ -1879,11 +1897,12 @@ bool GraphState2::has_loop(){
 			if (tree_bk3->g[source(*ei2, tree_bk3->g)].index == si && tree_bk3->g[target(*ei2, tree_bk3->g)].index == ti) {
 				e = *ei2;
 				t1 = source(*ei2, tree_bk3->g);
+				t1 = tree_bk3->get_child_node_mig(t1);
 				t2 = target(*ei2, tree_bk3->g);
 			}
 		}
-		remove_edge(e, tree_bk3->g);
-		if (! tree_bk3->is_legal_migration(t1, t2)) return true;
+		tree_bk3->remove_mig_edge(e);
+		if (!tree_bk3->is_legal_migration(t1, t2)) return true;
 	}
 	return toreturn;
 }
