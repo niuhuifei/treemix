@@ -22,16 +22,17 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	p.window_size = 200;
+	p.window_size = 1000;
 	///CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
 	//GraphState2 state(&tmpcount, &p);
 	//state.set_graph_from_file("phylopop_treein");
-	CountData tmpcount("/Users/pickrell/projects/phylopop/data/harvard_hgdp_yoruba_asc_noprimate_phylopop.gz", &p);
+	CountData tmpcount("/Users/pickrell/projects/phylopop/data/hgdp_freqs.phylopop_in.gz", &p);
 	GraphState2 state(&tmpcount, &p);
-	state.set_graph("/Users/pickrell/projects/phylopop/data/yoruba_global_reroot.vertices.gz", "/Users/pickrell/projects/phylopop/data/yoruba_global_reroot.edges.gz");
+	state.set_graph("/Users/pickrell/projects/phylopop/data/root_africa.vertices.gz", "/Users/pickrell/projects/phylopop/data/root_africa.edges.gz");
 	cout << state.llik() <<"\n"; cout.flush();
-	state.add_mig(24, 11);
+	state.add_mig(51, 135);
 	cout << state.llik() << "\n";
+	state.iterate_mig_hillclimb_and_optimweight(make_pair(51, 135));
 	//state.add_mig_targeted();
 	//state.tree->place_root("Denisova,Neander,San,BiakaPygmy,MbutiPygmy,BantuKenya,BantuSouthAfrica,Mandenka,Yoruba");
 	//state.tree->print("test");
