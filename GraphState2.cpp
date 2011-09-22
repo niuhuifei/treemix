@@ -1009,7 +1009,9 @@ int GraphState2::iterate_local_hillclimb_wmig(int index){
 	int moving = local_hillclimb_wmig(index);
 	if (moving  == 0 ) return 0;
 	while (moving > 0) {
-		cout << moving << "\n";
+		//cout << "moving vertex "<< index << " "<< moving << "\n";
+		//cout << llik() << "\n";
+		//cout << tree->get_newick_format()<<"\n";
 		moving = local_hillclimb_wmig(index);
 	}
 	return 1;
@@ -1018,7 +1020,6 @@ int GraphState2::iterate_local_hillclimb_wmig(int index){
 void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices){
 
 	int moving1 = iterate_local_hillclimb_wmig(indices.first);
-
 	//cout << "here!\n";
 	//tree->print();
 	//cout << "\n";
@@ -1079,6 +1080,7 @@ int GraphState2::local_hillclimb_wmig(int index){
 		gsl_matrix_memcpy( sigma_cor, tmpfitted);
 	}
 	else{
+		tree->copy(tree_bk);
 		current_llik = lik_bk;
 		gsl_matrix_memcpy( sigma_cor, tmpfitted);
 	}
