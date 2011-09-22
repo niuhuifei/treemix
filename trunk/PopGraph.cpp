@@ -1850,7 +1850,7 @@ void PopGraph::place_root(string pops){
 		cerr << "ERROR in placing root: no clade "<< pops << "\n";
 		exit(1);
 	}
-
+	if (g[get_parent_node(v).first].is_root) return;
 	// reverse edges on path to root
 	set<pair<double, set<Graph::edge_descriptor> > > p2root = get_paths_to_root_edge(v);
 	set<Graph::edge_descriptor> path = (*p2root.begin()).second;
