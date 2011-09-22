@@ -27,4 +27,5 @@ PhyloPop_params::PhyloPop_params(){
 	vfile = "NA";
 	efile = "NA";
 	quick = false;
+	min_migw = 0.001;
 }
