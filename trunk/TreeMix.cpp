@@ -118,6 +118,7 @@ int main(int argc, char *argv[]){
     		state.optimize_weights();
     	}
     	//cout << "Optim 2\n";
+    	state.trim_mig();
     	state.flip_mig();
     	//likout << st << " "<< state.current_llik << "\n";
     	cout << "ln(likelihood):" << state.current_llik << "\n";

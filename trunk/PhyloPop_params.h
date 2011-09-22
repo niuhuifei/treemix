@@ -38,6 +38,7 @@ public:
 
 	//quick optimization of weights
 	bool quick;
+	double min_migw;
 
 };
 

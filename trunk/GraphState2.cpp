@@ -1806,22 +1806,28 @@ void GraphState2::flip_mig(){
 	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
 		double w = tree->g[*it].weight;
 		if (w > 0.6){
-			//cout << "flipping\n"; cout.flush();
+
 			Graph::vertex_descriptor t = target(*it, tree->g);
 			Graph::vertex_descriptor s = source(*it, tree->g);
+			//cout << "flipping "<< tree->g[t].index << " "<< tree->g[s].index << "\n"; cout.flush();
 			if ( tree->g[tree->get_parent_node(t).first].is_root) continue;
 			double totalw = 0;
 			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
+			cout << "here2\n";
 			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
 			double left = 1-totalw;
 			Graph::edge_descriptor inc;
 			pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(t, tree->g);
 			while (ine.first != ine.second){
 				if (tree->g[*ine.first].is_mig == false) inc = *ine.first;
-				ine.first++;
+					ine.first++;
 			}
+			//cout << "here3\n";
 			//cout << "left "<< left << "\n"; cout.flush();
 			Graph::vertex_descriptor newm = source(inc, tree->g);
+			if (tree->g[newm].is_mig) continue;
+			set<Graph::edge_descriptor> inm2 = tree->get_in_mig_edges(newm);
+			if (inm2.size() > 0 ) continue;
 			tree->g[newm].is_mig = true;
 			tree->g[newm].mig_frac = 0.5;
 			tree->g[s].is_mig = false;
@@ -1833,11 +1839,23 @@ void GraphState2::flip_mig(){
 
 			tree->g[*it].is_mig = false;
 			tree->g[*it].len = 1;
-			//tree->print();
+			//tree->print("after_flip");
 			set_branches_ls_wmig();
+			//cout << "here4\n";
 			//tree->print();
 			current_llik = llik();
 		}
+	}
+}
+
+void GraphState2::trim_mig(){
+
+	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
+	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
+			double w = tree->g[*it].weight;
+			if (w < params->min_migw){
+				tree->remove_mig_edge(*it);
+			}
 	}
 }
 
