@@ -23,76 +23,53 @@ int main (void)
 
 	PhyloPop_params p;
 	p.window_size = 1000;
+	p.alfreq_scaling = 0;
 	///CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
 	//GraphState2 state(&tmpcount, &p);
 	//state.set_graph_from_file("phylopop_treein");
+
+
 	CountData tmpcount("/Users/pickrell/projects/phylopop/data/hgdp_freqs.phylopop_in.gz", &p);
 	GraphState2 state(&tmpcount, &p);
-	state.set_graph("/Users/pickrell/projects/phylopop/data/root_africa.vertices.gz", "/Users/pickrell/projects/phylopop/data/root_africa.edges.gz");
+	state.set_graph("/Users/pickrell/projects/phylopop/data/hgdp/noscale/hgdp_tree_global_noscale_afroot.vertices.gz", "/Users/pickrell/projects/phylopop/data/hgdp/noscale/hgdp_tree_global_noscale_afroot.edges.gz");
+	//state.place_root("San,BiakaPygmy,MbutiPygmy,Yoruba,Mandenka,BantuSouthAfrica,BantuKenya");
 	cout << state.llik() <<"\n"; cout.flush();
-	state.add_mig(51, 135);
+	//state.add_mig(4, 4892);
+	//cout << state.llik() << "\n";
+	//state.add_mig(536, 2);
+	//cout << state.llik() << "\n";
+	state.add_mig(2, 751);
 	cout << state.llik() << "\n";
-	state.iterate_mig_hillclimb_and_optimweight(make_pair(51, 135));
-	//state.add_mig_targeted();
-	//state.tree->place_root("Denisova,Neander,San,BiakaPygmy,MbutiPygmy,BantuKenya,BantuSouthAfrica,Mandenka,Yoruba");
-	//state.tree->print("test");
-	//cout << state.llik() <<"\n";
-	//state.rearrange(42, 58);
-	//cout << state.llik() <<"\n";
-	//state.add_mig(25, 42);
-	//cout << state.llik() <<"\n";
-	//state.add_mig(58, 42);
-	//cout << state.llik() <<"\n";
-	//state.optimize_weights();
-	//state.add_mig(70, 42);
-	//cout << state.llik() <<"\n";
-
-	//state.rearrange(42, 55);
-	//cout << state.llik() << "\n";
-	//state.add_mig(25, 42);
-	//cout << state.llik() << "\n";
-	//state.add_mig(25, 54);
-	//cout << state.llik() << "\n";
-
-	//state.rearrange(42, 70);
-	//cout << state.llik() << "\n";
-	//state.add_mig(25, 42);
-	//cout << state.llik() << "\n";
-	//state.add_mig(42, 54);
-	//cout << state.llik() << "\n";
-
-	//state.add_mig(42, 54);
-	//cout << state.llik() << "\n";
-	//state.add_mig(70, 42);
-	//cout << state.llik() << "\n";
-
-	//state.add_mig(13, 25);
-	//state.add_mig(34, 13);
-	//cout << state.llik() << "\n";
-	//state.optimize_weights();
-	//cout << state.llik() << "\n";
+	state.tree->print("before_flip");
+	state.flip_mig();
+	//state.iterate_mig_hillclimb_and_optimweight(make_pair(2, 751));
+	state.tree->print("after_flip");
 	cout << state.tree->get_newick_format() << "\n";
+
+
+
 
 
 	//CountData tmpcount("testin_counts.gz", &p);
 //	for( map<string, int>::iterator it = tmpcount.pop2id.begin(); it != tmpcount.pop2id.end() ; it++){
 	//	cout << it->first << " "<< tmpcount.mean_hzy[it->second]<< " "<< tmpcount.mean_ninds[it->second] << " "<< tmpcount.id2nsnp[it->second]<< "\n";
 //	}
-//	GraphState2 state(&tmpcount, &p);
+	//GraphState2 state(&tmpcount, &p);
 //	cout.precision(8);
-//	state.add_pop();
-//	state.iterate_hillclimb();
-//	state.add_pop();
-//	state.iterate_hillclimb();
-//	state.add_pop();
-//	state.iterate_hillclimb();
+	//state.add_pop();
+	//state.iterate_hillclimb();
+	//state.add_pop();
+	//state.iterate_hillclimb();
+	//state.add_pop();
+	//state.iterate_hillclimb();
 
-//	state.tree->print();
+	state.tree->print();
 //	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
 //	for (int i = 0; i < inorder.size(); i++)	cout << i << " "<< state.tree->g[ inorder[i]].index<<"\n";
 //	state.add_mig_targeted();
 //	state.tree->print();
-//	state.local_hillclimb_wmig(51);
+//	state.add_mig(4, 31);
+//	state.local_hillclimb_wmig(31);
 	//state.tree->place_root("pop6,pop3");
 	//state.tree->print();
 	//string newick =  state.tree->get_newick_subtrees( inorder[0], inorder[5] );
