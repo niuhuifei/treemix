@@ -12,13 +12,13 @@
 string infile;
 string outstem = "TreeMix";
 int nthread = 1;
-int norm_type = 3;
+int norm_type = 0;
 void printopts(){
 	cout << "\nTreeMix v.0.0 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
-	cout << "-noscale Do not rescale the allele frequencies\n";
+	cout << "-scale Rescale the allele frequencies by sqrt( p (1-p) )\n";
 	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global Do a round of global rearrangements after adding all populations\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]){
       	p.read_graph = true;
       }
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
-    if (cmdline.HasSwitch("-noscale")) p.alfreq_scaling = 0;
+    if (cmdline.HasSwitch("-scale")) p.alfreq_scaling = 3;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
@@ -120,6 +120,7 @@ int main(int argc, char *argv[]){
     	//cout << "Optim 2\n";
     	state.trim_mig();
     	state.flip_mig();
+    	state.trim_mig();
     	//likout << st << " "<< state.current_llik << "\n";
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]){
      		double w = state.tree->g[*it].weight;
 
         		double lk = state.llik();
-        		treeout << state.tree->g[*it].weight<< " "<< state.tree->g[*it].len << " ";
+        		treeout << state.tree->g[*it].weight<< " ";
         		state.tree->g[*it].weight = 0;
         		state.set_branches_ls_wmig();
 
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]){
    // state.set_branches_ls_wmig();
     //cout << state.tree->get_newick_format();
     //state.tree->print();
-    state.tree->print(outstem);
+    state.print_trimmed(outstem);
     state.print_sigma_cor(modelcovfile);
   //  state.tree->print();
   //  map<int, Graph::vertex_descriptor> test = state.tree->index2vertex();

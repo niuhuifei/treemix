@@ -1009,7 +1009,7 @@ int GraphState2::iterate_local_hillclimb_wmig(int index){
 	int moving = local_hillclimb_wmig(index);
 	if (moving  == 0 ) return 0;
 	while (moving > 0) {
-		cout << "moving vertex "<< index << " "<< moving << "\n";
+		//cout << "moving vertex "<< index << " "<< moving << "\n";
 		cout << llik() << "\n";
 		cout << tree->get_newick_format()<<"\n";
 		moving = local_hillclimb_wmig(index);
@@ -1053,9 +1053,9 @@ int GraphState2::local_hillclimb_wmig(int index){
 	for (int i = 1; i <=4; i++){
 		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
 		Graph::vertex_descriptor v = index2v[index];
-		if (i == 4 && index == 751) {
-			tree->print("before_rearrange");
-		}
+		//if (i == 4 && index == 751) {
+		//	tree->print("before_rearrange");
+		//}
 		bool rearr = tree->local_rearrange_wmig(v, i);
 		if ( has_loop() ) {
 			//cout << "has loop!\n";
@@ -1067,8 +1067,8 @@ int GraphState2::local_hillclimb_wmig(int index){
 		if (rearr){
 			set_branches_ls_wmig();
 			double lk = llik();
-			if (i == 4 && index == 751) tree->print("after_rearrange");
-			cout << lk << " "<< max << " "<< index << " "<< i << "\n";
+			//if (i == 4 && index == 751) tree->print("after_rearrange");
+			//cout << lk << " "<< max << " "<< index << " "<< i << "\n";
 			if (lk > max){
 				max = lk;
 				//cout << i << "\n";
@@ -1774,6 +1774,23 @@ string GraphState2::get_trimmed_newick(){
 	return toreturn;
 }
 
+
+void GraphState2::print_trimmed(string stem){
+	map<string, double> trim;
+	string toreturn;
+
+	for ( map<string, int>::iterator it = countdata->pop2id.begin(); it!= countdata->pop2id.end(); it++){
+		int id = it->second;
+		string pop = it->first;
+		double meanhzy = countdata->mean_hzy.find(id)->second;
+		double mean_n = countdata->mean_ninds.find(id)->second;
+		double t = meanhzy / (4.0* mean_n);
+		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
+		trim.insert(make_pair(pop, t));
+	}
+	tree->print(stem, &trim);
+}
+
 Graph::vertex_descriptor GraphState2::get_neighborhood(Graph::vertex_descriptor v){
 	Graph::vertex_descriptor toreturn = v;
 	int i = 0;
@@ -1864,6 +1881,7 @@ void GraphState2::flip_mig(){
 			//cout << "here4\n";
 			//tree->print();
 			current_llik = llik();
+			iterate_local_hillclimb_wmig(tree->g[t].index);
 		}
 	}
 }
@@ -1873,8 +1891,10 @@ void GraphState2::trim_mig(){
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
 	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
 			double w = tree->g[*it].weight;
+			Graph::vertex_descriptor v = target(*it, tree->g);
 			if (w < params->min_migw){
 				tree->remove_mig_edge(*it);
+				iterate_local_hillclimb_wmig(tree->g[v].index);
 			}
 	}
 }

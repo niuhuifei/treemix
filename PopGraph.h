@@ -70,6 +70,7 @@ public:
 	set<Graph::vertex_descriptor> get_root_adj();
 	void print();
 	void print(string);
+	void print(string, map<string, double>*);
 	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);
 
 	double get_height(Graph::vertex_descriptor);
