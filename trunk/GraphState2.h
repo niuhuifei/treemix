@@ -50,6 +50,9 @@ public:
 	//set the root to a given clade
 	void place_root(string);
 
+	//print
+	void print_trimmed(string);
+
 	//covariance matrix
 	void compute_sigma();
 	void print_sigma();

@@ -1606,6 +1606,54 @@ void PopGraph::print(string stem){
 }
 
 
+void PopGraph::print(string stem, map<string, double>* trim){
+	string outvfile = stem+".vertices.gz";
+	string outefile = stem+".edges.gz";
+	ogzstream outv(outvfile.c_str());
+	ogzstream oute(outefile.c_str());
+	IndexMap index = get(&Node::index, g);
+	pair<vertex_iter, vertex_iter> vp;
+	for (vp = vertices(g); vp.first != vp.second; ++vp.first){
+		outv << index[*vp.first] <<  " "<< g[*vp.first].name << " ";
+		if (g[*vp.first].is_root) outv << "ROOT ";
+		else outv << "NOT_ROOT ";
+		if (g[*vp.first].is_mig) outv << "MIG ";
+		else outv << "NOT_MIG ";
+		if (g[*vp.first].is_tip) outv << "TIP ";
+		else outv << "NOT_TIP ";
+		if ( g[*vp.first].is_mig ) {
+			outv << g[get_parent_node(*vp.first).first].index << " "<< g[get_child_node_mig(*vp.first)].index << " NA NA NA NA\n";
+		}
+		else{
+
+			outv << g[get_parent_node(*vp.first).first].index << " ";
+			if (g[*vp.first].is_tip) outv << "NA NA NA NA ";
+			else {
+				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes(*vp.first);
+				outv << g[ch.first].index << " "<< get_tips(ch.first).size() << " "<< g[ch.second].index << " "<< get_tips(ch.second).size()<< " ";
+			}
+			outv << get_newick_format(*vp.first) <<"\n";
+		}
+	}
+
+    graph_traits<Graph>::edge_iterator ei, ei_end;
+    for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei){
+    	oute << index[source(*ei, g)] << " "<< index[target(*ei, g)] << " ";
+        Graph::vertex_descriptor s = source( *ei, g);
+        Graph::vertex_descriptor t = target( *ei, g);
+        if (g[t].is_tip && !g[*ei].is_mig){
+        	double tm = trim->find( g[t].name )->second;
+        	double trimlen = g[*ei].len - tm ;
+        	oute << trimlen << " "<< g[*ei].weight << " ";
+        }
+
+        else oute << g[*ei].len << " "<< g[*ei].weight << " ";
+		if (g[*ei].is_mig) oute << "MIG\n";
+		else oute << "NOT_MIG\n";
+    }
+}
+
+
 string PopGraph::get_newick_format(map<string, double>* trim){
  	string toreturn = "";
  	newick_helper(root, &toreturn, trim);
