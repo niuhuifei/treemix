@@ -114,6 +114,7 @@ public:
 	vector<Graph::edge_descriptor> get_mig_edges();
 	void remove_mig_edge(Graph::edge_descriptor);
 	set<Graph::edge_descriptor> get_in_mig_edges(Graph::vertex_descriptor);
+	Graph::edge_descriptor get_out_mig_edge(Graph::vertex_descriptor);
 	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes(Graph::vertex_descriptor); // skips over migration nodes
 	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> get_child_nodes_wmig(Graph::vertex_descriptor);
 	Graph::vertex_descriptor get_child_node_mig(Graph::vertex_descriptor); //input a migration node, get the next non-migration node (along non-migration edges)

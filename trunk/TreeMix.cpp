@@ -14,7 +14,7 @@ string outstem = "TreeMix";
 int nthread = 1;
 int norm_type = 0;
 void printopts(){
-	cout << "\nTreeMix v.0.0 \n by JKP\n\n";
+	cout << "\nTreeMix v.0.1 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -74,6 +74,7 @@ int main(int argc, char *argv[]){
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
     CountData counts(infile, &p);
+
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
     GraphState2 state(&counts, &p);
@@ -174,5 +175,6 @@ int main(int argc, char *argv[]){
   //  	state.tree->print();
   //  	cout << state.llik() << "\n";
   // }
+
 	return 0;
 }

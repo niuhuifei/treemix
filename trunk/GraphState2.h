@@ -107,7 +107,8 @@ public:
 	void trim_mig();
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();
-
+	void iterate_movemig(int);
+	pair<bool, int> movemig(int);
 	//alterations to the tree
 	void add_mig(int, int);
 	void rearrange(int, int);
