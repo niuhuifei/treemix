@@ -1010,8 +1010,8 @@ int GraphState2::iterate_local_hillclimb_wmig(int index){
 	if (moving  == 0 ) return 0;
 	while (moving > 0) {
 		//cout << "moving vertex "<< index << " "<< moving << "\n";
-		cout << llik() << "\n";
-		cout << tree->get_newick_format()<<"\n";
+		//cout << llik() << "\n";
+		//cout << tree->get_newick_format()<<"\n";
 		moving = local_hillclimb_wmig(index);
 	}
 	return 1;
@@ -1881,6 +1881,7 @@ void GraphState2::flip_mig(){
 			//cout << "here4\n";
 			//tree->print();
 			current_llik = llik();
+			//iterate_movemig( tree->g[newm].index);
 			iterate_local_hillclimb_wmig(tree->g[t].index);
 		}
 	}
@@ -1926,3 +1927,117 @@ bool GraphState2::has_loop(){
 	}
 	return toreturn;
 }
+
+void GraphState2::iterate_movemig(int index){
+
+	pair<bool, int> moving = movemig(index);
+	while( moving.first){
+		moving = movemig(moving.second);
+	}
+
+}
+
+pair<bool, int> GraphState2::movemig( int index ){
+
+	pair<bool, int> toreturn = make_pair(false, 0);
+	double max = current_llik;
+	double lik_bk = current_llik;
+	tree_bk->copy(tree);
+	tree_bk2->copy(tree);
+	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted, sigma_cor);
+	gsl_matrix *tmpfitted2 = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+	tree->print("test");
+	for (int i = 0; i < 3 ; i++){
+		cout << "moving "<< i <<"\n";
+		map<int, Graph::vertex_descriptor> vindex = tree->index2vertex();
+		Graph::vertex_descriptor s = vindex[index];
+		Graph::vertex_descriptor p = tree->get_parent_node(s).first;
+		Graph::vertex_descriptor ch = tree->get_child_node_mig(s);
+		Graph::edge_descriptor e = tree->get_out_mig_edge(s);
+		Graph::vertex_descriptor t = target(e, tree->g);
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch2 = tree->get_child_nodes(ch);
+
+		if ( i == 0){
+			if (tree->g[p].is_root){
+				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch3 = tree->get_child_nodes(p);
+				if ( tree->g[ch3.first].index == tree->g[ch].index )	 p = ch3.second;
+				else p = ch3.first;
+			}
+
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(p, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(p, t);
+				optimize_weight(e2);
+				tree->print("test0");
+				cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max){
+					max = current_llik;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+		else if (i == 1){
+			if (tree->g[ch].is_tip) continue;
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(ch2.first, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(ch2.first, t);
+				optimize_weight(e2);
+				tree->print("test1");
+				cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max){
+					max = current_llik;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+		else if (i == 2){
+			if (tree->g[ch].is_tip) continue;
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(ch2.second, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(ch2.second, t);
+				optimize_weight(e2);
+				tree->print("test2");
+				cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max){
+					max = current_llik;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+
+
+	}
+	if (toreturn.first){
+		tree->copy(tree_bk2);
+		gsl_matrix_memcpy( sigma_cor, tmpfitted2);
+		current_llik = max;
+	}
+	else{
+		gsl_matrix_memcpy( sigma_cor, tmpfitted);
+		current_llik = lik_bk;
+		tree->copy(tree_bk);
+	}
+	gsl_matrix_free(tmpfitted);
+	gsl_matrix_free(tmpfitted2);
+	return toreturn;
+}
+
+
+

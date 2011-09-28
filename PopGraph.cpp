@@ -1898,7 +1898,7 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 
 	if (g[st].is_root || g[sp].is_root) return false;
 
-	if ( get_parent_node(st).first == get_parent_node(sp).first)return false;
+	//if ( get_parent_node(st).first == get_parent_node(sp).first)return false;
 
 	if ( st == get_parent_node(sp).first || sp == get_parent_node(st).first )return false;
 
@@ -1950,6 +1950,23 @@ set<Graph::edge_descriptor> PopGraph::get_in_mig_edges(Graph::vertex_descriptor 
 	while (ine.first != ine.second){
 		if ( g[*ine.first].is_mig) toreturn.insert(*ine.first);
 		ine.first++;
+	}
+	return toreturn;
+
+
+}
+
+
+Graph::edge_descriptor PopGraph::get_out_mig_edge(Graph::vertex_descriptor v){
+	if (!g[v].is_mig){
+		cerr << "ERROR: calling get_out_mig_edge on a non-migration node\n";
+		exit(1);
+	}
+	Graph::edge_descriptor toreturn;
+	pair<Graph::out_edge_iterator, Graph::out_edge_iterator> oute = out_edges(v, g);
+	while (oute.first != oute.second){
+		if ( g[*oute.first].is_mig) toreturn = *oute.first;
+		oute.first++;
 	}
 	return toreturn;
 
