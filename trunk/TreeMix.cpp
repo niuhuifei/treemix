@@ -14,7 +14,7 @@ string outstem = "TreeMix";
 int nthread = 1;
 int norm_type = 0;
 void printopts(){
-	cout << "\nTreeMix v.0.1 \n by JKP\n\n";
+	cout << "\nTreeMix v.0.11 \n by JKP\n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -112,23 +112,23 @@ int main(int argc, char *argv[]){
     	//cout << "Optim 1\n";
     	if (p.quick){
     		p.quick = false;
+    		state.optimize_fracs();
     		state.optimize_weights();
+
     		p.quick = true;
     	}
     	else{
+    		state.optimize_fracs();
     		state.optimize_weights();
+
     	}
-    	//cout << "Optim 2\n";
     	state.trim_mig();
     	state.flip_mig();
     	state.trim_mig();
-    	//likout << st << " "<< state.current_llik << "\n";
+
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 
-    //cout << state.tree->get_newick_format() << "\n";
-    //state.set_branches_ls_wmig();
-    //cout << state.tree->get_newick_format() << "\n";
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
 
@@ -156,25 +156,10 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
-   // cout << state.llik_wishart() << "\n";
-    //cout << state.tree->get_newick_format();
-   // state.set_branches_ls_wmig();
-    //cout << state.tree->get_newick_format();
-    //state.tree->print();
+
     state.print_trimmed(outstem);
     state.print_sigma_cor(modelcovfile);
-  //  state.tree->print();
-  //  map<int, Graph::vertex_descriptor> test = state.tree->index2vertex();
-  //  Graph::vertex_descriptor moz = test[28];
-  //  set<Graph::edge_descriptor> mig = state.tree->get_in_mig_edges(moz);
-  //  Graph::edge_descriptor mige = *(mig.begin());
-  //  for(double m = 0; m < 0.95; m+=0.05){
-  //  	state.tree->g[mige].weight = m;
-  //  	state.set_branches_ls_wmig();
-   // 	cout << m << "\n";
-  //  	state.tree->print();
-  //  	cout << state.llik() << "\n";
-  // }
+
 
 	return 0;
 }

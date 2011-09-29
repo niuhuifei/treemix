@@ -15,8 +15,8 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 10;
-	//cout << "SEED: "<< seed << "\n";
+	seed = 1317332588;
+	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
 	for (int i = 0; i <  allpopnames.size(); i++)	popname2index.insert(make_pair( allpopnames[i], i));
@@ -651,7 +651,36 @@ void GraphState2::optimize_weights(){
 			golden_section_weight( *it, min, guess, max, params->tau);
 			cout << tree->g[*it].weight << "\n";
 			}
-		if (current_llik < start_llik+0.01) done = true;
+		if (current_llik < start_llik+0.1) done = true;
+		else start_llik = current_llik;
+		nit++;
+	}
+
+}
+
+
+void GraphState2::optimize_fracs(){
+	/*
+	 *  Go through each migration edge, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *
+	 */
+
+	// get list of migration edges
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	double start_llik = current_llik;
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
+			double min, max, guess;
+			guess = tree->g[source(*it, tree->g)].mig_frac;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_frac( *it, min, guess, max, params->tau);
+			cout << tree->g[source(*it, tree->g)].mig_frac << " frac\n";
+			}
+		if (current_llik < start_llik+0.1) done = true;
 		else start_llik = current_llik;
 		nit++;
 	}
@@ -677,6 +706,8 @@ void GraphState2::quick_optimize_weight(Graph::edge_descriptor e){
 	current_llik = llik();
 }
 
+
+
 void GraphState2::optimize_weight(Graph::edge_descriptor e){
 
 	if (params->quick){
@@ -700,6 +731,31 @@ void GraphState2::optimize_weight(Graph::edge_descriptor e){
 			nit++;
 		}
 	}
+
+}
+
+
+
+void GraphState2::optimize_frac(Graph::edge_descriptor e){
+
+
+		double start_llik = current_llik;
+		bool done = false;
+		int nit = 0;
+		while(!done && nit < params->maxit){
+			//cout << nit << "\n"; cout.flush();
+			double min, max, guess;
+			guess = tree->g[source(e, tree->g)].mig_frac;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_frac(e, min, guess, max, params->tau);
+			if (current_llik < start_llik+0.01) done = true;
+			else start_llik = current_llik;
+			//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
+			nit++;
+		}
+
 
 }
 int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, double guess, double max, double tau){
@@ -741,6 +797,46 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 	}
 }
 
+
+int GraphState2::golden_section_frac(Graph::edge_descriptor e, double min, double guess, double max, double tau){
+	double x;
+
+	//cout << guess << "\n"; cout.flush();
+	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
+	else x = guess - resphi *(guess-min);
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+		double new_logweight = (min+max)/2;
+		double neww = 1/ (1+exp(-new_logweight));
+		tree->set_mig_frac(e, neww);
+		set_branches_ls_wmig();
+		current_llik = llik();
+		return 0;
+	}
+	double w = 1/(1+exp(-x));
+	tree->set_mig_frac(e, w);
+	//cout << "here\n"; cout.flush();
+	set_branches_ls_wmig();
+	//cout << "not here\n"; cout.flush();
+	double f_x = -llik();
+
+	w = 1/(1+exp(-guess));
+	tree->set_mig_frac(e, w);
+	//tree->g[e].weight = w;
+	//cout << "here2\n"; cout.flush();
+	set_branches_ls_wmig();
+	//cout << "not here2\n"; cout.flush();
+	double f_guess = -llik();
+
+	if (f_x < f_guess){
+		if ( (max-guess) > (guess-min) )	return golden_section_frac(e, guess, x, max, tau);
+
+		else return golden_section_frac(e, min, x, guess, tau);
+	}
+	else{
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
+		else return golden_section_frac(e, x, guess, max, tau);
+	}
+}
 
 void GraphState2::set_branches_ls_wmig(){
 
@@ -794,11 +890,26 @@ void GraphState2::set_branches_ls_wmig(){
 		else if ( tree->g[t].is_mig) {
 			index_vertex = tree->get_child_node_mig(t);
 		}
-
 		else index_vertex = t;
-		//if (tree->g[t].is_mig) f = tree->g[t].mig_frac;
-		//else if (tree->g[t2].is_mig) f = 1-tree->g[t2].mig_frac;
-		f = tree->g[*it].len / tree->get_parent_node(index_vertex).second;
+
+		if (tree->g[t].is_mig || tree->g[t2].is_mig){
+			if (tree->g[t].is_mig && tree->g[t2].is_mig)	{
+				//cout << "here?\n"; cout.flush();
+				f = tree->g[t].mig_frac - tree->g[t2].mig_frac;
+			}
+			else if (tree->g[t].is_mig) {
+				//cout << "here2 "<< tree->g[t].mig_frac << "\n";
+				f = tree->g[t].mig_frac;
+			}
+			else if (tree->g[t2].is_mig) {
+				//cout << "here3 "<< tree->g[t2].mig_frac << "\n";
+				f = 1-tree->g[t2].mig_frac;
+			}
+		}
+
+		//f = tree->g[*it].len / tree->get_parent_node(index_vertex).second;
+
+		//cout << tree->g[t2].index << " "<< tree->g[t].index << " "<< f<< " "<< tree->g[*it].len << "\n";
 		//cout << tree->g[source(*it, tree->g)].index << " "<< tree->g[t].index << " "<< f << " "<< f2 << "\n";
 		//cout << tree->g[t].index << "\n";
 		if (root_adj.find(index_vertex) != root_adj.end()) f = f/2;
@@ -1328,10 +1439,11 @@ void GraphState2::print_sigma_cor(string outfile){
 	}
 }
 
-void GraphState2::add_mig(int index1, int index2){
+Graph::edge_descriptor GraphState2::add_mig(int index1, int index2){
+	Graph::edge_descriptor e;
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
-		Graph::edge_descriptor e = tree->add_mig_edge(i2v[index1], i2v[index2]);
+		e = tree->add_mig_edge(i2v[index1], i2v[index2]);
 		//quick_optimize_weight(e);
 		optimize_weight(e);
 		//quick_optimize_weight(e);
@@ -1350,6 +1462,7 @@ void GraphState2::add_mig(int index1, int index2){
 		exit(1);
 	}
 	current_llik = llik();
+	return(e);
 }
 
 void GraphState2::rearrange(int index1, int index2){
@@ -1360,6 +1473,7 @@ void GraphState2::rearrange(int index1, int index2){
 }
 
 void GraphState2::add_mig(){
+
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
 	int maxst;
 	int maxsp;
@@ -1830,8 +1944,11 @@ void GraphState2::place_root(string r){
 
 void GraphState2::flip_mig(){
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
+	//tree->print("test2");
+
 	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
 		Graph::vertex_descriptor v = target(*it, tree->g);
+		//cout << tree->g[v].index << " "<< tree->g[source(*it, tree->g)].index << "\n";
 		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
 		double w = 0;
 		double max = 0;
@@ -1844,7 +1961,6 @@ void GraphState2::flip_mig(){
 			}
 		}
 		if (w > 0.6){
-
 			Graph::vertex_descriptor t = target(e, tree->g);
 			Graph::vertex_descriptor s = source(e, tree->g);
 			//cout << "flipping "<< tree->g[t].index << " "<< tree->g[s].index << "\n"; cout.flush();
@@ -1859,32 +1975,36 @@ void GraphState2::flip_mig(){
 				if (tree->g[*ine.first].is_mig == false) inc = *ine.first;
 					ine.first++;
 			}
-			//cout << "here3\n";
-			//cout << "left "<< left << "\n"; cout.flush();
+
 			Graph::vertex_descriptor newm = source(inc, tree->g);
 			if (tree->g[newm].is_mig) continue;
 			set<Graph::edge_descriptor> inm2 = tree->get_in_mig_edges(newm);
+
 			if (inm2.size() > 0 ) continue;
 			tree->g[newm].is_mig = true;
 			tree->g[newm].mig_frac = 0.5;
+
 			tree->g[s].is_mig = false;
 			tree->g[s].mig_frac = 0;
 
 			tree->g[inc].is_mig = true;
 			tree->g[inc].weight = left;
 			tree->g[inc].len = 0;
+			//cout << "here?\n"; cout.flush();
+			tree->set_mig_frac(inc, 0.5);
+
 
 			tree->g[e].is_mig = false;
 			tree->g[e].len = 1;
-			//tree->print("after_flip");
 			set_branches_ls_wmig();
-			//cout << "here4\n";
-			//tree->print();
+
 			current_llik = llik();
 			//iterate_movemig( tree->g[newm].index);
-			iterate_local_hillclimb_wmig(tree->g[t].index);
+			//iterate_local_hillclimb_wmig(tree->g[t].index);
+
 		}
 	}
+
 }
 
 void GraphState2::trim_mig(){
@@ -1895,7 +2015,6 @@ void GraphState2::trim_mig(){
 			Graph::vertex_descriptor v = target(*it, tree->g);
 			if (w < params->min_migw){
 				tree->remove_mig_edge(*it);
-				iterate_local_hillclimb_wmig(tree->g[v].index);
 			}
 	}
 }

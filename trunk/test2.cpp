@@ -24,11 +24,12 @@ int main (void)
 	PhyloPop_params p;
 	p.window_size = 1000;
 	p.alfreq_scaling = 0;
-	///CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
+	//CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
 	//GraphState2 state(&tmpcount, &p);
 	//state.set_graph_from_file("phylopop_treein");
+	//state.tree->print();
 
-
+	/*
 	CountData tmpcount("/Users/pickrell/projects/phylopop/data/hgdp_freqs.phylopop_in.gz", &p);
 	GraphState2 state(&tmpcount, &p);
 	state.set_graph("/Users/pickrell/projects/phylopop/data/hgdp/noscale/hgdp_tree_global_noscale_afroot.vertices.gz", "/Users/pickrell/projects/phylopop/data/hgdp/noscale/hgdp_tree_global_noscale_afroot.edges.gz");
@@ -45,25 +46,39 @@ int main (void)
 	//state.iterate_mig_hillclimb_and_optimweight(make_pair(2, 751));
 	state.tree->print("after_flip");
 	cout << state.tree->get_newick_format() << "\n";
+*/
 
 
 
 
-
-	//CountData tmpcount("testin_counts.gz", &p);
+	CountData tmpcount("testin_counts.gz", &p);
 //	for( map<string, int>::iterator it = tmpcount.pop2id.begin(); it != tmpcount.pop2id.end() ; it++){
 	//	cout << it->first << " "<< tmpcount.mean_hzy[it->second]<< " "<< tmpcount.mean_ninds[it->second] << " "<< tmpcount.id2nsnp[it->second]<< "\n";
 //	}
-	//GraphState2 state(&tmpcount, &p);
+	GraphState2 state(&tmpcount, &p);
 //	cout.precision(8);
-	//state.add_pop();
-	//state.iterate_hillclimb();
-	//state.add_pop();
-	//state.iterate_hillclimb();
-	//state.add_pop();
-	//state.iterate_hillclimb();
+	state.add_pop();
+	state.iterate_hillclimb();
+	state.add_pop();
+	state.iterate_hillclimb();
+	state.add_pop();
+	state.iterate_hillclimb();
+	Graph::edge_descriptor e = state.add_mig(3, 51);
+	state.tree->set_mig_frac(e, 0.3);
+	e = state.add_mig(3, 31);
+	state.tree->set_mig_frac(e, 0.7);
 
-	state.tree->print();
+	state.tree->set_mig_frac(e, 0.1);
+
+	state.tree->set_mig_frac(e, 0.7);
+	//state.tree->g[source(e, state.tree->g)].mig_frac = 0.1;
+	e = state.add_mig(3, 15);
+
+	state.tree->set_mig_frac(e, 0.05);
+	state.tree->print("before");
+	cout << "here\n";
+	state.tree->set_mig_frac(e, 0.95);
+	state.tree->print("test");
 //	vector<Graph::vertex_descriptor> inorder = state.tree->get_inorder_traversal(6);
 //	for (int i = 0; i < inorder.size(); i++)	cout << i << " "<< state.tree->g[ inorder[i]].index<<"\n";
 //	state.add_mig_targeted();

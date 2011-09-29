@@ -87,6 +87,11 @@ public:
 	void quick_optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
 
+	void optimize_fracs();
+	void optimize_frac(Graph::edge_descriptor);
+	void quick_optimize_frac(Graph::edge_descriptor);
+	int golden_section_frac(Graph::edge_descriptor, double, double, double, double);
+
 	//likelihoods
 	double llik();
 	double llik_normal();
@@ -109,8 +114,9 @@ public:
 	string get_trimmed_newick();
 	void iterate_movemig(int);
 	pair<bool, int> movemig(int);
+
 	//alterations to the tree
-	void add_mig(int, int);
+	Graph::edge_descriptor add_mig(int, int);
 	void rearrange(int, int);
 
 	bool has_loop();
