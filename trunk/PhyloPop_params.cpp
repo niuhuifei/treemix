@@ -28,4 +28,5 @@ PhyloPop_params::PhyloPop_params(){
 	efile = "NA";
 	quick = false;
 	min_migw = 0.001;
+	nofrac = false;
 }

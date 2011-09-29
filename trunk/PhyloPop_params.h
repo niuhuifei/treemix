@@ -40,6 +40,8 @@ public:
 	bool quick;
 	double min_migw;
 
+	bool nofrac;
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
