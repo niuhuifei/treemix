@@ -240,6 +240,12 @@ Graph::edge_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph
 	while( g[*in_it].is_mig) in_it++;
 	p1 = source(*in_it, g);
 	e = *in_it;
+	while( g[p1].is_mig && g[p1].mig_frac > 0.5) {
+		st = p1;
+		p1 = get_parent_node_wmig(p1).first;
+		e = edge(p1, st, g).first;
+	}
+
 	double oldlen = g[e].len;
 	//remove edge, insert node
 	remove_edge(e, g);
@@ -452,6 +458,7 @@ void PopGraph::copy(PopGraph * s){
 		g[vd].is_root = s->g[*it].is_root;
 		g[vd].is_tip = s->g[*it].is_tip;
 		g[vd].is_mig = s->g[*it].is_mig;
+		g[vd].mig_frac = s->g[*it].mig_frac;
 		tmpmap.insert(make_pair( g[vd].index, vd));
 		if (s->g[*it].is_root == true) root = vd;
 	}
@@ -1600,8 +1607,9 @@ void PopGraph::print(string stem){
     graph_traits<Graph>::edge_iterator ei, ei_end;
     for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei){
         oute << index[source(*ei, g)] << " "<< index[target(*ei, g)] << " "<< g[*ei].len << " "<< g[*ei].weight << " ";
-		if (g[*ei].is_mig) oute << "MIG\n";
-		else oute << "NOT_MIG\n";
+		if (g[*ei].is_mig) oute << "MIG ";
+		else oute << "NOT_MIG ";
+		oute << g[source(*ei, g)].mig_frac << "\n";
     }
 }
 
@@ -1648,8 +1656,9 @@ void PopGraph::print(string stem, map<string, double>* trim){
         }
 
         else oute << g[*ei].len << " "<< g[*ei].weight << " ";
-		if (g[*ei].is_mig) oute << "MIG\n";
-		else oute << "NOT_MIG\n";
+		if (g[*ei].is_mig) oute << "MIG ";
+		else oute << "NOT_MIG ";
+		oute << g[source(*ei, g)].mig_frac << "\n";
     }
 }
 
@@ -2067,3 +2076,79 @@ void PopGraph::place_root(string pops){
 
 }
 
+void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
+	if (!g[e].is_mig){
+		cerr << "ERROR: calling set_mig_frac on a non-migration edge\n";
+		exit(1);
+	}
+	Graph::vertex_descriptor v = source(e, g);
+	g[v].mig_frac = newfrac;
+	Graph::vertex_descriptor p = get_parent_node_wmig(v).first;
+	Graph::vertex_descriptor c;
+	pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v);
+	if ( g[edge(v, ch.first, g).first].is_mig) c = ch.second;
+	else c = ch.first;
+	while ( g[p].is_mig && g[p].mig_frac > newfrac){
+		//cout << "here\n";
+		//print ("before");
+		Graph::vertex_descriptor p2 = get_parent_node_wmig(p).first;
+		double l = get_parent_node_wmig(p).second;
+		Graph::edge_descriptor ec = edge(v, c, g).first;
+		Graph::edge_descriptor ep = edge(p, v, g).first;
+
+		double l_ec = g[ec].len;
+		double l_ep = g[ep].len;
+		//cout << "her2\n"; cout.flush();
+		Graph::edge_descriptor e = add_edge(p, c, g).first;
+
+		g[e].weight = 1;
+		g[e].len = l_ec+l_ep;
+		remove_edge(p, v, g);
+		remove_edge(v, c, g);
+		remove_edge(p2, p, g);
+		//cout << "here3\n"; cout.flush();
+		e = add_edge(p2, v, g).first;
+		g[e].weight = 1;
+		g[e].len = l;
+		e = add_edge(v, p, g).first;
+		g[e].weight = 1;
+		g[e].len = 0;
+		//cout << "here4\n"; cout.flush();
+		c = p;
+		p = p2;
+
+	}
+
+	while ( g[c].is_mig && g[c].mig_frac < newfrac){
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> c2ch = get_child_nodes_wmig(c);
+		Graph::vertex_descriptor c2;
+		if ( g[edge(c, c2ch.first, g).first].is_mig) c2 = c2ch.second;
+		else c2 = c2ch.first;
+		//cout << g[v].index << " "<< g[p].index << " "<< g[c].index << " "<< g[c2].index << "\n";
+		//print ("before2");
+		double l = get_parent_node_wmig(c2).second;
+		Graph::edge_descriptor ec = edge(v, c, g).first;
+		Graph::edge_descriptor ep = edge(p, v, g).first;
+		//cout << "here1\n"; cout.flush();
+		double l_ec = g[ec].len;
+		double l_ep = g[ep].len;
+		//cout << "here2\n"; cout.flush();
+		Graph::edge_descriptor e = add_edge(p, c, g).first;
+
+		g[e].weight = 1;
+		g[e].len = l_ec+l_ep;
+		remove_edge(p, v, g);
+		remove_edge(v, c, g);
+		remove_edge(c, c2, g);
+		//cout << "here3\n"; cout.flush();
+		e = add_edge(c, v, g).first;
+		g[e].weight = 1;
+		g[e].len = 0;
+		e = add_edge(v, c2, g).first;
+		g[e].weight = 1;
+		g[e].len = l;
+
+		p = c;
+		c = c2;
+	}
+}
