@@ -14,7 +14,7 @@ string outstem = "TreeMix";
 int nthread = 1;
 int norm_type = 0;
 void printopts(){
-	cout << "\nTreeMix v.0.11 \n by JKP\n\n";
+	cout << "\nTreeMix v.0.1.1 \n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -27,6 +27,7 @@ void printopts(){
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
 	cout << "-quick do fast optimization of migration weights\n";
+	cout << "-nofrac Force migration nodes to fall in the middle of their branches\n";
 	cout << "\n";
 }
 
@@ -54,6 +55,7 @@ int main(int argc, char *argv[]){
       	p.read_graph = true;
       }
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
+    if (cmdline.HasSwitch("-nofrac")) p.nofrac = true;
     if (cmdline.HasSwitch("-scale")) p.alfreq_scaling = 3;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
@@ -112,13 +114,14 @@ int main(int argc, char *argv[]){
     	//cout << "Optim 1\n";
     	if (p.quick){
     		p.quick = false;
-    		state.optimize_fracs();
+    		if (!p.nofrac) state.optimize_fracs();
     		state.optimize_weights();
 
     		p.quick = true;
     	}
     	else{
-    		state.optimize_fracs();
+
+    		if (!p.nofrac) state.optimize_fracs();
     		state.optimize_weights();
 
     	}
