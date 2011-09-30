@@ -171,9 +171,36 @@ void GraphState2::set_graph(string vfile, string efile){
 		Graph::edge_descriptor e = add_edge( i2v[index1], i2v[index2], tree->g).first;
 		tree->g[e].len = len;
 		tree->g[e].weight = w;
-		if (mig == "MIG") tree->g[e].is_mig = true;
+		if (mig == "MIG") {
+			//cout << "here\n";
+			tree->g[e].is_mig = true;
+			//float mig_frac = atof(line[5].c_str());
+			//tree->set_mig_frac(e, mig_frac);
+			//cout << "not here\n";
+		}
 		else tree->g[e].is_mig = false;
     }
+    ein.close();
+    igzstream ein2(efile.c_str());
+    while(getline(ein2, st)){
+     	string buf;
+ 		stringstream ss(st);
+ 		line.clear();
+ 		while (ss>> buf){
+ 			line.push_back(buf);
+ 		}
+ 		int index1 = atoi(line[0].c_str());
+ 		int index2 = atoi(line[1].c_str());
+ 		string mig= line[4];
+ 		Graph::edge_descriptor e = edge( i2v[index1], i2v[index2], tree->g).first;
+ 		if (mig == "MIG") {
+ 			//cout << "here\n";
+ 			//tree->g[e].is_mig = true;
+ 			float mig_frac = atof(line[5].c_str());
+ 			tree->set_mig_frac(e, mig_frac);
+ 			//cout << "not here\n";
+ 		}
+     }
 	gsl_matrix_free(sigma);
 	sigma = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_set_zero(sigma);
@@ -2016,6 +2043,7 @@ void GraphState2::trim_mig(){
 			Graph::vertex_descriptor v = target(*it, tree->g);
 			if (w < params->min_migw){
 				tree->remove_mig_edge(*it);
+				set_branches_ls_wmig();
 			}
 	}
 }
