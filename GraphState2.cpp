@@ -1997,7 +1997,8 @@ void GraphState2::flip_mig(){
 			tree->g[e].is_mig = false;
 			tree->g[e].len = 1;
 			set_branches_ls_wmig();
-
+			optimize_frac(inc);
+			//optimize_weight(inc);
 			current_llik = llik();
 			//iterate_movemig( tree->g[newm].index);
 			//iterate_local_hillclimb_wmig(tree->g[t].index);
