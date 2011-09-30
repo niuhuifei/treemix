@@ -128,7 +128,7 @@ int main(int argc, char *argv[]){
     	state.trim_mig();
     	state.flip_mig();
     	state.trim_mig();
-
+    	state.set_branches_ls_wmig();
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 
