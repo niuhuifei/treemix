@@ -1992,6 +1992,7 @@ void GraphState2::flip_mig(){
 			Graph::vertex_descriptor s = source(e, tree->g);
 			//cout << "flipping "<< tree->g[t].index << " "<< tree->g[s].index << "\n"; cout.flush();
 			if ( tree->g[tree->get_parent_node(t).first].is_root) continue;
+			if ( tree->g[ tree->get_parent_node(t).first].index ==  tree->g[ tree->get_parent_node(s).first].index ) continue;
 			double totalw = 0;
 			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
 			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
