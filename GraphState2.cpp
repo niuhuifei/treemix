@@ -1972,9 +1972,9 @@ void GraphState2::place_root(string r){
 void GraphState2::flip_mig(){
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
 	//tree->print("test2");
-
-	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
-		Graph::vertex_descriptor v = target(*it, tree->g);
+	int i = 0;
+	while (i < m.size()){
+		Graph::vertex_descriptor v = target(m[i], tree->g);
 		//cout << tree->g[v].index << " "<< tree->g[source(*it, tree->g)].index << "\n";
 		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
 		double w = 0;
@@ -1987,7 +1987,7 @@ void GraphState2::flip_mig(){
 				e = *it3;
 			}
 		}
-		if (w > 0.6){
+		if (w > 0.6 && tree->g[e].is_mig){
 			Graph::vertex_descriptor t = target(e, tree->g);
 			Graph::vertex_descriptor s = source(e, tree->g);
 			//cout << "flipping "<< tree->g[t].index << " "<< tree->g[s].index << "\n"; cout.flush();
@@ -2030,8 +2030,10 @@ void GraphState2::flip_mig(){
 			current_llik = llik();
 			//iterate_movemig( tree->g[newm].index);
 			//iterate_local_hillclimb_wmig(tree->g[t].index);
-
+			m = tree->get_mig_edges();
+			i = 0;
 		}
+		i++;
 	}
 
 }
@@ -2039,12 +2041,15 @@ void GraphState2::flip_mig(){
 void GraphState2::trim_mig(){
 
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
-	for (vector<Graph::edge_descriptor>::iterator it = m.begin(); it != m.end(); it++){
-			double w = tree->g[*it].weight;
-			Graph::vertex_descriptor v = target(*it, tree->g);
+	int i = 0;
+	while (i < m.size()){
+			double w = tree->g[ m[i] ].weight;
+			Graph::vertex_descriptor v = target( m[i], tree->g);
 			if (w < params->min_migw){
-				tree->remove_mig_edge(*it);
+				tree->remove_mig_edge(m[i]);
 				set_branches_ls_wmig();
+				m = tree->get_mig_edges();
+				i = 0;
 			}
 	}
 }
