@@ -24,11 +24,12 @@ public:
 	int npop, nsnp, ef_nsnp;
 	string get_pops(); //in Newick format
 	vector<string> list_pops(); //simple list
-	gsl_matrix *alfreqs, *scatter, *cov, *cov_var;
+	gsl_matrix *alfreqs, *scatter, *cov, *cov_var, *cov_var2;
 	void set_alfreqs();
 	void scale_alfreqs();
 	void set_scatter();
 	void set_cov();
+	void set_cov2();
 	void process_scatter();
 	void process_cov();
 	void read_scatter(string); //for debugging
@@ -40,8 +41,12 @@ public:
 	double get_scatter(string, string);
 	void print_cov(string);
 	void print_cov_var(string);
+	void print_cov_var2(string);
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
+	gsl_matrix *U, *scatter_prime;
+	int ne;
+	void set_ne();
 };
 
 #endif /* COUNTDATA_H_ */

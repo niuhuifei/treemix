@@ -1019,9 +1019,13 @@ double GraphState2::llik_normal(){
 			double se = countdata->get_cov_var(p1, p2);
 			double dif = obs-pred;
 			double toadd = gsl_ran_gaussian_pdf(dif, se);
+			if (toadd < 1e-300) 	toadd = 1e-300;
+
+			//cout << pred << " "<< obs << " "<< se << " "<< toadd << "\n";
 			toreturn+= log(toadd);
 		}
 	}
+	//cout << "tmp "<< (double) tmp / (double) total <<"\n";
 	return toreturn;
 }
 
@@ -1332,91 +1336,150 @@ double GraphState2::llik_wishart(){
 		}
 	}
 
+/*
+	for (int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			cout << gsl_matrix_get(scatter, i, j) << " ";
+		}
+		cout << "\n";
+	}
+*/
 	double toreturn = 0;
 	int s;
 	double ld;
-	double lpseudodet_sigma = 0;
 	int p = current_npops;
 	int n = countdata->nsnp -1;
 
-	// Get pseudoinverse and pseudodeterminant of sigma_cor
-	// 1. Do SVD of sigma_cor
-	// sigma_cor = U S V^t
-	gsl_matrix * U = gsl_matrix_alloc(p,p);
-	gsl_matrix_memcpy( U, sigma_cor );
-	gsl_matrix * V = gsl_matrix_alloc(p, p);
+	//set scatter gamma
+	scatter_gamma = ( (double) (p-1) * ( (double)  (p-1)-1.0) /4.0) * log (M_PI);
+	for (int i = 1; i <= p-1; i++) scatter_gamma+= gsl_sf_lngamma( (double) n/2.0 + (1.0- (double) i)/2.0);
+
+	gsl_matrix * U = gsl_matrix_alloc(p-1, p);
+	gsl_matrix *scatter_prime = gsl_matrix_alloc(p-1, p-1);
+	gsl_matrix * W_prime = gsl_matrix_alloc(p-1, p-1);
+	gsl_matrix * W_inv = gsl_matrix_alloc(p-1, p-1);
+
+	// 1. Take SVD of scatter
+	gsl_matrix * A = gsl_matrix_alloc(p,p);
+	gsl_matrix * VT = gsl_matrix_alloc(p,p);
 	gsl_vector * S = gsl_vector_alloc(p);
-	gsl_matrix * Smat = gsl_matrix_alloc(p, p);
-	gsl_matrix * Si = gsl_matrix_alloc(p, p);
-	gsl_matrix * VSi = gsl_matrix_alloc(p, p);
-	gsl_matrix * sigma_pinv = gsl_matrix_alloc(p, p);
-	gsl_matrix_set_zero(Smat);
-	gsl_matrix_set_zero(Si);
-	gsl_linalg_SV_decomp_jacobi( U, V, S );
-	for (int i = 0; i < p; i++) {
-		double eig = gsl_vector_get(S, i);
-		cout << "eig "<< eig <<"\n";
-		gsl_matrix_set(Smat, i, i, eig);
-		if (eig > 1E-8) {
-			lpseudodet_sigma += log( gsl_vector_get(S, i));
-			gsl_matrix_set(Si, i, i,  1/eig);
+	gsl_vector * work = gsl_vector_alloc(p);
+	gsl_matrix_memcpy( A, scatter );
+
+	gsl_linalg_SV_decomp(A, VT, S, work);
+
+
+	// Now copy the first npop=1 eigenvectors to U
+
+	for (int i = 0; i < p-1; i++){
+		for(int j = 0; j < p; j++){
+			gsl_matrix_set(U, i, j, gsl_matrix_get(A, i, j));
 		}
 	}
-	// 2. multiply matrices
-	gsl_matrix_transpose( Si ); // this is the pseudoinverse of S
-	gsl_matrix_transpose( U ); // the transpose of U
-	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, V, Si, 0.0, VSi);
-	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, VSi, U, 0.0, sigma_pinv);
-
-
-	// Get the determinant of the scatter matrix
-	gsl_matrix * work = gsl_matrix_alloc(p, p);
-	gsl_matrix_memcpy( work, scatter);
-	gsl_permutation * perm = gsl_permutation_alloc(p);
-	gsl_linalg_LU_decomp( work, perm, &s );
-	scatter_det = gsl_linalg_LU_lndet( work );
-
-	for (int i = 0; i < current_npops; i++){
-
+/*
+	cout << "\n";
+	for (int i = 0; i < current_npops-1; i++){
 		for (int j = 0; j < current_npops; j++){
-			cout << gsl_matrix_get(sigma_pinv, i, j) << " ";
+			cout << gsl_matrix_get(U, i, j) << " ";
 		}
 		cout << "\n";
 	}
 
+	cout << "\n";
+*/
+	// 2. transform scatter into m-1 space
+	// S' = U S U^T
 
+	gsl_matrix * US = gsl_matrix_alloc(p-1, p);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U, scatter, 0.0, US);
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, US, U, 0.0, scatter_prime);
+/*
+	for (int i = 0; i < current_npops-1; i++){
+			for (int j = 0; j < current_npops-1; j++){
+				cout << gsl_matrix_get(scatter_prime, i, j) << " ";
+			}
+			cout << "\n";
+		}
+	cout <<"\n";
+
+	*/
+	// 3. Same thing on predicted covariance matrix
+	gsl_matrix * UW = gsl_matrix_alloc(p-1, p);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U, sigma_cor, 0.0, UW);
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, UW, U, 0.0, W_prime);
+
+
+	// 4. Do LU decomposition and get determinant of scatter_prime
+	gsl_matrix_free(A);
+	A = gsl_matrix_alloc(p-1, p-1);
+	gsl_matrix_memcpy( A, scatter_prime );
+	gsl_permutation * perm = gsl_permutation_alloc(p-1);
+	gsl_linalg_LU_decomp( A, perm, &s );
+	scatter_det = gsl_linalg_LU_lndet( A );
+
+	// 5. Do LU decomposition, get inverse of W_prime
+	gsl_matrix_free(A);
+	gsl_permutation_free(perm);
+	A = gsl_matrix_alloc(p-1, p-1);
+	gsl_matrix_memcpy( A, W_prime );
+	perm = gsl_permutation_alloc(p-1);
+	gsl_linalg_LU_decomp( A, perm, &s );
+	gsl_linalg_LU_invert( A, perm, W_inv );
+	double w_det = gsl_linalg_LU_lndet( A );
+/*
+	cout << "scatter_prime_det "<< scatter_det << " w_det "<< w_det <<"\n";
 	for (int i = 0; i < current_npops; i++){
-
 		for (int j = 0; j < current_npops; j++){
 			cout << gsl_matrix_get(sigma_cor, i, j) << " ";
 		}
 		cout << "\n";
 	}
 
+	cout<<"\n";
+
+	for (int i = 0; i < current_npops-1; i++){
+			for (int j = 0; j < current_npops-1; j++){
+				cout << gsl_matrix_get(W_prime, i, j) << " ";
+			}
+			cout << "\n";
+		}
+	cout <<"\n";
+
+	for (int i = 0; i < current_npops-1; i++){
+			for (int j = 0; j < current_npops-1; j++){
+				cout << gsl_matrix_get(W_inv, i, j) << " ";
+			}
+			cout << "\n";
+		}
+	cout <<"\n";
+
+	*/
 	//multiply inverse of cov by scatter, get trace
-	gsl_matrix * ViU = gsl_matrix_alloc(p, p);
-	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, sigma_pinv, scatter, 0.0, ViU);
+	gsl_matrix * ViU = gsl_matrix_alloc(p-1, p-1);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, W_inv, scatter_prime, 0.0, ViU);
 
 	double trace = 0;
-	for (int i = 0; i < p ; i++) trace+= gsl_matrix_get(ViU, i, i);
-	cout << scatter_det << " "<< trace << " "<< lpseudodet_sigma << " "<< scatter_gamma << "\n";
-	toreturn+= ( (double) n- (double) p-1.0 )/2.0 * scatter_det - trace/2.0;
-	toreturn+= -( (double) n* (double) p/2.0) * log(2.0);
-	toreturn += -((double) n/2.0)*lpseudodet_sigma;
+	for (int i = 0; i < p-1 ; i++) trace+= gsl_matrix_get(ViU, i, i);
+
+	toreturn+= ( (double) n- (double) (p-1)-1.0 )/2.0 * scatter_det - trace/2.0;
+	toreturn+= -( (double) n* (double) (p-1)/2.0) * log(2.0);
+	toreturn += -((double) n/2.0)*w_det;
 	toreturn+= -scatter_gamma;
 
-	gsl_matrix_free(work);
-	gsl_matrix_free(U);
-	gsl_matrix_free(V);
+	gsl_matrix_free( U );
+	gsl_matrix_free(scatter_prime);
+	gsl_matrix_free(W_prime);
+	gsl_matrix_free(W_inv);
+	gsl_matrix_free(A);
+	gsl_matrix_free(VT);
 	gsl_vector_free(S);
-	gsl_matrix_free(Smat);
-	gsl_matrix_free(Si);
-	gsl_matrix_free(VSi);
-	gsl_matrix_free(sigma_pinv);
+	gsl_vector_free(work);
 	gsl_matrix_free(ViU);
+	gsl_matrix_free( US );
+	gsl_matrix_free( UW );
 	gsl_permutation_free(perm);
 
-
+	//cout << "llik: "<< toreturn <<"\n";
 	return toreturn;
 }
 
@@ -1974,6 +2037,7 @@ void GraphState2::flip_mig(){
 	//tree->print("test2");
 	int i = 0;
 	while (i < m.size()){
+		//cout << i << " in flip\n";
 		Graph::vertex_descriptor v = target(m[i], tree->g);
 		//cout << tree->g[v].index << " "<< tree->g[source(*it, tree->g)].index << "\n";
 		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
@@ -1991,8 +2055,14 @@ void GraphState2::flip_mig(){
 			Graph::vertex_descriptor t = target(e, tree->g);
 			Graph::vertex_descriptor s = source(e, tree->g);
 			//cout << "flipping "<< tree->g[t].index << " "<< tree->g[s].index << "\n"; cout.flush();
-			if ( tree->g[tree->get_parent_node(t).first].is_root) continue;
-			if ( tree->g[ tree->get_parent_node(t).first].index ==  tree->g[ tree->get_parent_node(s).first].index ) continue;
+			if ( tree->g[tree->get_parent_node(t).first].is_root) {
+				i++;
+				continue;
+			}
+			if ( tree->g[ tree->get_parent_node(t).first].index ==  tree->g[ tree->get_parent_node(s).first].index ) {
+				i++;
+				continue;
+			}
 			double totalw = 0;
 			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
 			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
@@ -2005,10 +2075,16 @@ void GraphState2::flip_mig(){
 			}
 
 			Graph::vertex_descriptor newm = source(inc, tree->g);
-			if (tree->g[newm].is_mig) continue;
+			if (tree->g[newm].is_mig) {
+				i++;
+				continue;
+			}
 			set<Graph::edge_descriptor> inm2 = tree->get_in_mig_edges(newm);
 
-			if (inm2.size() > 0 ) continue;
+			if (inm2.size() > 0 ) {
+				i++;
+				continue;
+			}
 			tree->g[newm].is_mig = true;
 			tree->g[newm].mig_frac = 0.5;
 
@@ -2032,6 +2108,7 @@ void GraphState2::flip_mig(){
 			//iterate_local_hillclimb_wmig(tree->g[t].index);
 			m = tree->get_mig_edges();
 			i = 0;
+			continue;
 		}
 		i++;
 	}
@@ -2043,6 +2120,7 @@ void GraphState2::trim_mig(){
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
 	int i = 0;
 	while (i < m.size()){
+			//cout << i <<" in trim\n";
 			double w = tree->g[ m[i] ].weight;
 			Graph::vertex_descriptor v = target( m[i], tree->g);
 			if (w < params->min_migw){
@@ -2050,7 +2128,9 @@ void GraphState2::trim_mig(){
 				set_branches_ls_wmig();
 				m = tree->get_mig_edges();
 				i = 0;
+				continue;
 			}
+			i++;
 	}
 }
 
