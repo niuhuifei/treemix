@@ -80,7 +80,6 @@ int main(int argc, char *argv[]){
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
     GraphState2 state(&counts, &p);
-    //GraphState3 s3(&state, &p);
     cout.precision(10);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
@@ -93,7 +92,6 @@ int main(int argc, char *argv[]){
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
-    	//cout << counts.npop << " "<< state.current_npops << "\n";
     	state.add_pop();
     	state.iterate_hillclimb();
     	cout << "ln(likelihood): "<< state.current_llik << "\n";
@@ -109,7 +107,6 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < p.nmig; i++){
     	double st = state.llik();
     	pair<bool, pair<int, int> > add = state.add_mig_targeted();
-    	//cout << "Added? "<< add.first << "\n";
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
     	//cout << "Optim 1\n";
     	if (p.quick){
@@ -125,8 +122,11 @@ int main(int argc, char *argv[]){
     		state.optimize_weights();
 
     	}
+    	state.tree->print("before_trim1");
     	state.trim_mig();
+    	state.tree->print("before_flip");
     	state.flip_mig();
+    	state.tree->print("before_trim2");
     	state.trim_mig();
     	state.set_branches_ls_wmig();
     	cout << "ln(likelihood):" << state.current_llik << "\n";

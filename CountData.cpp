@@ -15,11 +15,17 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	scatter = gsl_matrix_alloc(npop, npop);
 	cov = gsl_matrix_alloc(npop, npop);
 	cov_var = gsl_matrix_alloc(npop, npop);
+	cov_var2 = gsl_matrix_alloc(npop, npop);
+	U = gsl_matrix_alloc(npop-1, npop);
+	scatter_prime = gsl_matrix_alloc(npop-1, npop-1);
 	set_alfreqs();
 	scale_alfreqs();
 	set_scatter();
-	process_scatter();
+	//process_scatter();
 	set_cov();
+	set_cov2();
+	set_ne();
+	cout << "Effective number of SNPs: "<< ne << "\n";
 	//process_cov();
 }
 
@@ -301,7 +307,7 @@ void CountData::set_cov(){
 	//cout << npop << "\n";
 	cov = gsl_matrix_alloc(npop, npop);
 	cov_var = gsl_matrix_alloc(npop, npop);
-
+	//cov_var2 = gsl_matrix_alloc(npop, npop);
 	//initialize block estimation of covariance matrix
 	vector<vector<vector<double> > > cov_block;
 	for (int i = 0; i < npop; i++){
@@ -344,23 +350,56 @@ void CountData::set_cov(){
 			// and standard error
 			sum = 0;
 			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
-			double c = sum/nblock;
-			c = sqrt(c);
+			double sd = sqrt(sum/ (double) nblock);
+			double c = sd/ sqrt( (double) nblock);
+			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
 			gsl_matrix_set(cov_var, i, j, c);
 			gsl_matrix_set(cov_var, j, i, c);
 		}
 	}
+}
 
 
-	/*for (int i = 0; i < npop; i++){
+void CountData::set_cov2(){
+	/*
+	 * Get SE of covariance matrix without blocks
+	 */
+	gsl_matrix_free(cov_var2);
+	cov_var2 = gsl_matrix_alloc(npop, npop);
+	gsl_matrix *tmpcov = gsl_matrix_alloc(npop, npop);
+	//calculate the covariance matrix
+
+	for(int i = 0; i < npop; i++){
 		for (int j = i; j < npop; j++){
-			double sc = gsl_matrix_get(scatter, i, j);
-			double c = sc/ ( (double) nsnp - 1);
-			gsl_matrix_set(cov, i, j, c);
-			gsl_matrix_set(cov, j, i, c);
+			double c = 0;
+			for (int k = 0; k < nsnp; k++){
+				if (isnan(gsl_matrix_get(alfreqs, k, i))) continue;
+				double toadd = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
+				c+= toadd;
+			}
+			double cov = c/nsnp;
+			gsl_matrix_set(tmpcov, i, j, cov);
+			gsl_matrix_set(tmpcov, j, i, cov);
 		}
 	}
-	*/
+
+	//calculate the SE
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double mean = gsl_matrix_get(tmpcov, i, j);
+			double sum = 0;
+			for (int k = 0; k < nsnp; k++){
+				double s = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
+				sum+= (s-mean)*(s-mean);
+			}
+
+			double sd = sqrt(sum/ (double) nsnp);
+			double c = sd/ sqrt( (double) nsnp);
+			gsl_matrix_set(cov_var2, i, j, c);
+			gsl_matrix_set(cov_var2, j, i, c);
+		}
+	}
+	gsl_matrix_free(tmpcov);
 }
 
 void CountData::print_scatter(string outfile){
@@ -408,27 +447,64 @@ void CountData::print_fst(string outfile){
 }
 
 void CountData::process_scatter(){
-	// get the log of the determinant of the covariance matrix
-	// also calculate the log of the multivariate gamma function
+	// project scatter matrix into (npop-1) space
+	// get matrix for transformation
+	// get determinant and gamma
+
 	scatter_det = 0;
 	scatter_gamma = 0;
 	int n = nsnp-1;
 	size_t pop = npop;
 	int s;
-	gsl_matrix * work = gsl_matrix_alloc(pop,pop);
-	gsl_matrix_memcpy( work, scatter );
-	gsl_permutation * p = gsl_permutation_alloc(pop);
 
-	//do LU decomposition and get determinant
-	gsl_linalg_LU_decomp( work, p, &s );
-	scatter_det = gsl_linalg_LU_lndet( work );
+	//first do SVD on scatter matrix
+	gsl_matrix * A = gsl_matrix_alloc(pop,pop);
+	gsl_matrix * VT = gsl_matrix_alloc(pop,pop);
+	gsl_vector * S = gsl_vector_alloc(pop);
+	gsl_vector * work = gsl_vector_alloc(pop);
+	gsl_matrix_memcpy( A, scatter );
+
+	gsl_linalg_SV_decomp(A, VT, S, work);
+
+	// Now copy the first npop=1 eigenvectors to U
+
+	for (int i = 0; i < npop-1; i++){
+		for(int j = 0; j < npop; j++){
+			gsl_matrix_set(U, i, j, gsl_matrix_get(A, i, j));
+		}
+	}
+
+	// And transform scatter into m-1 space
+	// S' = U S U^T
+
+	gsl_matrix * US = gsl_matrix_alloc(pop-1, pop);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U, scatter, 0.0, US);
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, US, U, 0.0, scatter_prime);
+
+	// Now do LU decomposition and get determinant of scatter_prime
+	gsl_matrix_free(A);
+	A = gsl_matrix_alloc(npop-1, npop-1);
+	gsl_matrix_memcpy( A, scatter_prime );
+	gsl_permutation * p = gsl_permutation_alloc(pop-1);
+	gsl_linalg_LU_decomp( A, p, &s );
+	scatter_det = gsl_linalg_LU_lndet( A );
+
+
 	//get the log sum of the gammas
 	//cout << npop << " "<< n << "\n";
-	scatter_gamma = ( (double) npop * ( (double)  npop-1.0) /4.0) * log (M_PI);
+	scatter_gamma = ( (double) (pop-1) * ( (double)  npop-2.0) /4.0) * log (M_PI);
 	//cout << scatter_gamma << " sg1\n";
-	for (int i = 1; i <= npop; i++) scatter_gamma+= gsl_sf_lngamma( (double) n/2.0 + (1.0- (double) i)/2.0);
+	for (int i = 1; i <= pop-1; i++) scatter_gamma+= gsl_sf_lngamma( (double) n/2.0 + (1.0- (double) i)/2.0);
 	//cout << scatter_gamma << " sg2\n";
-	//cout << "scatter_gamma "<< scatter_gamma << "\n";
+	cout << "scatter_gamma "<< scatter_gamma << "\n";
+	cout << "scatter_det "<< scatter_det << "\n";
+	gsl_matrix_free(A);
+	gsl_matrix_free(VT);
+	gsl_matrix_free(US);
+	gsl_vector_free(S);
+	gsl_vector_free(work);
+	gsl_permutation_free(p);
+
 }
 
 void CountData::process_cov(){
@@ -539,4 +615,35 @@ void CountData::print_cov_var(string outfile){
 		out << "\n";
 	}
 
+}
+
+
+void CountData::print_cov_var2(string outfile){
+	ogzstream out(outfile.c_str());
+	vector<string> pops = list_pops();
+	for (int i = 0; i < pops.size(); i++) out << pops.at(i)<< " ";
+	out << "\n";
+	for (int i = 0; i < pops.size(); i++){
+		out << pops.at(i);
+		for(int j = 0; j < pops.size(); j++)	 out << " "<< gsl_matrix_get(cov_var2, pop2id[pops[i]], pop2id[pops[j]]);
+		out << "\n";
+	}
+
+}
+
+
+void CountData::set_ne(){
+	ne = 0;
+	double tmpne = 0;
+	int pairs = 0;
+	for (int i = 0; i < npop; i++){
+		for(int j = i ; j < npop; j++){
+			double tmp =gsl_matrix_get(cov_var, i, j)/gsl_matrix_get(cov_var2, i, j);
+			tmpne+= tmp;
+			pairs++;
+		}
+	}
+	tmpne = tmpne/ (double) pairs;
+	tmpne = tmpne* nsnp;
+	ne = int(tmpne);
 }

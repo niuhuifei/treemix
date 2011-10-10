@@ -22,10 +22,13 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	p.window_size = 1000;
+	p.window_size = 100;
 	p.alfreq_scaling = 0;
-	//CountData tmpcount("/Users/pickrell/Desktop/rosenburg_model_20pop2_phylopop_in.gz", &p);
-	//GraphState2 state(&tmpcount, &p);
+	CountData tmpcount("/Users/pickrell/projects/phylopop/rosenburg_model_20pop2_phylopop_in.gz", &p);
+	tmpcount.print_cov_var("covvar.gz");
+	GraphState2 state(&tmpcount, &p);
+	state.llik_wishart();
+	tmpcount.print_cov_var2("covvar2.gz");
 	//state.set_graph_from_file("phylopop_treein");
 	//state.tree->print();
 
@@ -49,7 +52,7 @@ int main (void)
 */
 
 
-
+/*
 
 	CountData tmpcount("testin_counts.gz", &p);
 //	for( map<string, int>::iterator it = tmpcount.pop2id.begin(); it != tmpcount.pop2id.end() ; it++){
