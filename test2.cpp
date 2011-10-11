@@ -22,9 +22,10 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	p.window_size = 100;
+	p.window_size = 1000;
 	p.alfreq_scaling = 0;
 	CountData tmpcount("/Users/pickrell/projects/phylopop/rosenburg_model_20pop2_phylopop_in.gz", &p);
+	tmpcount.print_alfreqs("alfreqs.gz");
 	tmpcount.print_cov_var("covvar.gz");
 	GraphState2 state(&tmpcount, &p);
 	state.llik_wishart();

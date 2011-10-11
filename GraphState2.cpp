@@ -1018,11 +1018,16 @@ double GraphState2::llik_normal(){
 			double obs = countdata->get_cov(p1, p2);
 			double se = countdata->get_cov_var(p1, p2);
 			double dif = obs-pred;
-			double toadd = gsl_ran_gaussian_pdf(dif, se);
-			if (toadd < 1e-300) 	toadd = 1e-300;
+			double toadd = gsl_ran_gaussian_pdf(dif, se * sqrt(params->window_size));
+			//double toadd = gsl_ran_gaussian_pdf(dif, se);
 
 			//cout << pred << " "<< obs << " "<< se << " "<< toadd << "\n";
 			toreturn+= log(toadd);
+			//if (toadd < 1e-300) 	{
+			//				cout << toadd << " "<< log(toadd) << " "<< toreturn << "\n";
+			//				cerr << "WARNING: underflow in normal likelihood\n";
+							//toadd = 1e-300;
+			//}
 		}
 	}
 	//cout << "tmp "<< (double) tmp / (double) total <<"\n";
@@ -1329,10 +1334,11 @@ double GraphState2::llik_wishart(){
 	// density is ( [n-p-1]/2 * scatter_det - [1/2] trace [sigma^-1 * scatter] - [np/2] ln(2) - [n/2] ln(det(sigma)) - scatter_gamma
 	gsl_matrix_free(scatter);
 	scatter = gsl_matrix_alloc(current_npops, current_npops);
+	double scale = (double) countdata->ne/ (double) countdata->nsnp;
 	for (int i = 0; i < current_npops; i++){
 		for (int j = 0; j < current_npops; j++){
 			//cout << allpopnames[i] << " "<< allpopnames[j] << " "<< countdata->get_scatter(allpopnames[i], allpopnames[j]) << "\n";
-			gsl_matrix_set(scatter, i, j, countdata->get_scatter( allpopnames[i], allpopnames[j] ));
+			gsl_matrix_set(scatter, i, j, countdata->get_scatter( allpopnames[i], allpopnames[j] ) *scale);
 		}
 	}
 
@@ -1348,7 +1354,7 @@ double GraphState2::llik_wishart(){
 	int s;
 	double ld;
 	int p = current_npops;
-	int n = countdata->nsnp -1;
+	int n = countdata->ne;
 
 	//set scatter gamma
 	scatter_gamma = ( (double) (p-1) * ( (double)  (p-1)-1.0) /4.0) * log (M_PI);
@@ -1393,7 +1399,8 @@ double GraphState2::llik_wishart(){
 	gsl_matrix * US = gsl_matrix_alloc(p-1, p);
 	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U, scatter, 0.0, US);
 	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, US, U, 0.0, scatter_prime);
-/*
+
+	/*
 	for (int i = 0; i < current_npops-1; i++){
 			for (int j = 0; j < current_npops-1; j++){
 				cout << gsl_matrix_get(scatter_prime, i, j) << " ";
@@ -1401,8 +1408,8 @@ double GraphState2::llik_wishart(){
 			cout << "\n";
 		}
 	cout <<"\n";
+*/
 
-	*/
 	// 3. Same thing on predicted covariance matrix
 	gsl_matrix * UW = gsl_matrix_alloc(p-1, p);
 	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U, sigma_cor, 0.0, UW);
@@ -1436,7 +1443,8 @@ double GraphState2::llik_wishart(){
 	}
 
 	cout<<"\n";
-
+*/
+/*
 	for (int i = 0; i < current_npops-1; i++){
 			for (int j = 0; j < current_npops-1; j++){
 				cout << gsl_matrix_get(W_prime, i, j) << " ";
@@ -1444,7 +1452,8 @@ double GraphState2::llik_wishart(){
 			cout << "\n";
 		}
 	cout <<"\n";
-
+	*/
+/*
 	for (int i = 0; i < current_npops-1; i++){
 			for (int j = 0; j < current_npops-1; j++){
 				cout << gsl_matrix_get(W_inv, i, j) << " ";
@@ -1479,7 +1488,7 @@ double GraphState2::llik_wishart(){
 	gsl_matrix_free( UW );
 	gsl_permutation_free(perm);
 
-	//cout << "llik: "<< toreturn <<"\n";
+	//cout << "llik: "<< toreturn <<" "<< n << " \n";
 	return toreturn;
 }
 

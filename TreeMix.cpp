@@ -142,12 +142,15 @@ int main(int argc, char *argv[]){
      		double w = state.tree->g[*it].weight;
 
         		double lk = state.llik();
+        		double wlk = state.llik_wishart();
         		treeout << state.tree->g[*it].weight<< " ";
         		state.tree->g[*it].weight = 0;
         		state.set_branches_ls_wmig();
 
         		double lk0 = state.llik();
+        		double wlk0 = state.llik_wishart();
         		treeout << lk0 << " "<< lk << " ";
+        		treeout << wlk0 << " "<< wlk << " ";
         		state.tree->g[*it].weight = w;
         		state.set_branches_ls_wmig();
 
