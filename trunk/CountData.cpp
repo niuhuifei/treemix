@@ -332,7 +332,7 @@ void CountData::set_cov(){
 					double toadd = gsl_matrix_get(alfreqs, n, i) * gsl_matrix_get(alfreqs, n, j);
 					c+= toadd;
 				}
-				double cov = c/params->window_size;
+				double cov = c/ (double) params->window_size;
 				cov_block[i][j].push_back(cov);
 			}
 		}
@@ -350,8 +350,8 @@ void CountData::set_cov(){
 			// and standard error
 			sum = 0;
 			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
-			double sd = sqrt(sum/ (double) nblock);
-			double c = sd/ sqrt( (double) nblock);
+			//double sd = sqrt(sum/ (double) nblock);
+			double c = sqrt(sum) /(double) nblock;
 			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
 			gsl_matrix_set(cov_var, i, j, c);
 			gsl_matrix_set(cov_var, j, i, c);
@@ -377,7 +377,8 @@ void CountData::set_cov2(){
 				double toadd = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
 				c+= toadd;
 			}
-			double cov = c/nsnp;
+			double cov = c/(double) nsnp;
+			//cout << i << " "<< j << " "<< cov << "\n";
 			gsl_matrix_set(tmpcov, i, j, cov);
 			gsl_matrix_set(tmpcov, j, i, cov);
 		}
@@ -390,11 +391,15 @@ void CountData::set_cov2(){
 			double sum = 0;
 			for (int k = 0; k < nsnp; k++){
 				double s = gsl_matrix_get(alfreqs, k, i) * gsl_matrix_get(alfreqs, k, j);
+
 				sum+= (s-mean)*(s-mean);
 			}
 
-			double sd = sqrt(sum/ (double) nsnp);
-			double c = sd/ sqrt( (double) nsnp);
+			//double sd = sqrt(sum/ (double) nsnp);
+			double c = sqrt(sum)/ (double) nsnp;
+			//if (i == 0 && j ==2){
+			//	cout << "sum "<< sum << " "<< nsnp << " "<< c << "\n";
+			//}
 			gsl_matrix_set(cov_var2, i, j, c);
 			gsl_matrix_set(cov_var2, j, i, c);
 		}
@@ -412,6 +417,17 @@ void CountData::print_scatter(string outfile){
 		out << "\n";
 	}
 
+}
+
+
+void CountData::print_alfreqs(string outfile){
+	ogzstream out(outfile.c_str());
+	for(map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++)	out << it->first << " ";
+	out << "\n";
+	for (int i = 0; i < nsnp ; i++){
+		for(map<string, int>::iterator it2 = pop2id.begin(); it2 != pop2id.end(); it2++)	 out << " "<< gsl_matrix_get(alfreqs, i, it2->second);
+		out << "\n";
+	}
 }
 
 void CountData::print_fst(string outfile){
@@ -638,11 +654,16 @@ void CountData::set_ne(){
 	int pairs = 0;
 	for (int i = 0; i < npop; i++){
 		for(int j = i ; j < npop; j++){
-			double tmp =gsl_matrix_get(cov_var, i, j)/gsl_matrix_get(cov_var2, i, j);
+			double tmp =gsl_matrix_get(cov_var2, i, j)/gsl_matrix_get(cov_var, i, j);
+			tmp = tmp*tmp;
+			//if (i == 0&& j == 2){
+			//	cout << "tmp "<< tmp <<"\n";
+			//}
 			tmpne+= tmp;
 			pairs++;
 		}
 	}
+	//cout << tmpne << " "<< pairs << "\n";
 	tmpne = tmpne/ (double) pairs;
 	tmpne = tmpne* nsnp;
 	ne = int(tmpne);
