@@ -22,14 +22,20 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	p.window_size = 1000;
+	p.window_size = 500;
 	p.alfreq_scaling = 0;
-	CountData tmpcount("/Users/pickrell/projects/phylopop/rosenburg_model_20pop2_phylopop_in.gz", &p);
-	tmpcount.print_alfreqs("alfreqs.gz");
-	tmpcount.print_cov_var("covvar.gz");
+	CountData tmpcount("/Users/pickrell/projects/treemix/hgdp+new/san_asc.treemix_in.gz", &p);
+//	tmpcount.print_alfreqs("alfreqs.gz");
+//	tmpcount.print_cov_var("covvar.gz");
 	GraphState2 state(&tmpcount, &p);
-	state.llik_wishart();
-	tmpcount.print_cov_var2("covvar2.gz");
+	state.set_graph("/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.vertices.gz", "/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.edges.gz");
+	cout << state.llik() << " "<< state.llik_wishart() << "\n";
+	state.rearrange(8055, 536);
+	cout << state.llik() << " "<< state.llik_wishart() << "\n";
+	state.rearrange(535, 8055);
+	cout << state.llik() << " "<< state.llik_wishart() << "\n";
+//	state.llik_wishart();
+//	tmpcount.print_cov_var2("covvar2.gz");
 	//state.set_graph_from_file("phylopop_treein");
 	//state.tree->print();
 

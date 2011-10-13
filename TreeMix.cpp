@@ -106,8 +106,11 @@ int main(int argc, char *argv[]){
     likout << "Tree likelihood: "<< state.llik() << "\n";
     for (int i = 0; i < p.nmig; i++){
     	double st = state.llik();
+
     	pair<bool, pair<int, int> > add = state.add_mig_targeted();
+
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
+
     	//cout << "Optim 1\n";
     	if (p.quick){
     		p.quick = false;
@@ -122,11 +125,11 @@ int main(int argc, char *argv[]){
     		state.optimize_weights();
 
     	}
-    	state.tree->print("before_trim1");
+    	//state.tree->print("before_trim1");
     	state.trim_mig();
-    	state.tree->print("before_flip");
+    	//state.tree->print("before_flip");
     	state.flip_mig();
-    	state.tree->print("before_trim2");
+    	//state.tree->print("before_trim2");
     	state.trim_mig();
     	state.set_branches_ls_wmig();
     	cout << "ln(likelihood):" << state.current_llik << "\n";
@@ -151,6 +154,8 @@ int main(int argc, char *argv[]){
         		double wlk0 = state.llik_wishart();
         		treeout << lk0 << " "<< lk << " ";
         		treeout << wlk0 << " "<< wlk << " ";
+        		double pval = 1-gsl_cdf_chisq_P(-2 *(wlk0-wlk), 2 );
+        		treeout << pval << " ";
         		state.tree->g[*it].weight = w;
         		state.set_branches_ls_wmig();
 
