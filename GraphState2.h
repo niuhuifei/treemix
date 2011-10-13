@@ -34,7 +34,7 @@ public:
 	vector<string> allpopnames; //names of populations, will be added one at a time after the first 3
 	map<string, int> popname2index; //go from the population name to the index in the above vector
 	int current_npops; //current total number of populations
-	double current_llik;
+	double current_llik, current_llik_w;
 	double scatter_det, scatter_gamma;
 	gsl_matrix *scatter; //current scatter matrix
 	double phi, resphi;
@@ -83,17 +83,20 @@ public:
 
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
+	void optimize_weights(Graph::edge_descriptor);
 	void optimize_weight(Graph::edge_descriptor);
 	void quick_optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
-
+	int golden_section_weight_wish(Graph::edge_descriptor, double, double, double, double);
 	void optimize_fracs();
+	void optimize_fracs(Graph::edge_descriptor);
 	void optimize_frac(Graph::edge_descriptor);
 	void quick_optimize_frac(Graph::edge_descriptor);
 	int golden_section_frac(Graph::edge_descriptor, double, double, double, double);
+	int golden_section_frac_wish(Graph::edge_descriptor, double, double, double, double);
 
 	//likelihoods
-	double llik();
+	double llik(bool w = false);
 	double llik_normal();
 	double llik_wishart();
 

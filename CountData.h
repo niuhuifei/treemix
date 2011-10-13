@@ -46,8 +46,9 @@ public:
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;
-	int ne;
+	int ne, ne2;
 	void set_ne();
+	void set_ne2();
 };
 
 #endif /* COUNTDATA_H_ */

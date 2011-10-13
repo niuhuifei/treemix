@@ -89,6 +89,7 @@ int main(int argc, char *argv[]){
     else if (p.read_graph){
     	state.set_graph(p.vfile, p.efile);
     	cout << "Set tree to: "<< state.tree->get_newick_format() << "\n";
+    	cout << "ln(lk) = " << state.current_llik <<"\n";
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
@@ -149,7 +150,8 @@ int main(int argc, char *argv[]){
         		treeout << state.tree->g[*it].weight<< " ";
         		state.tree->g[*it].weight = 0;
         		state.set_branches_ls_wmig();
-
+        		state.optimize_fracs(*it);
+        		state.optimize_weights(*it);
         		double lk0 = state.llik();
         		double wlk0 = state.llik_wishart();
         		treeout << lk0 << " "<< lk << " ";
