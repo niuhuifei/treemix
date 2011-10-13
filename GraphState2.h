@@ -83,14 +83,18 @@ public:
 
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
+	void optimize_weights_wish();
 	void optimize_weights(Graph::edge_descriptor);
 	void optimize_weight(Graph::edge_descriptor);
+	void optimize_weight_wish(Graph::edge_descriptor);
 	void quick_optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_weight_wish(Graph::edge_descriptor, double, double, double, double);
 	void optimize_fracs();
 	void optimize_fracs(Graph::edge_descriptor);
+	void optimize_fracs_wish();
 	void optimize_frac(Graph::edge_descriptor);
+	void optimize_frac_wish(Graph::edge_descriptor);
 	void quick_optimize_frac(Graph::edge_descriptor);
 	int golden_section_frac(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_frac_wish(Graph::edge_descriptor, double, double, double, double);
