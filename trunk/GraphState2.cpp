@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1318516219;
+	seed = 1318534015;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -666,6 +666,7 @@ void GraphState2::optimize_weights(){
 	// get list of migration edges
 	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
 	double start_llik = current_llik;
+	//cout << current_llik << " "<< start_llik << "\n";
 	bool done = false;
 	int nit = 0;
 	while(!done){
@@ -678,12 +679,46 @@ void GraphState2::optimize_weights(){
 			golden_section_weight( *it, min, guess, max, params->tau);
 			cout << tree->g[*it].weight << "\n";
 			}
+		//cout << current_llik << " " <<start_llik << "\n";
 		if (current_llik < start_llik+0.1) done = true;
 		else start_llik = current_llik;
 		nit++;
 	}
 
 }
+
+
+void GraphState2::optimize_weights(Graph::edge_descriptor e){
+	/*
+	 *  Go through each migration edge except the one in the argument, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *
+	 */
+
+	// get list of migration edges
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	double start_llik = current_llik;
+	//cout << current_llik << " "<< start_llik << "\n";
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
+			if (*it == e ) continue;
+			double min, max, guess;
+			guess = tree->g[*it].weight;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_weight( *it, min, guess, max, params->tau);
+			cout << tree->g[*it].weight << "\n";
+			}
+		//cout << current_llik << " " <<start_llik << "\n";
+		if (current_llik < start_llik+0.1) done = true;
+		else start_llik = current_llik;
+		nit++;
+	}
+
+}
+
 
 
 void GraphState2::optimize_fracs(){
@@ -695,6 +730,7 @@ void GraphState2::optimize_fracs(){
 	// get list of migration edges
 	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
 	double start_llik = current_llik;
+	cout << start_llik << " "<< current_llik << " llik\n";
 	bool done = false;
 	int nit = 0;
 	while(!done){
@@ -707,6 +743,40 @@ void GraphState2::optimize_fracs(){
 			golden_section_frac( *it, min, guess, max, params->tau);
 			cout << tree->g[source(*it, tree->g)].mig_frac << " frac\n";
 			}
+		//cout << start_llik << " "<< current_llik << " llik\n";
+		if (current_llik < start_llik+0.1) done = true;
+		else start_llik = current_llik;
+		nit++;
+	}
+
+}
+
+
+
+void GraphState2::optimize_fracs(Graph::edge_descriptor e){
+	/*
+	 *  Go through each migration edge (except one in argument), optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *
+	 */
+
+	// get list of migration edges
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	double start_llik = current_llik;
+	cout << start_llik << " "<< current_llik << " llik\n";
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
+			if (*it == e) continue;
+			double min, max, guess;
+			guess = tree->g[source(*it, tree->g)].mig_frac;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_frac( *it, min, guess, max, params->tau);
+			cout << tree->g[source(*it, tree->g)].mig_frac << " frac\n";
+			}
+		cout << start_llik << " "<< current_llik << " llik\n";
 		if (current_llik < start_llik+0.1) done = true;
 		else start_llik = current_llik;
 		nit++;
@@ -1018,15 +1088,17 @@ double GraphState2::llik_normal(){
 			double obs = countdata->get_cov(p1, p2);
 			double se = countdata->get_cov_var(p1, p2);
 			double dif = obs-pred;
-			double toadd = gsl_ran_gaussian_pdf(dif, se * sqrt(params->window_size));
+			double scale = sqrt( (double) countdata->nsnp / (double) params->window_size);
+			double toadd = gsl_ran_gaussian_pdf(dif, se * scale);
 			//double toadd = gsl_ran_gaussian_pdf(dif, se);
-
-			//cout << pred << " "<< obs << " "<< se << " "<< toadd << "\n";
-			toreturn+= log(toadd);
 			//if (toadd < 1e-300) 	{
-			//				cout << toadd << " "<< log(toadd) << " "<< toreturn << "\n";
-			//				cerr << "WARNING: underflow in normal likelihood\n";
-							//toadd = 1e-300;
+			//	//cout << toadd << " "<< log(toadd) << " "<< toreturn << "\n";
+			//	cerr << "WARNING: underflow in normal likelihood\n";
+			//	toadd = 1e-300;
+			//}
+			//cout << p1<< " "<< p2 << " "<< toadd << " "<< log(toadd) << "\n";
+			toreturn+= log(toadd);
+
 			//}
 		}
 	}
@@ -1318,9 +1390,9 @@ void GraphState2::add_pop(){
 	current_llik = max_llik;
 }
 
-double GraphState2::llik(){
-	return llik_normal();
-	//return llik_wishart();
+double GraphState2::llik( bool w){
+	if (!w) return llik_normal();
+	else return llik_wishart();
 }
 
 double GraphState2::llik_wishart(){

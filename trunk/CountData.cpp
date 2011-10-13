@@ -25,7 +25,8 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	set_cov();
 	set_cov2();
 	set_ne();
-	cout << "Effective number of SNPs: "<< ne << "\n";
+	set_ne2();
+	cout << "Effective number of SNPs: "<< ne << " "<< ne2 << "\n";
 	//process_cov();
 }
 
@@ -277,6 +278,7 @@ void CountData::scale_alfreqs(){
 			double f = gsl_matrix_get(alfreqs, i, j);
 			if (params->alfreq_scaling == 3) {
 				gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
+				if (m < 1e-8) gsl_matrix_set(alfreqs, i, j, 0);
 			}
 			else gsl_matrix_set(alfreqs, i, j, f-m);
 		}
@@ -667,4 +669,37 @@ void CountData::set_ne(){
 	tmpne = tmpne/ (double) pairs;
 	tmpne = tmpne* nsnp;
 	ne = int(tmpne);
+}
+
+
+void CountData::set_ne2(){
+	ne2 = 0;
+	int p = npop;
+	gsl_matrix * A = gsl_matrix_alloc(npop, npop);
+	gsl_matrix * VT = gsl_matrix_alloc(p,p);
+	gsl_vector * S = gsl_vector_alloc(p);
+	gsl_vector * work = gsl_vector_alloc(p);
+	gsl_matrix_memcpy( A, scatter );
+
+	gsl_linalg_SV_decomp(A, VT, S, work);
+
+	double s  = 0;
+	double s2 = 0;
+	//for (int i = 0; i < p; i++){
+	//	double eig = gsl_vector_get(S, i);
+	//	cout << eig << "\n";
+	//}
+	for (int i = 0; i < p-1; i++){
+		double eig = gsl_vector_get(S, i);
+		s+= eig;
+		s2+= eig*eig;
+		cout << eig << " "<< eig*eig << "\n";
+	}
+	cout << s<< " "<< s2 << "\n";
+	double num = ( (double) p+1.0)* s*s;
+	double denom = ( ((double) p-1.0)* s2 ) - (s*s);
+	cout << "num denom " << num << " "<< denom << "\n";
+	double tmp = num/denom;
+	ne2 = int(tmp);
+
 }
