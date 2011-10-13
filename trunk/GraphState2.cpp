@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1317332588;
+	seed = 1318516219;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -1154,23 +1154,25 @@ int GraphState2::global_hillclimb(int inorder_index){
 
 int GraphState2::iterate_local_hillclimb_wmig(int index){
 	int moving = local_hillclimb_wmig(index);
+	//if (index == 355) tree->print("did_first");
 	if (moving  == 0 ) return 0;
+
 	while (moving > 0) {
 		//cout << "moving vertex "<< index << " "<< moving << "\n";
 		//cout << llik() << "\n";
 		//cout << tree->get_newick_format()<<"\n";
 		moving = local_hillclimb_wmig(index);
 	}
+
 	return 1;
 }
 
 void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices){
 
+
 	int moving1 = iterate_local_hillclimb_wmig(indices.first);
-	//cout << "here!\n";
-	//tree->print();
-	//cout << "\n";
 	int moving2 = iterate_local_hillclimb_wmig(indices.second);
+	//tree->print("after_optim2");
 	int moving = moving1+moving2;
 	while (moving > 0){
 		map<int, Graph::vertex_descriptor> vindex = tree->index2vertex();
@@ -1186,6 +1188,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices){
 		//cout <<"or here\n"; cout.flush();
 
 	}
+
 }
 
 
@@ -1197,12 +1200,11 @@ int GraphState2::local_hillclimb_wmig(int index){
 	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_memcpy( tmpfitted, sigma_cor);
 	int toreturn = 0;
+	//cout << index << " index2\n";
+	//if (index == 355) tree->print("entering_local");
 	for (int i = 1; i <=4; i++){
 		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
 		Graph::vertex_descriptor v = index2v[index];
-		//if (i == 4 && index == 751) {
-		//	tree->print("before_rearrange");
-		//}
 		bool rearr = tree->local_rearrange_wmig(v, i);
 		if ( has_loop() ) {
 			//cout << "has loop!\n";
@@ -1210,12 +1212,10 @@ int GraphState2::local_hillclimb_wmig(int index){
 			continue;
 		}
 
-		//tree->print();
+
 		if (rearr){
 			set_branches_ls_wmig();
 			double lk = llik();
-			//if (i == 4 && index == 751) tree->print("after_rearrange");
-			//cout << lk << " "<< max << " "<< index << " "<< i << "\n";
 			if (lk > max){
 				max = lk;
 				//cout << i << "\n";
@@ -1229,9 +1229,6 @@ int GraphState2::local_hillclimb_wmig(int index){
 	if (toreturn == 1){
 		tree->copy(tree_bk2);
 		current_llik = max;
-		//cout << lik_bk << " "<< max << "\n";
-		//cout << "moving from"<< tree_bk->get_newick_format() <<"\n";
-		//cout << "to "<< tree->get_newick_format()<<"\n";
 		gsl_matrix_memcpy( sigma_cor, tmpfitted);
 	}
 	else{

@@ -1205,12 +1205,15 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 		  */
 	 else if (which == 2 || which ==3){
 		 v1p = get_parent_node(v1).first;
+		 if (g[v1p].index == 356) print("test");
 		 v1m = get_parent_node_wmig(v1).first;
 		 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes(v1p);
 		 if ( g[ch.first].index == g[v1].index) v1s = ch.second;
 		 else if (g[ch.second].index == g[v1].index) v1s = ch.first;
+		// cout << which << " "<< g[v1].index << " "<< g[v1p].index << " "<< !g[v1p].is_root << " "<< !g[v1s].is_tip << "\n";
 		 //cout << g[v1p].index << " "<< g[v1m].index << " "<< g[v1s].index << "\n";
 		 if (!g[v1s].is_tip && !g[v1p].is_root){
+			 //cout << which << " "<< g[v1].index << " "<< g[v1p].index << " "<< g[v1s].index<< " "<< !g[v1p].is_root << " "<< !g[v1s].is_tip << " "<< g[ch.first].index << " "<< g[ch.second].index << " here\n";
 			 toreturn = true;
 			 v1pm = get_parent_node_wmig(v1p).first;
 			 ch = get_child_nodes_wmig(v1s);
@@ -1277,6 +1280,7 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 		 if (! g[v1p].is_root){
 			 toreturn = 1;
 			 v1pp = get_parent_node(v1p).first;
+			 if (g[v1pp].is_root) return false;
 			 v1pm = get_parent_node_wmig(v1p).first;
 			 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
 			 if ( g[ch.first].index == g[v1].index) {
