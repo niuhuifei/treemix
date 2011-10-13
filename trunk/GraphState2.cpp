@@ -688,6 +688,36 @@ void GraphState2::optimize_weights(){
 }
 
 
+void GraphState2::optimize_weights_wish(){
+	/*
+	 *  Go through each migration edge, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *
+	 */
+
+	// get list of migration edges
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	double start_llik = current_llik_w;
+	//cout << current_llik << " "<< start_llik << "\n";
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
+			double min, max, guess;
+			guess = tree->g[*it].weight;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_weight_wish( *it, min, guess, max, params->tau);
+			cout << tree->g[*it].weight << "\n";
+			}
+		//cout << current_llik << " " <<start_llik << "\n";
+		if (current_llik_w < start_llik+0.1) done = true;
+		else start_llik = current_llik_w;
+		nit++;
+	}
+
+}
+
 void GraphState2::optimize_weights(Graph::edge_descriptor e){
 	/*
 	 *  Go through each migration edge except the one in the argument, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
@@ -730,7 +760,7 @@ void GraphState2::optimize_fracs(){
 	// get list of migration edges
 	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
 	double start_llik = current_llik;
-	cout << start_llik << " "<< current_llik << " llik\n";
+	//cout << start_llik << " "<< current_llik << " llik\n";
 	bool done = false;
 	int nit = 0;
 	while(!done){
@@ -746,6 +776,38 @@ void GraphState2::optimize_fracs(){
 		//cout << start_llik << " "<< current_llik << " llik\n";
 		if (current_llik < start_llik+0.1) done = true;
 		else start_llik = current_llik;
+		nit++;
+	}
+
+}
+
+
+
+void GraphState2::optimize_fracs_wish(){
+	/*
+	 *  Go through each migration edge, optimize (restricting to be in range [0,1]) by normal optimization using logistic function
+	 *
+	 */
+
+	// get list of migration edges
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	double start_llik = current_llik_w;
+	//cout << start_llik << " "<< current_llik_w << "  w llik\n";
+	bool done = false;
+	int nit = 0;
+	while(!done){
+		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++){
+			double min, max, guess;
+			guess = tree->g[source(*it, tree->g)].mig_frac;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_frac_wish( *it, min, guess, max, params->tau);
+			cout << tree->g[source(*it, tree->g)].mig_frac << " w frac\n";
+			}
+		//cout << start_llik << " "<< current_llik << " llik\n";
+		if (current_llik_w < start_llik+0.1) done = true;
+		else start_llik = current_llik_w;
 		nit++;
 	}
 
@@ -832,6 +894,33 @@ void GraphState2::optimize_weight(Graph::edge_descriptor e){
 }
 
 
+void GraphState2::optimize_weight_wish(Graph::edge_descriptor e){
+
+	//if (params->quick){
+		//quick_optimize_weight(e);
+	//}
+	//else{
+		double start_llik = current_llik_w;
+		bool done = false;
+		int nit = 0;
+		while(!done && nit < params->maxit){
+			//cout << nit << "\n"; cout.flush();
+			double min, max, guess;
+			guess = tree->g[e].weight;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_weight_wish(e, min, guess, max, params->tau);
+			if (current_llik_w < start_llik+1E-8) done = true;
+			else start_llik = current_llik_w;
+			//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
+			nit++;
+		}
+	//}
+
+}
+
+
 
 void GraphState2::optimize_frac(Graph::edge_descriptor e){
 
@@ -849,6 +938,31 @@ void GraphState2::optimize_frac(Graph::edge_descriptor e){
 			golden_section_frac(e, min, guess, max, params->tau);
 			if (current_llik < start_llik+0.01) done = true;
 			else start_llik = current_llik;
+			//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
+			nit++;
+		}
+
+
+}
+
+
+
+void GraphState2::optimize_frac_wish(Graph::edge_descriptor e){
+
+
+		double start_llik = current_llik_w;
+		bool done = false;
+		int nit = 0;
+		while(!done && nit < params->maxit){
+			//cout << nit << "\n"; cout.flush();
+			double min, max, guess;
+			guess = tree->g[source(e, tree->g)].mig_frac;
+			guess = exp(guess) / (1+exp(guess));
+			min = params->minweight;
+			max = params->maxweight;
+			golden_section_frac_wish(e, min, guess, max, params->tau);
+			if (current_llik_w < start_llik+0.01) done = true;
+			else start_llik = current_llik_w;
 			//cout << guess << " "<< start_llik << " "<< current_llik << "\n";
 			nit++;
 		}
@@ -894,6 +1008,45 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 	}
 }
 
+int GraphState2::golden_section_weight_wish(Graph::edge_descriptor e, double min, double guess, double max, double tau){
+	double x;
+
+	//cout << guess << "\n"; cout.flush();
+	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
+	else x = guess - resphi *(guess-min);
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+		double new_logweight = (min+max)/2;
+		double neww = 1/ (1+exp(-new_logweight));
+		tree->g[e].weight = neww;
+		set_branches_ls_wmig();
+		current_llik_w = llik(true);
+		return 0;
+	}
+	double w = 1/(1+exp(-x));
+	tree->g[e].weight = w;
+	//cout << "here\n"; cout.flush();
+	set_branches_ls_wmig();
+	//cout << "not here\n"; cout.flush();
+	double f_x = -llik(true);
+
+	w = 1/(1+exp(-guess));
+	tree->g[e].weight = w;
+	//cout << "here2\n"; cout.flush();
+	set_branches_ls_wmig();
+	//cout << "not here2\n"; cout.flush();
+	double f_guess = -llik(true);
+
+	if (f_x < f_guess){
+		if ( (max-guess) > (guess-min) )	return golden_section_weight(e, guess, x, max, tau);
+
+		else return golden_section_weight(e, min, x, guess, tau);
+	}
+	else{
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
+		else return golden_section_weight(e, x, guess, max, tau);
+	}
+}
+
 
 int GraphState2::golden_section_frac(Graph::edge_descriptor e, double min, double guess, double max, double tau){
 	double x;
@@ -923,6 +1076,47 @@ int GraphState2::golden_section_frac(Graph::edge_descriptor e, double min, doubl
 	set_branches_ls_wmig();
 	//cout << "not here2\n"; cout.flush();
 	double f_guess = -llik();
+
+	if (f_x < f_guess){
+		if ( (max-guess) > (guess-min) )	return golden_section_frac(e, guess, x, max, tau);
+
+		else return golden_section_frac(e, min, x, guess, tau);
+	}
+	else{
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
+		else return golden_section_frac(e, x, guess, max, tau);
+	}
+}
+
+
+int GraphState2::golden_section_frac_wish(Graph::edge_descriptor e, double min, double guess, double max, double tau){
+	double x;
+
+	//cout << guess << "\n"; cout.flush();
+	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
+	else x = guess - resphi *(guess-min);
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+		double new_logweight = (min+max)/2;
+		double neww = 1/ (1+exp(-new_logweight));
+		tree->set_mig_frac(e, neww);
+		set_branches_ls_wmig();
+		current_llik_w = llik(true);
+		return 0;
+	}
+	double w = 1/(1+exp(-x));
+	tree->set_mig_frac(e, w);
+	//cout << "here\n"; cout.flush();
+	set_branches_ls_wmig();
+	//cout << "not here\n"; cout.flush();
+	double f_x = -llik(true);
+
+	w = 1/(1+exp(-guess));
+	tree->set_mig_frac(e, w);
+	//tree->g[e].weight = w;
+	//cout << "here2\n"; cout.flush();
+	set_branches_ls_wmig();
+	//cout << "not here2\n"; cout.flush();
+	double f_guess = -llik(true);
 
 	if (f_x < f_guess){
 		if ( (max-guess) > (guess-min) )	return golden_section_frac(e, guess, x, max, tau);
