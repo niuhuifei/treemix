@@ -691,9 +691,10 @@ void CountData::set_ne2(){
 	//}
 	for (int i = 0; i < p-1; i++){
 		double eig = gsl_vector_get(S, i);
+		eig = eig*eig;
 		s+= eig;
 		s2+= eig*eig;
-		cout << eig << " "<< eig*eig << "\n";
+		//cout << eig << " "<< eig*eig << "\n";
 	}
 	cout << s<< " "<< s2 << "\n";
 	double num = ( (double) p+1.0)* s*s;
