@@ -1282,7 +1282,8 @@ double GraphState2::llik_normal(){
 			double obs = countdata->get_cov(p1, p2);
 			double se = countdata->get_cov_var(p1, p2);
 			double dif = obs-pred;
-			double scale = sqrt( (double) countdata->nsnp / (double) params->window_size);
+			double scale = 1;
+			if (params->smooth_lik) scale = sqrt( (double) countdata->nsnp / (double) params->window_size);
 			double toadd = gsl_ran_gaussian_pdf(dif, se * scale);
 			//double toadd = gsl_ran_gaussian_pdf(dif, se);
 			//if (toadd < 1e-300) 	{

@@ -42,6 +42,9 @@ public:
 
 	bool nofrac;
 
+
+	bool smooth_lik;
+
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

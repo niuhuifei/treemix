@@ -23,7 +23,6 @@ void printopts(){
 	cout << "-global Do a round of global rearrangements after adding all populations\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 	cout << "-m [int] number of migration edges to add (0)\n";
-	cout << "-mn [int] depth of subtree to use in migration optimization (3)\n";
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
 	cout << "-quick do fast optimization of migration weights\n";
@@ -61,7 +60,6 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
-    if (cmdline.HasSwitch("-mn"))	p.m_neigh = atoi(cmdline.GetArgument("-mn", 0).c_str());
     if (cmdline.HasSwitch("-root")) {
     	p.set_root = true;
     	p.root = cmdline.GetArgument("-root", 0);
@@ -143,6 +141,7 @@ int main(int argc, char *argv[]){
     state.optimize_weights_wish();
     pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);
     Graph::edge_iterator it = eds.first;
+    p.smooth_lik = false;
     while (it != eds.second){
     	if ( state.tree->g[*it].is_mig){
      		double w = state.tree->g[*it].weight;

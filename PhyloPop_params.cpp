@@ -29,4 +29,5 @@ PhyloPop_params::PhyloPop_params(){
 	quick = false;
 	min_migw = 0.001;
 	nofrac = false;
+	smooth_lik = true;
 }
