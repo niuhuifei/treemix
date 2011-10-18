@@ -24,17 +24,32 @@ int main (void)
 	PhyloPop_params p;
 	p.window_size = 1;
 	p.alfreq_scaling = 0;
-	CountData tmpcount("/Users/pickrell/projects/treemix/sims/sim_mvn/simfreqs0.gz", &p);
-//	tmpcount.print_alfreqs("alfreqs.gz");
-//	tmpcount.print_cov_var("covvar.gz");
-	GraphState2 state(&tmpcount, &p);
-	state.add_pop();
+	ofstream tmpfile("llikout");
+	for (int i = 0; i < 50; i++){
+		stringstream ss;
+		ss<< "/Users/pickrell/projects/treemix/sims/sim_mvn/simfreqs" << i << ".gz";
+		string file  = ss.str();
+		CountData tmpcount(file, &p);
+	//	tmpcount.print_alfreqs("alfreqs.gz");
+	//	tmpcount.print_cov_var("covvar.gz");
+		GraphState2 state(&tmpcount, &p);
+		//cout << "setting graph\n";cout.flush();
+		state.set_graph("(pop1:0.00532549,((pop3:0.0183318,(pop4:0.0178017,(pop5:0.0163895,(pop6:0.0155497,(pop7:0.0146479,(pop8:0.0134163,(pop9:0.0125101,(pop10:0.0115314,(pop11:0.0105312,(pop12:0.00968735,(pop13:0.0087489,(pop15:0.00765831,pop14:0.00734194):0.00104139):0.00111911):0.000921365):0.00100286):0.00106475):0.000900554):0.00114427):0.000932313):0.00108868):0.000831278):0.000982886):0.00122326,pop2:0.0193423):0.0162424);");
 
-	state.add_mig(1, 3);
-	state.compute_sigma();
-	state.print_sigma();
-	state.print_sigma_cor("testcor.gz");
-	state.tree->print("testtree");
+		state.set_branches_ls_wmig();
+		//cout << "done\n"; cout.flush();
+		double l0 = state.llik_wishart();
+		map<string, Graph::vertex_descriptor> tips = state.tree->get_tips(state.tree->root);
+		int i1 = state.tree->g[ tips["pop2"] ].index;
+		int i2 = state.tree->g[ tips["pop6"] ].index;
+		state.add_mig(i1, i2);
+		tmpfile << l0 << " "<< state.llik_wishart() << "\n";
+		//state.compute_sigma();
+		//state.print_sigma();
+		//state.print_sigma_cor("testcor.gz");
+		//state.tree->print("testtree");
+	}
+
 	//state.set_graph("/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.vertices.gz", "/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.edges.gz");
 	//cout << state.llik() << " "<< state.llik_wishart() << "\n";
 	//state.rearrange(8055, 536);
