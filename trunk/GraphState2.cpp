@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	seed = 1318878040;
+	//seed = 1318878040;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -75,6 +75,17 @@ void GraphState2::print_sigma(){
 
 void GraphState2::set_graph(string newick){
 	tree->set_graph(newick);
+	current_npops = allpopnames.size();
+	gsl_matrix_free(sigma);
+	sigma = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma_cor);
+
+    set_branches_ls_wmig();
+
+    current_llik = llik();
 }
 
 void GraphState2::set_graph(string vfile, string efile){
@@ -1115,8 +1126,12 @@ void GraphState2::set_branches_ls_wmig(){
 
 
 	map<Graph::vertex_descriptor, int> vertex2index;
+	//cout << "here1\n"; cout.flush();
+	tree->print("testout");
 	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
+	//cout << "here1.1\n"; cout.flush();
 	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
+	//cout << "here1.2\n"; cout.flush();
 	vector<Graph::vertex_descriptor> i_nodes2;  //remove the ones next to the root
 
 	int index = 0;
@@ -1133,7 +1148,7 @@ void GraphState2::set_branches_ls_wmig(){
 
 	for(set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++) vertex2index[*it] = joint_index;
 	index++;
-	//cout << "here1\n"; cout.flush();
+	//cout << "here1.1\n"; cout.flush();
 	vector<Graph::vertex_descriptor> mig_nodes;
 	for(Graph::vertex_iterator it = vertices(tree->g).first; it != vertices(tree->g).second; it++){
 		if ( tree->g[*it].is_mig ) {
@@ -1222,7 +1237,7 @@ void GraphState2::set_branches_ls_wmig(){
 		double l = gsl_vector_get(c, i);
 		tree->g[*it].len = l*frac;
 	}
-	//cout << "here3\n";
+	//cout << "here3.1\n";
 	//and the corrected covariance matrix
 	index = 0;
 	for (int i = 0; i < current_npops; i++){
@@ -1582,18 +1597,18 @@ double GraphState2::llik_wishart(){
 			//cout << countdata->get_scatter( allpopnames[i], allpopnames[j]) << " "<< scale << " "<< gsl_matrix_get(scatter, i, j) << "\n";
 		}
 	}
-
 /*
+	ofstream tmpout("scatter_tmp");
+
 	for (int i = 0; i < current_npops; i++){
 		for (int j = 0; j < current_npops; j++){
-			cout << gsl_matrix_get(scatter, i, j) << " ";
+			tmpout << gsl_matrix_get(scatter, i, j) << " ";
 		}
-		cout << "\n";
+		tmpout << "\n";
 	}
 */
 	double toreturn = 0;
 	int s;
-	double ld;
 	int p = current_npops;
 	int n = countdata->ne;
 
@@ -1616,7 +1631,7 @@ double GraphState2::llik_wishart(){
 	gsl_linalg_SV_decomp(A, VT, S, work);
 
 
-	// Now copy the first npop=1 eigenvectors to U
+	// Now copy the first npop-1 eigenvectors to U
 
 	for (int i = 0; i < p-1; i++){
 		for(int j = 0; j < p; j++){

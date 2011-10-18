@@ -591,6 +591,7 @@ void PopGraph::set_graph(string p_newickString){
 	g[v].is_root = true;
 	g[v].rev = false;
 	g[v].is_mig = false;
+	g[v].mig_frac = 0;
 	root = v;
 	for(string::const_iterator I = p_newickString.begin();
 		I != p_newickString.end(); ++I)
@@ -608,6 +609,7 @@ void PopGraph::set_graph(string p_newickString){
 			g[v2].is_root = false;
 			g[v2].rev = false;
 			g[v2].is_mig = false;
+			g[v2].mig_frac = 0;
 			e = add_edge( v, v2, g).first;
 			v = v2;
 		}
@@ -627,6 +629,7 @@ void PopGraph::set_graph(string p_newickString){
 			g[v2].is_tip = false;
 			g[v2].is_root = false;
 			g[v2].rev = false;
+			g[v2].mig_frac = 0;
 			g[v2].is_mig = false;
 			e = add_edge( v, v2, g).first;
 			v = v2;
