@@ -280,6 +280,7 @@ void CountData::scale_alfreqs(){
 				gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
 				if (m < 1e-8) gsl_matrix_set(alfreqs, i, j, 0);
 			}
+			else if (params->alfreq_scaling == 4) gsl_matrix_set(alfreqs, i, j, f);
 			else gsl_matrix_set(alfreqs, i, j, f-m);
 		}
 	}
