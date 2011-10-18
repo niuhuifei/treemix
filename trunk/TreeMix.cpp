@@ -56,6 +56,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     if (cmdline.HasSwitch("-nofrac")) p.nofrac = true;
     if (cmdline.HasSwitch("-scale")) p.alfreq_scaling = 3;
+    if (cmdline.HasSwitch("-nothing")) p.alfreq_scaling = 4;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
@@ -103,6 +104,7 @@ int main(int argc, char *argv[]){
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << "\n";
+    cout << "Tree Wishart likelihood: "<< state.llik_wishart() << "\n";
     for (int i = 0; i < p.nmig; i++){
     	double st = state.llik();
 

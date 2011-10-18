@@ -22,18 +22,25 @@ int main (void)
 	gsl_rng_set(r, 100);
 
 	PhyloPop_params p;
-	p.window_size = 500;
+	p.window_size = 1;
 	p.alfreq_scaling = 0;
-	CountData tmpcount("/Users/pickrell/projects/treemix/hgdp+new/san_asc.treemix_in.gz", &p);
+	CountData tmpcount("/Users/pickrell/projects/treemix/sims/sim_mvn/simfreqs0.gz", &p);
 //	tmpcount.print_alfreqs("alfreqs.gz");
 //	tmpcount.print_cov_var("covvar.gz");
 	GraphState2 state(&tmpcount, &p);
-	state.set_graph("/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.vertices.gz", "/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.edges.gz");
-	cout << state.llik() << " "<< state.llik_wishart() << "\n";
-	state.rearrange(8055, 536);
-	cout << state.llik() << " "<< state.llik_wishart() << "\n";
-	state.rearrange(535, 8055);
-	cout << state.llik() << " "<< state.llik_wishart() << "\n";
+	state.add_pop();
+
+	state.add_mig(1, 3);
+	state.compute_sigma();
+	state.print_sigma();
+	state.print_sigma_cor("testcor.gz");
+	state.tree->print("testtree");
+	//state.set_graph("/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.vertices.gz", "/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.edges.gz");
+	//cout << state.llik() << " "<< state.llik_wishart() << "\n";
+	//state.rearrange(8055, 536);
+	//cout << state.llik() << " "<< state.llik_wishart() << "\n";
+	//state.rearrange(535, 8055);
+	//cout << state.llik() << " "<< state.llik_wishart() << "\n";
 //	state.llik_wishart();
 //	tmpcount.print_cov_var2("covvar2.gz");
 	//state.set_graph_from_file("phylopop_treein");
