@@ -26,7 +26,7 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	set_cov2();
 	set_ne();
 	set_ne2();
-	cout << "Effective number of SNPs: "<< ne << " "<< ne2 << "\n";
+	cout << "Effective number of SNPs: "<< ne << "\n";
 	//process_cov();
 }
 
@@ -697,10 +697,10 @@ void CountData::set_ne2(){
 		s2+= eig*eig;
 		//cout << eig << " "<< eig*eig << "\n";
 	}
-	cout << s<< " "<< s2 << "\n";
+	//cout << s<< " "<< s2 << "\n";
 	double num = ( (double) p+1.0)* s*s;
 	double denom = ( ((double) p-1.0)* s2 ) - (s*s);
-	cout << "num denom " << num << " "<< denom << "\n";
+	//cout << "num denom " << num << " "<< denom << "\n";
 	double tmp = num/denom;
 	ne2 = int(tmp);
 

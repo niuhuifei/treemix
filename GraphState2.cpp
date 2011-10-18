@@ -2526,84 +2526,6 @@ pair<bool, int> GraphState2::movemig( int index ){
 
 void GraphState2::compute_sigma(){
 
-	map<Graph::vertex_descriptor, int> vertex2index;
-	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
-	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
-	vector<Graph::vertex_descriptor> i_nodes2;  //remove the ones next to the root
-
-	int index = 0;
-
-	for (int i = 0; i < i_nodes.size(); i++){
-		if (root_adj.find(i_nodes[i]) == root_adj.end() && !tree->g[ i_nodes[i] ].is_root) {
-			i_nodes2.push_back( i_nodes[i] );
-			vertex2index.insert(make_pair(i_nodes[i], index));
-			index++;
-		}
-	}
-
-	int joint_index = i_nodes2.size(); //the index of the parameter for the sum of the two branch lengths next to the root
-
-	for(set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++) vertex2index[*it] = joint_index;
-	index++;
-	//cout << "here1\n"; cout.flush();
-	vector<Graph::vertex_descriptor> mig_nodes;
-	for(Graph::vertex_iterator it = vertices(tree->g).first; it != vertices(tree->g).second; it++){
-		if ( tree->g[*it].is_mig ) {
-			mig_nodes.push_back(*it);
-			vertex2index[*it] = index;
-			index++;
-		}
-	}
-	//cout << "here2\n"; cout.flush();
-	// now get the edge to index and edge to fraction maps
-	map<Graph::edge_descriptor, int> edge2index;
-	map<Graph::edge_descriptor, double> edge2frac;
-	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
-		Graph::vertex_descriptor index_vertex, t;
-		double f = 1.0;
-		double f2 = 1.0;
-		t = target(*it, tree->g);
-		Graph::vertex_descriptor t2 = source(*it, tree->g);
-		//cout << tree->g[t].index << "\n";
-		if (tree->g[*it].is_mig) continue;
-		else if ( tree->g[t].is_mig) {
-			index_vertex = tree->get_child_node_mig(t);
-		}
-		else index_vertex = t;
-
-		if (tree->g[t].is_mig || tree->g[t2].is_mig){
-			if (tree->g[t].is_mig && tree->g[t2].is_mig)	{
-				//cout << "here?\n"; cout.flush();
-				f = tree->g[t].mig_frac - tree->g[t2].mig_frac;
-			}
-			else if (tree->g[t].is_mig) {
-				//cout << "here2 "<< tree->g[t].mig_frac << "\n";
-				f = tree->g[t].mig_frac;
-			}
-			else if (tree->g[t2].is_mig) {
-				//cout << "here3 "<< tree->g[t2].mig_frac << "\n";
-				f = 1-tree->g[t2].mig_frac;
-			}
-		}
-
-		//f = tree->g[*it].len / tree->get_parent_node(index_vertex).second;
-
-		//cout << tree->g[t2].index << " "<< tree->g[t].index << " "<< f<< " "<< tree->g[*it].len << "\n";
-		//cout << tree->g[source(*it, tree->g)].index << " "<< tree->g[t].index << " "<< f << " "<< f2 << "\n";
-		//cout << tree->g[t].index << "\n";
-		if (root_adj.find(index_vertex) != root_adj.end()) f = f/2;
-		int i;
-		if (vertex2index.find(index_vertex) == vertex2index.end()){
-			cerr << "Error in least squares estimation: vertex "<< tree->g[index_vertex].index << " not found in the list of vertices\n";
-			exit(1);
-		}
-		else i = vertex2index[index_vertex];
-		//cout << tree->g[source(*it, tree->g)].index<< " "<< tree->g[target(*it, tree->g)].index << " "<<  tree->g[index_vertex].index << " "<< f<< "\n";
-		edge2index.insert(make_pair(*it, i));
-		edge2frac.insert(make_pair(*it, f));
-	}
-
-
 	gsl_matrix_set_zero(sigma);
 	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
 	map<string, set<pair<double, set<Graph::edge_descriptor> > > > name2paths;
@@ -2626,11 +2548,9 @@ void GraphState2::compute_sigma(){
 					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
 						if ( tree->g[*it3].is_mig) continue;
 						if (it2->second.find(*it3) != it2->second.end()){
-							if (p2 == "pop3" and p1 == "pop3"){
-								cout << it1->first << " "<< it2->first << " "<< frac << " "<< tree->g[*it3].len << "\n";
-							}
-							double frac = edge2frac.find(*it3)->second;
-							double add = it1->first * it2->first *frac * tree->g[*it3].len;
+
+							//double frac = edge2frac.find(*it3)->second;
+							double add = it1->first * it2->first * tree->g[*it3].len;
 							gsl_matrix_set(sigma, i, j, gsl_matrix_get(sigma, i, j)+add);
 						}
 					}
