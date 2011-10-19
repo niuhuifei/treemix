@@ -160,7 +160,8 @@ int main(int argc, char *argv[]){
         		treeout << lk0 << " "<< lk << " ";
         		treeout << wlk0 << " "<< wlk << " ";
         		double pval = 1-gsl_cdf_chisq_P(-2 *(wlk0-wlk), 2 );
-        		int ncomp = 2* (2*state.current_npops- 2);
+        		int nbranch = 2* state.current_npops-2;
+        		int ncomp = nbranch*(nbranch-1);
         		pval = pval * (double) ncomp;
         		treeout << pval << " ";
         		state.tree->g[*it].weight = w;
