@@ -25,7 +25,7 @@ int main (void)
 	p.window_size = 1;
 	p.alfreq_scaling = 0;
 	ofstream tmpfile("llikout");
-	for (int i = 0; i < 50; i++){
+	for (int i = 0; i < 90; i++){
 		stringstream ss;
 		ss<< "/Users/pickrell/projects/treemix/sims/sim_mvn/simfreqs" << i << ".gz";
 		string file  = ss.str();
