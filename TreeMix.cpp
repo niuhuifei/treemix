@@ -27,11 +27,21 @@ void printopts(){
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
 	cout << "-quick do fast optimization of migration weights\n";
 	cout << "-nofrac Force migration nodes to fall in the middle of their branches\n";
+	cout << "-r [int] number of iterations of randomization for p-values\n";
 	cout << "\n";
 }
 
 
 int main(int argc, char *argv[]){
+
+	const gsl_rng_type * T;
+	gsl_rng * r;
+	gsl_rng_env_setup();
+	T = gsl_rng_ranlxs2;
+	r = gsl_rng_alloc(T);
+	int seed = (int) time(0);
+	gsl_rng_set(r, seed);
+
     CCmdLine cmdline;
     PhyloPop_params p;
     if (cmdline.SplitLine(argc, argv) < 1){
@@ -61,6 +71,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
+    if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
     if (cmdline.HasSwitch("-root")) {
     	p.set_root = true;
     	p.root = cmdline.GetArgument("-root", 0);
@@ -104,7 +115,27 @@ int main(int argc, char *argv[]){
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << "\n";
-    cout << "Tree Wishart likelihood: "<< state.llik_wishart() << "\n";
+    if (p.nrand > 0){
+    	string randfile = outstem+".randllk.gz";
+		ogzstream randout(randfile.c_str());
+    	for (int i = 0; i < p.nrand; i++){
+    		vector<string> pops = state.allpopnames;
+    		CountData randcount(&counts, pops, state.sigma_cor, &p,  r);
+    		GraphState2 randstate(&randcount, &p);
+    		randstate.set_graph(&state);
+    		p.smooth_lik = false;
+    		double llk0 = randstate.llik();
+    		p.smooth_lik = true;
+    		randstate.add_mig_targeted();
+    		if (!p.nofrac) state.optimize_fracs();
+    		state.optimize_weights();
+    		p.smooth_lik = false;
+    		double llk1 = randstate.llik();
+    		p.smooth_lik = true;
+    		randout << llk0 << " "<< llk1 << "\n";
+
+    	}
+    }
     for (int i = 0; i < p.nmig; i++){
     	double st = state.llik();
 

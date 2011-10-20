@@ -49,6 +49,7 @@ CountData::CountData(CountData * c, vector<string> names, gsl_matrix* model, Phy
 	// set covariance matrix to a random Wishart with covariance from a model, copy over the standard errors
 	params= p;
 	npop = names.size();
+	nsnp = c->nsnp;
 	cov = gsl_matrix_alloc(npop, npop);
 	cov_var = gsl_matrix_alloc(npop, npop);
 	ne = c->ne;

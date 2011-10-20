@@ -17,7 +17,6 @@ class GraphState2{
 public:
 	GraphState2();
 	GraphState2(CountData*, PhyloPop_params*);
-
 	PhyloPop_params* params; //paramters for run
 	PopGraph* tree;
 	PopGraph* tree_bk;
@@ -46,6 +45,7 @@ public:
 
 	//set graph from files with the vertices and edges
 	void set_graph(string, string);
+	void set_graph(GraphState2*);
 
 	//set the root to a given clade
 	void place_root(string);
