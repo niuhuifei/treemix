@@ -25,6 +25,16 @@ int main (void)
 	p.window_size = 1;
 	p.alfreq_scaling = 0;
 	ofstream tmpfile("llikout");
+	CountData tmpcount("/Users/pickrell/projects/treemix/sims/rosenburg_model_20pop2_phylopop_in.gz", &p);
+	GraphState2 state(&tmpcount, &p);
+
+	state.set_graph("((pop5:0.00259392,((pop3:0.00303462,(pop1:0.0036395,pop2:0.00312606):0.000436326):0.000279838,pop4:0.00283215):0.000274779):0.000135986,((pop7:0.00230621,(pop8:0.002108,((((((pop14:0.00111402,((pop16:0.000744062,(pop17:0.00052396,((pop20:0.000360078,pop19:0.000223979):0.000297038,pop18:0.000416602):0.000294024):0.000276486):0.000264836,pop15:0.000971684):0.000265374):0.000280506,pop13:0.00132408):0.000285774,pop12:0.00150098):0.000263486,pop11:0.00155312):0.000291052,pop10:0.00176539):0.000316614,pop9:0.00193484):0.000247762):0.000325461):0.000386744,pop6:0.00246966):0.000135986);");
+	state.print_sigma_cor("incov.gz");
+	vector<string> pops = state.allpopnames;
+	cout << "here\n"; cout.flush();
+	CountData tmpcount2(&tmpcount, pops, state.sigma_cor, &p, r);
+
+	/*
 	for (int i = 0; i < 90; i++){
 		stringstream ss;
 		ss<< "/Users/pickrell/projects/treemix/sims/sim_mvn/simfreqs" << i << ".gz";
@@ -49,7 +59,7 @@ int main (void)
 		//state.print_sigma_cor("testcor.gz");
 		//state.tree->print("testtree");
 	}
-
+*/
 	//state.set_graph("/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.vertices.gz", "/Users/pickrell/projects/treemix/hgdp+new/san_asc_tree_archaic_root.edges.gz");
 	//cout << state.llik() << " "<< state.llik_wishart() << "\n";
 	//state.rearrange(8055, 536);

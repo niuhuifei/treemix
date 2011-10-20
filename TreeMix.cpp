@@ -163,6 +163,7 @@ int main(int argc, char *argv[]){
         		int nbranch = 2* state.current_npops-2;
         		int ncomp = nbranch*(nbranch-1);
         		pval = pval * (double) ncomp;
+        		if (pval > 1)  pval = 1;
         		treeout << pval << " ";
         		state.tree->g[*it].weight = w;
         		state.set_branches_ls_wmig();
