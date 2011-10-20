@@ -6,8 +6,9 @@
  */
 #include "CountData.h"
 
-CountData::CountData(string infile, PhyloPop_params* p){
 
+
+CountData::CountData(string infile, PhyloPop_params* p){
 	params = p;
 	read_counts(infile);
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
@@ -43,6 +44,69 @@ CountData::CountData(string infile){
 	process_scatter();
 }
 
+
+CountData::CountData(CountData * c, vector<string> names, gsl_matrix* model, PhyloPop_params* p, gsl_rng *r){
+	// set covariance matrix to a random Wishart with covariance from a model, copy over the standard errors
+	params= p;
+	npop = names.size();
+	cov = gsl_matrix_alloc(npop, npop);
+	cov_var = gsl_matrix_alloc(npop, npop);
+	ne = c->ne;
+	for (int i = 0; i < names.size(); i++){
+		pop2id.insert(make_pair(names[i], i));
+	}
+	set_cov_ran(model, r);
+	for(int i = 0; i < names.size(); i++){
+		for (int j = 0; j < names.size(); j++){
+			gsl_matrix_set(cov_var, i, j, c->get_cov_var(names[i], names[j] ));
+		}
+	}
+}
+
+void CountData::set_cov_ran(gsl_matrix* model,gsl_rng* r){
+
+	// 1. Take SVD of model
+	gsl_matrix * U2 = gsl_matrix_alloc(npop-1,npop);
+	gsl_matrix * A = gsl_matrix_alloc(npop,npop);
+	gsl_matrix * VT = gsl_matrix_alloc(npop,npop);
+	gsl_matrix * model_prime = gsl_matrix_alloc(npop-1,npop-1);
+	gsl_matrix * cov_prime = gsl_matrix_alloc(npop-1,npop-1);
+	gsl_vector * S = gsl_vector_alloc(npop);
+	gsl_vector * work = gsl_vector_alloc(npop);
+	gsl_matrix_memcpy( A, model);
+
+	gsl_linalg_SV_decomp(A, VT, S, work);
+
+
+	// Now copy the first npop-1 eigenvectors to U
+
+	for (int i = 0; i < npop-1; i++){
+		for(int j = 0; j < npop; j++){
+			gsl_matrix_set(U2, i, j, gsl_matrix_get(A, i, j));
+		}
+	}
+
+	// multiply U model U^T
+	gsl_matrix * US = gsl_matrix_alloc(npop-1, npop);
+
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U2, model, 0.0, US);
+
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, US, U2, 0.0, model_prime);
+
+	//get random wishart
+	//const gsl_rng *r, const int n, const int dof, const gsl_matrix *scale, gsl_matrix *result){
+	rwishart(r, npop-1, ne, model_prime, cov_prime );
+	//multiply U^T cov_prime U
+	gsl_matrix * UTC = gsl_matrix_alloc(npop, npop-1);
+	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, U2, cov_prime, 0.0, UTC);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, UTC, U2, 0.0, cov);
+	for(int i = 0; i < npop; i++){
+		for (int j = 0; j < npop; j++){
+			gsl_matrix_set(cov, i, j, gsl_matrix_get(cov, i, j)/ ne);
+		}
+	}
+	print_cov("rancov.gz");
+}
 string CountData::get_pops(){
 	string toreturn = "(";
 	map<string , int>::iterator it = pop2id.begin();
@@ -704,4 +768,29 @@ void CountData::set_ne2(){
 	double tmp = num/denom;
 	ne2 = int(tmp);
 
+}
+
+int rwishart(gsl_rng *r, const int n, const int dof, const gsl_matrix *scale, gsl_matrix *result){
+  /* Wishart distribution random number generator */
+  /*
+   *    n        gives the dimension of the random matrix
+   *    dof      degrees of freedom
+   *    scale    scale matrix of dimension n x n
+   *    result   output variable with a single random matrix Wishart distribution generation
+   */
+  int k,l;
+  gsl_matrix *work = gsl_matrix_calloc(n,n);
+
+  for(k=0; k<n; k++){
+    gsl_matrix_set( work, k, k, sqrt( gsl_ran_chisq( r, (dof-k) ) ) );
+    for(l=0; l<k; l++){
+      gsl_matrix_set( work, k, l, gsl_ran_ugaussian(r) );
+    }
+  }
+  gsl_matrix_memcpy(result,scale);
+  gsl_linalg_cholesky_decomp(result);
+  gsl_blas_dtrmm(CblasLeft,CblasLower,CblasNoTrans,CblasNonUnit,1.0,result,work);
+  gsl_blas_dsyrk(CblasUpper,CblasNoTrans,1.0,work,0.0,result);
+
+  return 0;
 }

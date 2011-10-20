@@ -13,6 +13,8 @@
 
 class CountData{
 public:
+	CountData( CountData*, vector<string>, gsl_matrix*, PhyloPop_params *, gsl_rng *);
+	void set_cov_ran(gsl_matrix * , gsl_rng *);
 	CountData(string, PhyloPop_params*);
 	CountData(string); //no rescaling (ie. just the allele frequencies)
 	void read_counts(string);
@@ -51,4 +53,5 @@ public:
 	void set_ne2();
 };
 
+extern int rwishart(gsl_rng *, const int, const int, const gsl_matrix *, gsl_matrix *);
 #endif /* COUNTDATA_H_ */
