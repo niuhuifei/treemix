@@ -19,7 +19,9 @@ int main (void)
 	gsl_rng_env_setup();
 	T = gsl_rng_ranlxs2;
 	r = gsl_rng_alloc(T);
-	gsl_rng_set(r, 100);
+	int seed = (int) time(0);
+	gsl_rng_set(r, seed);
+
 
 	PhyloPop_params p;
 	p.window_size = 1;
@@ -33,7 +35,8 @@ int main (void)
 	vector<string> pops = state.allpopnames;
 	cout << "here\n"; cout.flush();
 	CountData tmpcount2(&tmpcount, pops, state.sigma_cor, &p, r);
-
+	GraphState2 randstate(&tmpcount2, &p);
+	randstate.set_graph(&state);
 	/*
 	for (int i = 0; i < 90; i++){
 		stringstream ss;

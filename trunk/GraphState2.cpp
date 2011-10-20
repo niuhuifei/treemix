@@ -88,6 +88,21 @@ void GraphState2::set_graph(string newick){
     current_llik = llik();
 }
 
+void GraphState2::set_graph(GraphState2* g){
+	tree->copy( g->tree);
+	current_npops = allpopnames.size();
+	gsl_matrix_free(sigma);
+	sigma = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(sigma_cor);
+
+    set_branches_ls_wmig();
+    cout << llik()<< "\n";
+    current_llik = llik();
+
+}
 void GraphState2::set_graph(string vfile, string efile){
 	igzstream vin(vfile.c_str());
 	tree->g.clear();
@@ -1272,10 +1287,12 @@ double GraphState2::llik_normal(){
 			double pred = gsl_matrix_get(sigma_cor, i, j);
 			double obs = countdata->get_cov(p1, p2);
 			double se = countdata->get_cov_var(p1, p2);
+
 			double dif = obs-pred;
 			double scale = 1;
 			if (params->smooth_lik) scale = sqrt( (double) countdata->nsnp / (double) params->window_size);
 			double toadd = gsl_ran_gaussian_pdf(dif, se * scale);
+			//cout << p1 << " "<< p2 << pred << " "<< obs << " "<< se << " "<< toadd << " "<< log(toadd) << "\n";
 			//double toadd = gsl_ran_gaussian_pdf(dif, se);
 			//if (toadd < 1e-300) 	{
 			//	//cout << toadd << " "<< log(toadd) << " "<< toreturn << "\n";
@@ -1288,6 +1305,7 @@ double GraphState2::llik_normal(){
 			//}
 		}
 	}
+	//cout << toreturn << "\n";
 	//cout << "tmp "<< (double) tmp / (double) total <<"\n";
 	return toreturn;
 }
