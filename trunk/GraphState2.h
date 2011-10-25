@@ -17,6 +17,7 @@ class GraphState2{
 public:
 	GraphState2();
 	GraphState2(CountData*, PhyloPop_params*);
+
 	PhyloPop_params* params; //paramters for run
 	PopGraph* tree;
 	PopGraph* tree_bk;
@@ -42,7 +43,7 @@ public:
 	void set_graph(string);
 	void set_graph_from_file(string);
 	void set_graph_from_string(string);
-
+	void set_countdata(CountData*);
 	//set graph from files with the vertices and edges
 	void set_graph(string, string);
 	void set_graph(GraphState2*);
@@ -55,6 +56,7 @@ public:
 
 	//covariance matrix
 	void compute_sigma();
+	void set_sigmacor_from_sigma();
 	void print_sigma();
 	void print_sigma_cor(string);
 
@@ -71,6 +73,7 @@ public:
 
 	//add a new population
 	void add_pop();
+	void add_pop(string, string);
 	void process_scatter();
 
 	//under normal model, get the max lik branch lengths
@@ -99,6 +102,9 @@ public:
 	int golden_section_frac(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_frac_wish(Graph::edge_descriptor, double, double, double, double);
 
+	//do golden section on an edge length
+	int golden_section_edge(Graph::edge_descriptor, double, double, double, double);
+
 	//likelihoods
 	double llik(bool w = false);
 	double llik_normal();
@@ -124,6 +130,7 @@ public:
 
 	//alterations to the tree
 	Graph::edge_descriptor add_mig(int, int);
+	Graph::edge_descriptor add_mig_noopt(int, int);
 	void rearrange(int, int);
 
 	bool has_loop();

@@ -5,10 +5,7 @@
  *      Author: pickrell
  */
 
-#include "CountData.h"
-#include "PopGraph.h"
 #include "GraphState2.h"
-#include "GraphState3.h"
 #include "PhyloPop_params.h"
 
 int main (void)
@@ -24,7 +21,7 @@ int main (void)
 
 
 	PhyloPop_params p;
-	p.window_size = 1;
+	p.window_size = 1000;
 	p.alfreq_scaling = 0;
 	ofstream tmpfile("llikout");
 	CountData tmpcount("/Users/pickrell/projects/treemix/sims/rosenburg_model_20pop2_phylopop_in.gz", &p);

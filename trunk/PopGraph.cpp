@@ -1920,7 +1920,7 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 		if (!(g[get_parent_node_wmig(p).first].is_mig || g[ch.first].is_mig || g[ch.second].is_mig) ) return false;
 	}
 
-	if ( st == get_parent_node(sp).first || sp == get_parent_node(st).first )return false;
+	//if ( st == get_parent_node(sp).first || sp == get_parent_node(st).first )return false;
 
 	if ( does_mig_exist( st, sp)) return false;
 
