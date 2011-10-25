@@ -26,7 +26,10 @@ public:
 	int npop, nsnp, ef_nsnp;
 	string get_pops(); //in Newick format
 	vector<string> list_pops(); //simple list
+	string get_pop_in_index(int); //return the name of the population at a given index
 	gsl_matrix *alfreqs, *scatter, *cov, *cov_var, *cov_var2;
+	gsl_matrix *cov_samp;
+	gsl_matrix *cov_cov;
 	void set_alfreqs();
 	void scale_alfreqs();
 	void set_scatter();
@@ -48,7 +51,7 @@ public:
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;
-	int ne, ne2;
+	int ne, ne2, ncomp, nblock;
 	void set_ne();
 	void set_ne2();
 };

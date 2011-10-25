@@ -89,6 +89,7 @@ int main(int argc, char *argv[]){
 
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
+    if (p.smooth_lik) p.smooth_scale = sqrt( (double) counts.nsnp / (double) p.window_size);
     GraphState2 state(&counts, &p);
     cout.precision(10);
     if (p.readtree) {

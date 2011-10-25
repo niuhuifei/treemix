@@ -44,8 +44,14 @@ public:
 
 
 	bool smooth_lik;
+	double smooth_scale;
 
 	int nrand;
+
+
+	//only use a certain number of populations
+	bool restrict_pop;
+	int pops2use;
 
 };
 

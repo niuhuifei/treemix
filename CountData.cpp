@@ -11,6 +11,7 @@
 CountData::CountData(string infile, PhyloPop_params* p){
 	params = p;
 	read_counts(infile);
+	if (p->restrict_pop) npop = p->pops2use;
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
 	scatter = gsl_matrix_alloc(npop, npop);
@@ -19,6 +20,11 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	cov_var2 = gsl_matrix_alloc(npop, npop);
 	U = gsl_matrix_alloc(npop-1, npop);
 	scatter_prime = gsl_matrix_alloc(npop-1, npop-1);
+	nblock = nsnp/ p->window_size;
+	ncomp = (npop* (npop-1))/2+ npop;
+	//cout << nwind << " "<< ncomp << "\n";
+	cov_samp = gsl_matrix_alloc(nblock, ncomp);
+	cov_cov = gsl_matrix_alloc(ncomp, ncomp);
 	set_alfreqs();
 	scale_alfreqs();
 	set_scatter();
@@ -57,11 +63,11 @@ CountData::CountData(CountData * c, vector<string> names, gsl_matrix* model, Phy
 		pop2id.insert(make_pair(names[i], i));
 	}
 	set_cov_ran(model, r);
-	for(int i = 0; i < names.size(); i++){
-		for (int j = 0; j < names.size(); j++){
-			gsl_matrix_set(cov_var, i, j, c->get_cov_var(names[i], names[j] ));
-		}
-	}
+	//for(int i = 0; i < names.size(); i++){
+	//	for (int j = 0; j < names.size(); j++){
+	//		gsl_matrix_set(cov_var, i, j, c->get_cov_var(names[i], names[j] ));
+	//	}
+	//}
 }
 
 void CountData::set_cov_ran(gsl_matrix* model,gsl_rng* r){
@@ -71,11 +77,11 @@ void CountData::set_cov_ran(gsl_matrix* model,gsl_rng* r){
 	gsl_matrix * A = gsl_matrix_alloc(npop,npop);
 	gsl_matrix * VT = gsl_matrix_alloc(npop,npop);
 	gsl_matrix * model_prime = gsl_matrix_alloc(npop-1,npop-1);
-	gsl_matrix * cov_prime = gsl_matrix_alloc(npop-1,npop-1);
 	gsl_vector * S = gsl_vector_alloc(npop);
 	gsl_vector * work = gsl_vector_alloc(npop);
 	gsl_matrix_memcpy( A, model);
-
+	gsl_matrix_set_zero(cov);
+	gsl_matrix_set_zero(cov_var);
 	gsl_linalg_SV_decomp(A, VT, S, work);
 
 
@@ -87,26 +93,71 @@ void CountData::set_cov_ran(gsl_matrix* model,gsl_rng* r){
 		}
 	}
 
+
 	// multiply U model U^T
 	gsl_matrix * US = gsl_matrix_alloc(npop-1, npop);
-
 	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U2, model, 0.0, US);
-
 	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, US, U2, 0.0, model_prime);
+	int nblock = nsnp/ params->window_size;
 
-	//get random wishart
-	//const gsl_rng *r, const int n, const int dof, const gsl_matrix *scale, gsl_matrix *result){
-	rwishart(r, npop-1, ne, model_prime, cov_prime );
-	//multiply U^T cov_prime U
-	gsl_matrix * UTC = gsl_matrix_alloc(npop, npop-1);
-	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, U2, cov_prime, 0.0, UTC);
-	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, UTC, U2, 0.0, cov);
-	for(int i = 0; i < npop; i++){
-		for (int j = 0; j < npop; j++){
-			gsl_matrix_set(cov, i, j, gsl_matrix_get(cov, i, j)/ ne);
+	//initialize blocks
+	vector< vector< vector<double> > > allsamp;
+	for (int i = 0; i < npop; i++){
+		vector<vector<double> > tmp1;
+		for(int j = 0; j < npop; j++){
+			vector<double> tmp;
+			tmp1.push_back(tmp);
+		}
+		allsamp.push_back(tmp1);
+	}
+
+	//sample nblock Wisharts
+	for (int i = 0; i < nblock; i++){
+		gsl_matrix * cov_prime = gsl_matrix_alloc(npop-1,npop-1);
+		gsl_matrix * tmpcov = gsl_matrix_alloc(npop, npop);
+		//get random wishart
+		//const gsl_rng *r, const int n, const int dof, const gsl_matrix *scale, gsl_matrix *result){
+		rwishart(r, npop-1, ne , model_prime, cov_prime );
+		//multiply U^T cov_prime U
+		gsl_matrix * UTC = gsl_matrix_alloc(npop, npop-1);
+		gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, U2, cov_prime, 0.0, UTC);
+		gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, UTC, U2, 0.0, tmpcov);
+
+		cout << gsl_matrix_get(tmpcov, 1, 3) / ne << "\n";
+		for(int i = 0; i < npop; i++){
+			for (int j = i; j < npop; j++){
+				gsl_matrix_set(cov, i, j, gsl_matrix_get(cov, i, j)+gsl_matrix_get(tmpcov, i, j)/ (ne/nblock));
+				gsl_matrix_set(cov, j, i, gsl_matrix_get(cov, j, i)+gsl_matrix_get(tmpcov, j, i)/ (ne/nblock));
+				allsamp[i][j].push_back(gsl_matrix_get(tmpcov, i, j)/ (ne/nblock));
+			}
+		}
+
+		gsl_matrix_free(cov_prime);
+		gsl_matrix_free(tmpcov);
+	}
+	cout << gsl_matrix_get(model, 1, 3) << " model\n";
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double mean =  gsl_matrix_get(cov, i, j)/ (double) nblock;
+			gsl_matrix_set(cov, i, j, mean);
+			gsl_matrix_set(cov, j, i, mean);
+			double sum = 0;
+			vector<double> all_covs = allsamp[i][j];
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
+			//double sd = sqrt(sum/ (double) nblock);
+			double c = sqrt(sum) /(double) nblock;
+			gsl_matrix_set(cov_var, i, j, c);
+			gsl_matrix_set(cov_var, j, i, c);
+
 		}
 	}
 	print_cov("rancov.gz");
+	print_cov_var("rancovvar.gz");
+	gsl_matrix_free(U2);
+	gsl_matrix_free(A);
+	gsl_matrix_free(VT);
+	gsl_vector_free(S);
+	gsl_vector_free(work);
 }
 string CountData::get_pops(){
 	string toreturn = "(";
@@ -131,7 +182,12 @@ string CountData::get_pops(){
 
 vector<string> CountData::list_pops(){
 	vector<string> toreturn;
-	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++) toreturn.push_back( it->first);
+	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++) {
+		if ( params->restrict_pop == true ){
+			if (it->second < params->pops2use ) toreturn.push_back( it->first);
+		}
+		else toreturn.push_back( it->first);
+	}
 	return toreturn;
 }
 
@@ -387,11 +443,12 @@ void CountData::set_cov(){
 		cov_block.push_back(tmp1);
 	}
 	//get the number of blocks
-	int nblock = nsnp/params->window_size;
+	int blocksize = nsnp/params->window_size;
 
 	//calculate the covariance matrix in each block
 	cout << "Estimating covariance matrix in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
-	for (int k = 0; k < nblock ; k++){
+	for (int k = 0; k < blocksize ; k++){
+		int index = 0;
 		for(int i = 0; i < npop; i++){
 			for (int j = i; j < npop; j++){
 				double c = 0;
@@ -401,7 +458,9 @@ void CountData::set_cov(){
 					c+= toadd;
 				}
 				double cov = c/ (double) params->window_size;
+				gsl_matrix_set(cov_samp, k, index, cov);
 				cov_block[i][j].push_back(cov);
+				index++;
 			}
 		}
 	}
@@ -423,6 +482,23 @@ void CountData::set_cov(){
 			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
 			gsl_matrix_set(cov_var, i, j, c);
 			gsl_matrix_set(cov_var, j, i, c);
+		}
+	}
+	//get the covariance in the estimates of the covariance matrix
+	gsl_matrix_set_zero(cov_cov);
+	for(int i = 0; i < ncomp; i++){
+		double meani = 0;
+		for (int k = 0; k < nblock; k++) meani+= gsl_matrix_get(cov_samp, i, k);
+		meani = meani/ (double) nblock;
+
+		for (int j = i ; j < ncomp; j++){
+			double meanj = 0;
+			for (int k = 0; k < nblock; k++) meanj+= gsl_matrix_get(cov_samp, j, k);
+			meanj = meanj/ (double) nblock;
+			double sum = 0;
+			for (int k = 0; k < nblock; k++)		sum += (gsl_matrix_get(cov_samp, i, k)- meani )*(gsl_matrix_get(cov_samp, j, k) - meanj);
+			gsl_matrix_set(cov_cov, i, j, sum/ (double) nblock);
+			gsl_matrix_set(cov_cov, j, i, sum/ (double) nblock);
 		}
 	}
 }
@@ -794,4 +870,18 @@ int rwishart(gsl_rng *r, const int n, const int dof, const gsl_matrix *scale, gs
   gsl_blas_dsyrk(CblasUpper,CblasNoTrans,1.0,work,0.0,result);
 
   return 0;
+}
+
+string CountData::get_pop_in_index(int index){
+	string toreturn;
+	map<string , int>::iterator it = pop2id.begin();
+	while (it != pop2id.end()){
+		if (it->second == index) return it->first;
+		it++;
+	}
+	if (it == pop2id.end()) {
+		cerr << "Trying to get index "<< index << " in CountData, none found\n";
+		exit(1);
+	}
+	return toreturn;
 }

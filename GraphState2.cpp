@@ -50,7 +50,10 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	resphi = 2-phi;
 }
 
-
+void GraphState2::set_countdata(CountData* counts){
+	countdata = counts;
+	allpopnames = counts->list_pops();
+}
 void GraphState2::print_sigma(){
 	for (int i = 0; i < current_npops; i++){
 		cout << allpopnames[i]<< " ";
@@ -1085,8 +1088,49 @@ int GraphState2::golden_section_frac(Graph::edge_descriptor e, double min, doubl
 		else return golden_section_frac(e, min, x, guess, tau);
 	}
 	else{
-		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
+		if ( (max - guess) > (guess - min)  ) return golden_section_frac(e, min, guess, x, tau);
 		else return golden_section_frac(e, x, guess, max, tau);
+	}
+}
+
+
+int GraphState2::golden_section_edge(Graph::edge_descriptor e, double min, double guess, double max, double tau){
+	double x;
+
+	//cout << min << " "<< guess << " "<< max << " "<< tau << " "<< resphi << "\n"; cout.flush();
+	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
+	else x = guess - resphi *(guess-min);
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+		double new_loglen = (min+max)/2;
+		double neww = exp(new_loglen);
+		tree->g[e].len = neww;
+		compute_sigma();
+		set_sigmacor_from_sigma();
+		current_llik = llik();
+		return 0;
+	}
+	double w = exp(x);
+	tree->g[e].len = w;
+	compute_sigma();
+	set_sigmacor_from_sigma();
+
+	double f_x = -llik();
+	//cout << x << " " << f_x << "\n";
+	w = exp(guess);
+	tree->g[e].len = w;
+	compute_sigma();
+	set_sigmacor_from_sigma();
+
+	double f_guess = -llik();
+	//cout << f_guess << " "<< f_x << "\n";
+	if (f_x < f_guess){
+		if ( (max-guess) > (guess-min) )	return golden_section_edge(e, guess, x, max, tau);
+
+		else return golden_section_edge(e, min, x, guess, tau);
+	}
+	else{
+		if ( (max - guess) > (guess - min)  ) return golden_section_edge(e, min, guess, x, tau);
+		else return golden_section_edge(e, x, guess, max, tau);
 	}
 }
 
@@ -1126,7 +1170,7 @@ int GraphState2::golden_section_frac_wish(Graph::edge_descriptor e, double min, 
 		else return golden_section_frac(e, min, x, guess, tau);
 	}
 	else{
-		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
+		if ( (max - guess) > (guess - min)  ) return golden_section_frac(e, min, guess, x, tau);
 		else return golden_section_frac(e, x, guess, max, tau);
 	}
 }
@@ -1290,15 +1334,9 @@ double GraphState2::llik_normal(){
 
 			double dif = obs-pred;
 			double scale = 1;
-			if (params->smooth_lik) scale = sqrt( (double) countdata->nsnp / (double) params->window_size);
+			if (params->smooth_lik) scale = params->smooth_scale;
 			double toadd = gsl_ran_gaussian_pdf(dif, se * scale);
 			//cout << p1 << " "<< p2 << pred << " "<< obs << " "<< se << " "<< toadd << " "<< log(toadd) << "\n";
-			//double toadd = gsl_ran_gaussian_pdf(dif, se);
-			//if (toadd < 1e-300) 	{
-			//	//cout << toadd << " "<< log(toadd) << " "<< toreturn << "\n";
-			//	cerr << "WARNING: underflow in normal likelihood\n";
-			//	toadd = 1e-300;
-			//}
 			//cout << p1<< " "<< p2 << " "<< toadd << " "<< log(toadd) << "\n";
 			toreturn+= log(toadd);
 
@@ -1594,6 +1632,28 @@ void GraphState2::add_pop(){
 	current_llik = max_llik;
 }
 
+
+void GraphState2::add_pop(string name, string popname){
+
+	gsl_matrix_free(sigma);
+	sigma = gsl_matrix_alloc(current_npops+1, current_npops+1);
+	gsl_matrix_set_zero(sigma);
+	gsl_matrix_free(sigma_cor);
+	sigma_cor = gsl_matrix_alloc(current_npops+1, current_npops+1);
+	gsl_matrix_set_zero(sigma_cor);
+
+	string toadd = popname;
+	map<string, Graph::vertex_descriptor> p2v = tree->get_tips(tree->root);
+	Graph::vertex_descriptor t = tree->add_tip(p2v[name], toadd);
+	current_npops++;
+	compute_sigma();
+
+	set_sigmacor_from_sigma();
+	//print_sigma();
+	current_llik = llik();
+}
+
+
 double GraphState2::llik( bool w){
 	if (!w) return llik_normal();
 	else return llik_wishart();
@@ -1817,23 +1877,35 @@ Graph::edge_descriptor GraphState2::add_mig(int index1, int index2){
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
 		e = tree->add_mig_edge(i2v[index1], i2v[index2]);
-		//quick_optimize_weight(e);
 		optimize_weight(e);
-		//quick_optimize_weight(e);
+
 		Graph::vertex_descriptor v = source(e, tree->g);
 		cout << tree->g[e].weight <<"\n";
-		//for (float f = 0.1; f < 1; f+=0.2){
-		//	tree->g[v].mig_frac = f;
-			//optimize_weight(e);
-		//	set_branches_ls_wmig();
-		//	cout << f<< " "<< llik() << "\n";
-		//}
 
 	}
 	else{
 		cerr << "ERROR: not a legal migration between index " << index1 << " and "<< index2 << "\n";
 		exit(1);
 	}
+	current_llik = llik();
+	return(e);
+}
+
+
+Graph::edge_descriptor GraphState2::add_mig_noopt(int index1, int index2){
+	Graph::edge_descriptor e;
+	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
+		e = tree->add_mig_edge(i2v[index1], i2v[index2]);
+		Graph::vertex_descriptor v = source(e, tree->g);
+		tree->g[e].weight =0;
+	}
+	else{
+		cerr << "ERROR: not a legal migration between index " << index1 << " and "<< index2 << "\n";
+		exit(1);
+	}
+	compute_sigma();
+	set_sigmacor_from_sigma();
 	current_llik = llik();
 	return(e);
 }
@@ -2309,10 +2381,10 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 void GraphState2::place_root(string r){
 	tree->place_root(r);
 	cout << "Set root above "<< r << "\n"; cout.flush();
-	set_branches_ls();
-	current_llik = llik();
-	cout << tree->get_newick_format()<< "\n"; cout.flush();
-	cout << "ln(lk) = "<< current_llik << "\n";
+	//set_branches_ls();
+	//current_llik = llik();
+	//cout << tree->get_newick_format()<< "\n"; cout.flush();
+	//cout << "ln(lk) = "<< current_llik << "\n";
 }
 
 void GraphState2::flip_mig(){
@@ -2581,14 +2653,47 @@ void GraphState2::compute_sigma(){
 					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
 						if ( tree->g[*it3].is_mig) continue;
 						if (it2->second.find(*it3) != it2->second.end()){
-
-							//double frac = edge2frac.find(*it3)->second;
 							double add = it1->first * it2->first * tree->g[*it3].len;
 							gsl_matrix_set(sigma, i, j, gsl_matrix_get(sigma, i, j)+add);
 						}
 					}
 				}
 			}
+		}
+	}
+}
+
+
+void GraphState2::set_sigmacor_from_sigma(){
+
+	gsl_matrix_set_zero(sigma_cor);
+	double c1 = 1.0 / (double) current_npops;
+	double c2 = c1*c1;
+	double shared = 0;
+	for(int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			shared += gsl_matrix_get(sigma, i, j);
+		}
+	}
+
+	shared = shared * c2;
+	//cout << "here "<< shared << " "<< current_npops << " \n";
+	for (int i = 0; i < current_npops; i++){
+		for (int j = i; j < current_npops; j++){
+			//cout << i << " "<< j;
+			double vij = gsl_matrix_get(sigma, i, j);
+			double sum_i = 0;
+			double sum_j = 0;
+			for (int k = 0; k < current_npops; k++){
+				sum_i += gsl_matrix_get(sigma, k, i);
+				sum_j += gsl_matrix_get(sigma, j, k);
+			}
+			sum_i = sum_i * c1;
+			sum_j = sum_j * c1;
+			double w_ij = vij - sum_i - sum_j + shared;
+			//cout << " "<< vij << " "<< sum_i << " "<< sum_j << " "<< w_ij << "\n";
+			gsl_matrix_set(sigma_cor, i, j, w_ij);
+			gsl_matrix_set(sigma_cor, j, i, w_ij);
 		}
 	}
 }
