@@ -19,6 +19,7 @@ public:
 	CountData(string); //no rescaling (ie. just the allele frequencies)
 	void read_counts(string);
 	map<string, int> pop2id;
+	map<int, string> id2pop;
 	map<int, double> mean_hzy;
 	map<int, double> mean_ninds;
 	map<int, int> id2nsnp;
@@ -48,10 +49,14 @@ public:
 	void print_cov(string);
 	void print_cov_var(string);
 	void print_cov_var2(string);
+	void print_cov_cov(string);
+	void print_cov_samp(string);
+	void set_ncomp_ef();
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;
 	int ne, ne2, ncomp, nblock;
+	int ncomp_ef;
 	void set_ne();
 	void set_ne2();
 };

@@ -38,7 +38,7 @@ return 0;
 /*****************************************************************************************************************/
 double dmvnorm(const int n, const gsl_vector *x, const gsl_vector *mean, const gsl_matrix *var){
 /* multivariate normal density function    */
-/*
+/* LOGGED
 *	n	dimension of the random vetor
 *	mean	vector of means of size n
 *	var	variance matrix of dimension n x n
@@ -53,7 +53,18 @@ gsl_permutation *p = gsl_permutation_alloc(n);
 gsl_matrix_memcpy( work, var );
 gsl_linalg_LU_decomp( work, p, &s );
 gsl_linalg_LU_invert( work, p, winv );
-ax = gsl_linalg_LU_det( work, s );
+
+//for (int i = 0; i < n ; i++){
+//	std::cout << gsl_vector_get(x, i) << " "<< gsl_vector_get(mean, i)<< "\n";
+//}
+//for (int i = 0; i < n ; i++){
+//	for(int j = 0; j < n ; j++){
+//		std::cout << gsl_matrix_get(work, i,j) << " ";
+//	}
+//	std::cout << "\n";
+//}
+//ax = gsl_linalg_LU_lndet( work, s );
+ax = gsl_linalg_LU_lndet( work);
 //std::cout << "in dmvnorm "<< ax << "\n";
 gsl_matrix_free( work );
 gsl_permutation_free( p );
@@ -67,8 +78,10 @@ gsl_matrix_free( winv );
 gsl_blas_ddot( xm, ym, &ay);
 gsl_vector_free(xm);
 gsl_vector_free(ym);
-ay = exp(-0.5*ay)/sqrt( pow((2*M_PI),n)*ax );
-
+//std::cout << ay << " "<< ax << "\n";
+ay = -0.5*ay - 0.5* (log(pow((2*M_PI),n))+ ax);
+//ay = exp(-0.5*ay)/sqrt( pow((2*M_PI),n)*ax );
+//std::cout << ay << "\n";
 return ay;
 }
 

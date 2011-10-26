@@ -1826,7 +1826,116 @@ double GraphState2::llik_wishart(){
 	return toreturn;
 }
 
+double GraphState2::llik_mvn(){
+	double toreturn;
+	int n = countdata->ncomp;
+	gsl_matrix * D = gsl_matrix_alloc(countdata->nblock, countdata->ncomp);
+	gsl_matrix_memcpy( D, countdata->cov_samp);
+	gsl_matrix * V = gsl_matrix_alloc(countdata->ncomp, countdata->ncomp);
+	gsl_matrix_memcpy( V, countdata->cov_cov);
 
+	//cout << "here\n";
+	gsl_vector * means = gsl_vector_alloc(n);
+	int index = 0;
+	for (int i = 0; i < countdata->npop; i++){
+		for (int j = i; j < countdata->npop; j++){
+			string s1 = countdata->id2pop[i];
+			string s2 = countdata->id2pop[j];
+			int index1 = popname2index[s1];
+			int index2 = popname2index[s2];
+
+			double m= gsl_matrix_get(sigma_cor, index1, index2);
+			//cout << s1 <<" "<< s2 << " "<< index1 << " "<< index2 << "\n";
+			gsl_vector_set(means, index, m);
+			index++;
+		}
+	}
+
+
+	gsl_matrix * S = gsl_matrix_alloc(countdata->ncomp, countdata->ncomp);
+	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, D, D, 0.0, S);
+	gsl_matrix * A = gsl_matrix_alloc(n,n);
+	gsl_matrix * VT = gsl_matrix_alloc(n,n);
+	gsl_vector * Sv = gsl_vector_alloc(n);
+	gsl_vector * work = gsl_vector_alloc(n);
+	gsl_matrix_memcpy( A, S );
+	gsl_linalg_SV_decomp(A, VT, Sv, work);
+	int is = 0;
+	while ( is < n && gsl_vector_get(Sv, is)  > 1e-10) is++; //this is the number of eigenvectors to use
+	//cout << is << "\n";
+	//is = 5;
+	gsl_matrix * U = gsl_matrix_alloc(is, n);
+	for (int i = 0; i < is ; i++){
+		for (int j = 0; j < n; j++){
+			gsl_matrix_set(U, i, j, gsl_matrix_get(A, i, j));
+		}
+	}
+	gsl_matrix * Dnew = gsl_matrix_alloc(countdata->nblock, is);
+	gsl_matrix *Dnew_t = gsl_matrix_alloc(is, countdata->nblock);
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, U, D, 0.0, Dnew_t);
+	gsl_matrix_transpose_memcpy(Dnew, Dnew_t);
+
+	gsl_vector * mean_new = gsl_vector_alloc(is);
+	for(int i = 0; i < is; i++){
+		double tmp = 0;
+		for(int j = 0; j < n; j++){
+			tmp += gsl_matrix_get(U, i, j)* gsl_vector_get(means, j);
+		}
+		gsl_vector_set(mean_new, i, tmp);
+	}
+	gsl_matrix * Vnew = gsl_matrix_alloc(is, is);
+	gsl_matrix * UV = gsl_matrix_alloc(is, n);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, U, V, 0.0, UV);
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, UV, U, 0.0, Vnew);
+
+	ofstream tmpm("means_new");
+	for (int i = 0; i < is ; i++){
+		tmpm << gsl_vector_get(mean_new, i) << "\n";
+		//cout << gsl_vector_get(mean_new, i) << "\n";
+	}
+	ofstream tmpd("data_new");
+	for (int i = 0; i < countdata->nblock; i++){
+		for (int j = 0; j< is; j++){
+			tmpd << gsl_matrix_get(Dnew, i, j)<< " ";
+		}
+		tmpd << "\n";
+	}
+	ofstream tmpv("var_new");
+	for (int i = 0; i < is; i++){
+		for (int j = 0; j< is; j++){
+			tmpv << gsl_matrix_get(Vnew, i, j)<< " ";
+		}
+		tmpv << "\n";
+	}
+
+	for (int i = 0; i < countdata->nblock; i++){
+	//for (int i = 0; i < 1; i++){
+		//gsl_vector * tmpvec  = gsl_vector_alloc(n);
+		//for (int j = 0; j < n; j++) gsl_vector_set(tmpvec, j, gsl_matrix_get(D, i, j));
+		//double d = dmvnorm(n, tmpvec, means, V);
+		gsl_vector * tmpvec  = gsl_vector_alloc(is);
+		for (int j = 0; j < is; j++) gsl_vector_set(tmpvec, j, gsl_matrix_get(Dnew, i, j));
+		double d = dmvnorm(is, tmpvec, mean_new, Vnew);
+		toreturn+= log(d);
+		//cout << d << " "<< log(d)<< "\n";
+		gsl_vector_free(tmpvec);
+	}
+
+	gsl_matrix_free(S);
+	gsl_matrix_free(A);
+	gsl_matrix_free(VT);
+	gsl_matrix_free(D);
+	gsl_matrix_free(V);
+	gsl_matrix_free(Dnew);
+	gsl_matrix_free(Dnew_t);
+	gsl_matrix_free(Vnew);
+	gsl_matrix_free(UV);
+	gsl_vector_free(means);
+	gsl_vector_free(Sv);
+	gsl_vector_free(work);
+	//cout << toreturn << "\n";
+	return toreturn;
+}
 void GraphState2::process_scatter(){
 	scatter_det = 0;
 	scatter_gamma = 0;
