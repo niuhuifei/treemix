@@ -109,6 +109,7 @@ public:
 	double llik(bool w = false);
 	double llik_normal();
 	double llik_wishart();
+	double llik_mvn();
 
 	//migration
 	pair<string, string> get_max_resid();

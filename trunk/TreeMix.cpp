@@ -170,9 +170,9 @@ int main(int argc, char *argv[]){
 
     treeout << state.tree->get_newick_format() << "\n";
     treeout << state.get_trimmed_newick() << "\n";
-    state.current_llik_w = state.llik_wishart();
-    state.optimize_fracs_wish();
-    state.optimize_weights_wish();
+    //state.current_llik_w = state.llik_wishart();
+    //state.optimize_fracs_wish();
+    //state.optimize_weights_wish();
     pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);
     Graph::edge_iterator it = eds.first;
     p.smooth_lik = false;
@@ -181,21 +181,21 @@ int main(int argc, char *argv[]){
      		double w = state.tree->g[*it].weight;
 
         		double lk = state.llik();
-        		double wlk = state.llik_wishart();
+        		double nlk = state.llik_mvn();
         		treeout << state.tree->g[*it].weight<< " ";
         		state.tree->g[*it].weight = 0;
         		state.set_branches_ls_wmig();
         		//state.optimize_fracs(*it);
         		//state.optimize_weights(*it);
         		double lk0 = state.llik();
-        		double wlk0 = state.llik_wishart();
+        		double nlk0 = state.llik_mvn();
         		treeout << lk0 << " "<< lk << " ";
-        		treeout << wlk0 << " "<< wlk << " ";
-        		double pval = 1-gsl_cdf_chisq_P(-2 *(wlk0-wlk), 2 );
-        		int nbranch = 2* state.current_npops-2;
-        		int ncomp = nbranch*(nbranch-1);
-        		pval = pval * (double) ncomp;
-        		if (pval > 1)  pval = 1;
+        		treeout << nlk0 << " "<< nlk << " ";
+        		double pval = 1-gsl_cdf_chisq_P(-2 *(lk0-lk), 3);
+        		//int nbranch = 2* state.current_npops-2;
+        		//int ncomp = nbranch*(nbranch-1);
+        		//pval = pval * (double) ncomp;
+        		//if (pval > 1)  pval = 1;
         		treeout << pval << " ";
         		state.tree->g[*it].weight = w;
         		state.set_branches_ls_wmig();
