@@ -31,11 +31,11 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	set_scatter();
 	//process_scatter();
 	set_cov();
-	//set_cov2();
-	//set_ne();
-	//set_ne2();
+	set_cov2();
+	set_ne();
+	set_ne2();
 	set_ncomp_ef();
-	//cout << "Effective number of SNPs: "<< ne << "\n";
+	cout << "Effective number of SNPs: "<< ne << "\n";
 	//process_cov();
 }
 

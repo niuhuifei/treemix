@@ -192,6 +192,7 @@ int main(int argc, char *argv[]){
         		treeout << lk0 << " "<< lk << " ";
         		treeout << nlk0 << " "<< nlk << " ";
         		double pval = 1-gsl_cdf_chisq_P(-2 *(lk0-lk), 3);
+        		double pval2 = 1-gsl_cdf_chisq_P(-2 *(nlk0-nlk), 3);
         		//int nbranch = 2* state.current_npops-2;
         		//int ncomp = nbranch*(nbranch-1);
         		//pval = pval * (double) ncomp;
