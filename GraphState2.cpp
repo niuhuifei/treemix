@@ -1016,10 +1016,11 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double min, double guess, double max, double tau){
 	double x;
 
-	//cout << guess << "\n"; cout.flush();
+	//cout << min << " "<< guess << " "<< max << "\n"; cout.flush();
 	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
 	else x = guess - resphi *(guess-min);
 	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+		//cout << "here "<< min << " "<< max << "\n";
 		double new_logweight = (min+max)/2;
 		double neww = new_logweight;
 		tree->g[e].weight = neww;
@@ -1040,15 +1041,14 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 	set_branches_ls_wmig();
 	//cout << "not here2\n"; cout.flush();
 	double f_guess = -llik();
-
 	if (f_x < f_guess){
-		if ( (max-guess) > (guess-min) )	return golden_section_weight(e, guess, x, max, tau);
+		if ( (max-guess) > (guess-min) )	return golden_section_weight_noexp(e, guess, x, max, tau);
 
-		else return golden_section_weight(e, min, x, guess, tau);
+		else return golden_section_weight_noexp(e, min, x, guess, tau);
 	}
 	else{
-		if ( (max - guess) > (guess - min)  ) return golden_section_weight(e, min, guess, x, tau);
-		else return golden_section_weight(e, x, guess, max, tau);
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight_noexp(e, min, guess, x, tau);
+		else return golden_section_weight_noexp(e, x, guess, max, tau);
 	}
 }
 
@@ -2852,6 +2852,7 @@ void GraphState2::set_sigmacor_from_sigma(){
 double GraphState2::calculate_se(Graph::edge_descriptor e){
 	vector<double> samps;
 	double oldweight = tree->g[e].weight;
+	//for (int i = 0; i < 1; i++){
 	for (int i = 0; i < countdata->nblock; i++){
 		countdata->set_cov_jackknife(i);
 		//double oldweight = tree->g[e].weight;
@@ -2859,10 +2860,11 @@ double GraphState2::calculate_se(Graph::edge_descriptor e){
 		guess = oldweight;
 		min = params->minweight;
 		max = params->maxweight;
-		guess = exp(guess) / (1+exp(guess));
-		golden_section_weight(e, min, guess, max, 0.01);
+		//guess = exp(guess) / (1+exp(guess));
+		//golden_section_weight(e, min, guess, max, 0.01);
+		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
 		samps.push_back(tree->g[e].weight);
-		//cout<< "\r" <<i << " "<< tree->g[e].weight;
+		//cout <<i << " "<< tree->g[e].weight << "\n";
 	}
 	double mean = 0;
 	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) mean += *it;
