@@ -180,32 +180,29 @@ int main(int argc, char *argv[]){
     	if ( state.tree->g[*it].is_mig){
      		double w = state.tree->g[*it].weight;
 
-        		double lk = state.llik();
-        		double nlk = state.llik_mvn();
-        		treeout << state.tree->g[*it].weight<< " ";
-        		state.tree->g[*it].weight = 0;
-        		state.set_branches_ls_wmig();
-        		//state.optimize_fracs(*it);
-        		//state.optimize_weights(*it);
-        		double lk0 = state.llik();
-        		double nlk0 = state.llik_mvn();
-        		treeout << lk0 << " "<< lk << " ";
-        		treeout << nlk0 << " "<< nlk << " ";
-        		double pval = 1-gsl_cdf_chisq_P(-2 *(lk0-lk), 3);
-        		double pval2 = 1-gsl_cdf_chisq_P(-2 *(nlk0-nlk), 3);
-        		//int nbranch = 2* state.current_npops-2;
-        		//int ncomp = nbranch*(nbranch-1);
-        		//pval = pval * (double) ncomp;
-        		//if (pval > 1)  pval = 1;
-        		treeout << pval << " ";
-        		state.tree->g[*it].weight = w;
-        		state.set_branches_ls_wmig();
+     		//double lk = state.llik();
+     		//double nlk = state.llik_wishart();
+     		treeout << state.tree->g[*it].weight<< " ";
+     		state.calculate_se(*it);
+     		//state.tree->g[*it].weight = 0;
+     		//state.set_branches_ls_wmig();
+     		//double lk0 = state.llik();
+     		//double nlk0 = state.llik_wishart();
+     		//treeout << lk0 << " "<< lk << " ";
+     		//treeout << nlk0 << " "<< nlk << " ";
 
-        		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
-        		p1 = state.tree->get_child_node_mig(p1);
-        		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
-        		treeout << state.tree->get_newick_format(p1) << " ";
-        		treeout << state.tree->get_newick_format(p2) << "\n";
+     		//double pval = 1-gsl_cdf_chisq_P(-2 *(lk0-lk), 3);
+     		//double pval2 = 1-gsl_cdf_chisq_P(-2 *(nlk0-nlk), 3);
+
+     		//treeout << pval << " ";
+     		state.tree->g[*it].weight = w;
+     		state.set_branches_ls_wmig();
+
+     		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
+     		p1 = state.tree->get_child_node_mig(p1);
+     		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
+     		treeout << state.tree->get_newick_format(p1) << " ";
+     		treeout << state.tree->get_newick_format(p2) << "\n";
     	}
 		it++;
     }
