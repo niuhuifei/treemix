@@ -29,12 +29,14 @@ public:
 	vector<string> list_pops(); //simple list
 	string get_pop_in_index(int); //return the name of the population at a given index
 	gsl_matrix *alfreqs, *scatter, *cov, *cov_var, *cov_var2;
-	gsl_matrix *cov_samp;
+	//gsl_matrix *cov_samp;
+	map<string, map<string, vector<double> > > cov_samp;
 	gsl_matrix *cov_cov;
 	void set_alfreqs();
 	void scale_alfreqs();
 	void set_scatter();
 	void set_cov();
+	void set_cov_jackknife(int);
 	void set_cov2();
 	void process_scatter();
 	void process_cov();
@@ -52,6 +54,7 @@ public:
 	void print_cov_cov(string);
 	void print_cov_samp(string);
 	void set_ncomp_ef();
+	pair<double, double> calculate_f4();
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;

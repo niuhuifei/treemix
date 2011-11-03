@@ -92,6 +92,7 @@ public:
 	void optimize_weight_wish(Graph::edge_descriptor);
 	void quick_optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
+	int golden_section_weight_noexp(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_weight_wish(Graph::edge_descriptor, double, double, double, double);
 	void optimize_fracs();
 	void optimize_fracs(Graph::edge_descriptor);
@@ -128,7 +129,7 @@ public:
 	string get_trimmed_newick();
 	void iterate_movemig(int);
 	pair<bool, int> movemig(int);
-
+	double calculate_se(Graph::edge_descriptor); //get the SE of the weight on an edge
 	//alterations to the tree
 	Graph::edge_descriptor add_mig(int, int);
 	Graph::edge_descriptor add_mig_noopt(int, int);
