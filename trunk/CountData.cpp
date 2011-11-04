@@ -398,16 +398,16 @@ void CountData::scale_alfreqs(){
 			total = total+scaled;
 			gsl_matrix_set(alfreqs, i, j, scaled);
 		}
-		//double m = total/ (double) npop;
-		//for (int j = 0; j < npop; j++){
-		//	double f = gsl_matrix_get(alfreqs, i, j);
-		//	if (params->alfreq_scaling == 3) {
-		//		gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
-		//		if (m < 1e-8) gsl_matrix_set(alfreqs, i, j, 0);
-		//	}
-		//	else if (params->alfreq_scaling == 4) gsl_matrix_set(alfreqs, i, j, f);
-		//	else gsl_matrix_set(alfreqs, i, j, f-m);
-		//}
+		double m = total/ (double) npop;
+		for (int j = 0; j < npop; j++){
+			double f = gsl_matrix_get(alfreqs, i, j);
+			if (params->alfreq_scaling == 3) {
+				gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
+				if (m < 1e-8) gsl_matrix_set(alfreqs, i, j, 0);
+			}
+			else if (params->alfreq_scaling == 4) gsl_matrix_set(alfreqs, i, j, f);
+			else gsl_matrix_set(alfreqs, i, j, f-m);
+		}
 	}
 }
 
