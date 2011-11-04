@@ -2849,7 +2849,7 @@ void GraphState2::set_sigmacor_from_sigma(){
 }
 
 
-double GraphState2::calculate_se(Graph::edge_descriptor e){
+pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 	vector<double> samps;
 	double oldweight = tree->g[e].weight;
 	//for (int i = 0; i < 1; i++){
@@ -2879,5 +2879,5 @@ double GraphState2::calculate_se(Graph::edge_descriptor e){
 	se = sqrt(se);
 	tree->g[e].weight = oldweight;
 	//cout << se << " se\n";
-	return se;
+	return make_pair(mean, se);
 }
