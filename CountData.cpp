@@ -398,6 +398,7 @@ void CountData::scale_alfreqs(){
 			total = total+scaled;
 			gsl_matrix_set(alfreqs, i, j, scaled);
 		}
+
 		double m = total/ (double) npop;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
@@ -458,21 +459,7 @@ void CountData::set_cov(){
 	}
 	//get the number of blocks
 
-	//make centering matrix
-	gsl_matrix * C  = gsl_matrix_alloc(npop, npop);
-	for (int i = 0; i < npop; i++){
-		for (int j = 0; j < npop; j++){
-			double tmpf = 1.0 / (double) npop;
-			if (i == j){
-				double tmp = 1- tmpf;
-				gsl_matrix_set(C, i, j, tmp);
-			}
-			else{
-				double tmp = - tmpf;
-				gsl_matrix_set(C, i, j, tmp);
-			}
-		}
-	}
+
 	//calculate the covariance matrix in each block
 	cout << "Estimating covariance matrix in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
 	for (int k = 0; k < nblock ; k++){
