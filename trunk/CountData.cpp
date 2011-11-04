@@ -469,7 +469,7 @@ void CountData::set_cov(){
 			}
 			else{
 				double tmp = - tmpf;
-				gsl_matrix_Set(C, i, j, tmp);
+				gsl_matrix_set(C, i, j, tmp);
 			}
 		}
 	}
