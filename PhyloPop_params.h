@@ -53,6 +53,9 @@ public:
 	bool restrict_pop;
 	int pops2use;
 
+	//
+	bool sample_size_correct;
+	bool calc_se;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

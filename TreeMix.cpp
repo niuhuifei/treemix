@@ -25,9 +25,9 @@ void printopts(){
 	cout << "-m [int] number of migration edges to add (0)\n";
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
-	cout << "-quick do fast optimization of migration weights\n";
+	cout << "-quick Do fast optimization of migration weights\n";
 	cout << "-nofrac Force migration nodes to fall in the middle of their branches\n";
-	cout << "-r [int] number of iterations of randomization for p-values\n";
+	cout << "-nose Do not calculate standard errors of migration weights\n";
 	cout << "\n";
 }
 
@@ -69,6 +69,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-nothing")) p.alfreq_scaling = 4;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
+    if (cmdline.HasSwitch("-nose")) p.calc_se = false;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
@@ -169,7 +170,7 @@ int main(int argc, char *argv[]){
     }
 
     treeout << state.tree->get_newick_format() << "\n";
-    treeout << state.get_trimmed_newick() << "\n";
+    if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
     //state.current_llik_w = state.llik_wishart();
     //state.optimize_fracs_wish();
     //state.optimize_weights_wish();
@@ -180,21 +181,16 @@ int main(int argc, char *argv[]){
     	if ( state.tree->g[*it].is_mig){
      		double w = state.tree->g[*it].weight;
 
-     		//double lk = state.llik();
-     		//double nlk = state.llik_wishart();
      		treeout << state.tree->g[*it].weight<< " ";
-     		state.calculate_se(*it);
-     		//state.tree->g[*it].weight = 0;
-     		//state.set_branches_ls_wmig();
-     		//double lk0 = state.llik();
-     		//double nlk0 = state.llik_wishart();
-     		//treeout << lk0 << " "<< lk << " ";
-     		//treeout << nlk0 << " "<< nlk << " ";
+     		if (p.calc_se){
+     			pair<double, double> se = state.calculate_se(*it);
+     			treeout << se.first << " "<< se.second << " ";
+     			double test = se.first/ se.second;
+     			double pval = 1-gsl_cdf_tdist_P(test, 1);
+     			treeout << pval << " ";
+     		}
+     		else treeout << "NA NA NA ";
 
-     		//double pval = 1-gsl_cdf_chisq_P(-2 *(lk0-lk), 3);
-     		//double pval2 = 1-gsl_cdf_chisq_P(-2 *(nlk0-nlk), 3);
-
-     		//treeout << pval << " ";
      		state.tree->g[*it].weight = w;
      		state.set_branches_ls_wmig();
 
@@ -206,8 +202,8 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
-
-    state.print_trimmed(outstem);
+    if (p.sample_size_correct == true) state.print(outstem);
+    else state.print_trimmed(outstem);
     state.print_sigma_cor(modelcovfile);
 
 

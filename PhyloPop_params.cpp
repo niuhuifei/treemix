@@ -34,4 +34,6 @@ PhyloPop_params::PhyloPop_params(){
 	nrand = 0;
 	restrict_pop = false;
 	pops2use = 0;
+	sample_size_correct = true;
+	calc_se = true;
 }
