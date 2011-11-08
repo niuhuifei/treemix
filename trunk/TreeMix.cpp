@@ -202,7 +202,7 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
-    if (p.sample_size_correct == true) state.print(outstem);
+    if (p.sample_size_correct == true) state.tree->print(outstem);
     else state.print_trimmed(outstem);
     state.print_sigma_cor(modelcovfile);
 

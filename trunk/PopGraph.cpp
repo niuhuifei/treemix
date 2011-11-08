@@ -1496,7 +1496,6 @@ void PopGraph::global_rearrange(Graph::vertex_descriptor v1, Graph::vertex_descr
 		 g[e].len = l/2;
 		 g[e].is_mig = false;
 		 g[e].weight = 1;
-		 print();
 	 }
 
 
