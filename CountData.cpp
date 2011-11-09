@@ -1042,6 +1042,39 @@ pair<double, double> CountData::calculate_f4(){
 	return make_pair(mean, se);
 }
 
+map<string, map<string, map<string, double> > > CountData::calculate_f3s(){
+	map<string, map<string, map<string, double> > > toreturn;
+	for(int i = 0; i< npop; i++){
+		string p1 = id2pop[i];
+		map<string, map<string, double> > tmp;
+		for(int j = 0; j< npop ; j++){
+			string p2 = id2pop[j];
+
+			map<string, double> tmp2;
+			for (int k = 0; k < npop; k++){
+
+				string p3 = id2pop[k];
+				if (p1 == p2 || p1 == p3 || p2 == p3) continue;
+				double sum = 0;
+				for (int l = 0; l < nsnp; l++){
+					double n = mean_ninds[i];
+					double f1 = gsl_matrix_get(alfreqs, l,i);
+					double f2 = gsl_matrix_get(alfreqs, l, j);
+					double f3 = gsl_matrix_get(alfreqs, l, k);
+					double hz1 = f1*(1-f1);
+					double s = (f1-f2)*(f1-f3) - hz1/ (2*n);
+					sum += s;
+				}
+				sum = sum/nsnp;
+				tmp2.insert(make_pair(p3, sum));
+			}
+			tmp.insert(make_pair(p2, tmp2));
+		}
+		toreturn.insert(make_pair(p1, tmp));
+	}
+	return toreturn;
+}
+
 void CountData::set_cov_jackknife(int which){
 	gsl_matrix_set_zero(cov);
 	for(int i = 0; i < npop; i++){
@@ -1054,6 +1087,21 @@ void CountData::set_cov_jackknife(int which){
 				m+= cov_samp[p1][p2].at(k);
 			}
 			m = m/ (double) (nblock-1);
+			gsl_matrix_set(cov, i, j, m);
+			gsl_matrix_set(cov, j, i, m);
+		}
+	}
+
+}
+
+
+void CountData::set_cov_fromsamp(int which){
+	gsl_matrix_set_zero(cov);
+	for(int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			string p1 = id2pop[i];
+			string p2 = id2pop[j];
+			double m = cov_samp[p1][p2].at(which);
 			gsl_matrix_set(cov, i, j, m);
 			gsl_matrix_set(cov, j, i, m);
 		}
