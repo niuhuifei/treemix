@@ -2895,7 +2895,7 @@ pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e
 		guess = oldweight;
 		min = params->minweight;
 		max = params->maxweight;
-		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
+		golden_section_weight_noexp(e, -1, guess, 1, 0.0005);
 		samps.push_back(tree->g[e].weight);
 	}
 	double mean = 0;
@@ -2907,8 +2907,7 @@ pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e
 		toadd = toadd*toadd;
 		sum += toadd;
 	}
-	double se = ( (double) (countdata->nblock -1)/ (double) countdata->nblock) * sum;
-	se = sqrt(se);
+	double se = sqrt(sum) / (double) nblock;
 	tree->g[e].weight = oldweight;
 	return make_pair(mean, se);
 }
