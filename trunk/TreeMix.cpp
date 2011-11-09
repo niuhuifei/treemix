@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
     counts.print_cov_var(cov_sefile);
     if (p.smooth_lik) p.smooth_scale = sqrt( (double) counts.nsnp / (double) p.window_size);
     GraphState2 state(&counts, &p);
-    cout.precision(10);
+    cout.precision(15);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]){
 
      		treeout << state.tree->g[*it].weight<< " ";
      		if (p.calc_se){
-     			pair<double, double> se = state.calculate_se(*it);
+     			pair<double, double> se = state.calculate_se_fromsamp(*it);
      			treeout << se.first << " "<< se.second << " ";
      			double test = se.first/ se.second;
      			double pval = 1-gsl_cdf_tdist_P(test, 1);

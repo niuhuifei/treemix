@@ -37,6 +37,7 @@ public:
 	void set_scatter();
 	void set_cov();
 	void set_cov_jackknife(int);
+	void set_cov_fromsamp(int);
 	void set_cov2();
 	void process_scatter();
 	void process_cov();
@@ -55,6 +56,7 @@ public:
 	void print_cov_samp(string);
 	void set_ncomp_ef();
 	pair<double, double> calculate_f4();
+	map< string, map< string, map<string, double> > > calculate_f3s();
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;

@@ -2855,6 +2855,8 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 	//for (int i = 0; i < 1; i++){
 	for (int i = 0; i < countdata->nblock; i++){
 		countdata->set_cov_jackknife(i);
+		//if (i == 0) countdata->print_cov("cov1.gz");
+		//if (i == 1) countdata->print_cov("cov2.gz");
 		//double oldweight = tree->g[e].weight;
 		double min, max, guess;
 		guess = oldweight;
@@ -2879,5 +2881,34 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 	se = sqrt(se);
 	tree->g[e].weight = oldweight;
 	//cout << se << " se\n";
+	return make_pair(mean, se);
+}
+
+
+pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e){
+	vector<double> samps;
+	double oldweight = tree->g[e].weight;
+	//for (int i = 0; i < 1; i++){
+	for (int i = 0; i < countdata->nblock; i++){
+		countdata->set_cov_fromsamp(i);
+		double min, max, guess;
+		guess = oldweight;
+		min = params->minweight;
+		max = params->maxweight;
+		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
+		samps.push_back(tree->g[e].weight);
+	}
+	double mean = 0;
+	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) mean += *it;
+	mean = mean/ (double) countdata->nblock;
+	double sum = 0;
+	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) {
+		double toadd = (*it - mean);
+		toadd = toadd*toadd;
+		sum += toadd;
+	}
+	double se = ( (double) (countdata->nblock -1)/ (double) countdata->nblock) * sum;
+	se = sqrt(se);
+	tree->g[e].weight = oldweight;
 	return make_pair(mean, se);
 }
