@@ -2907,7 +2907,7 @@ pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e
 		toadd = toadd*toadd;
 		sum += toadd;
 	}
-	double se = sqrt(sum) / (double) nblock;
+	double se = sqrt(sum) / (double) countdata->nblock;
 	tree->g[e].weight = oldweight;
 	return make_pair(mean, se);
 }
