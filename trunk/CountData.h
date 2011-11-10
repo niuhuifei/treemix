@@ -37,6 +37,7 @@ public:
 	void set_scatter();
 	void set_cov();
 	void set_cov_jackknife(int);
+	void set_cov_bootstrap(gsl_rng *);
 	void set_cov_fromsamp(int);
 	void set_cov2();
 	void process_scatter();

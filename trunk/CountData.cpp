@@ -1095,6 +1095,25 @@ void CountData::set_cov_jackknife(int which){
 }
 
 
+void CountData::set_cov_bootstrap(gsl_rng *r){
+gsl_matrix_set_zero(cov);
+	for(int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			string p1 = id2pop[i];
+			string p2 = id2pop[j];
+			double m = 0;
+			for (int k = 0; k < nblock; k++){
+				int rint = gsl_rng_uniform_int(r, nblock);
+				m+= cov_samp[p1][p2].at(rint);
+			}
+			m = m / (double) nblock;
+			gsl_matrix_set(cov, i, j, m);
+			gsl_matrix_set(cov, j, i, m);
+		}
+	}
+}
+
+
 void CountData::set_cov_fromsamp(int which){
 	gsl_matrix_set_zero(cov);
 	for(int i = 0; i < npop; i++){

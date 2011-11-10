@@ -131,6 +131,7 @@ public:
 	pair<bool, int> movemig(int);
 	pair<double, double> calculate_se(Graph::edge_descriptor); //get the SE of the weight on an edge (jackknife on blocks)
 	pair<double, double> calculate_se_fromsamp(Graph::edge_descriptor); //get the SE of the weight on an edge (from each block)
+	pair<double, double> calculate_se_bootstrap(gsl_rng *, Graph::edge_descriptor); //bootstrap
 	//alterations to the tree
 	Graph::edge_descriptor add_mig(int, int);
 	Graph::edge_descriptor add_mig_noopt(int, int);
