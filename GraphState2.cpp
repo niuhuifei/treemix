@@ -2885,6 +2885,36 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 }
 
 
+pair<double, double> GraphState2::calculate_se_bootstrap(gsl_rng *r, Graph::edge_descriptor e){
+	vector<double> samps;
+	double oldweight = tree->g[e].weight;
+	for (int i = 0; i < countdata->nblock; i++){
+		countdata->set_cov_bootstrap(r);
+		double min, max, guess;
+		guess = oldweight;
+		min = params->minweight;
+		max = params->maxweight;
+		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
+		samps.push_back(tree->g[e].weight);
+
+	}
+	double mean = 0;
+	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) mean += *it;
+	mean = mean/ (double) countdata->nblock;
+	double sum = 0;
+	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) {
+		double toadd = (*it - mean);
+		toadd = toadd*toadd;
+		sum += toadd;
+	}
+
+	double se = sqrt(sum) / ((double) countdata->nblock - 1.0);
+	tree->g[e].weight = oldweight;
+	//cout << se << " se\n";
+	return make_pair(mean, se);
+}
+
+
 pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e){
 	vector<double> samps;
 	double oldweight = tree->g[e].weight;
@@ -2895,8 +2925,9 @@ pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e
 		guess = oldweight;
 		min = params->minweight;
 		max = params->maxweight;
-		golden_section_weight_noexp(e, -1, guess, 1, 0.0005);
+		golden_section_weight_noexp(e, -1, 0, 1, 0.0005);
 		samps.push_back(tree->g[e].weight);
+		cout << i << " "<< tree->g[e].weight << "\n";
 	}
 	double mean = 0;
 	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) mean += *it;
