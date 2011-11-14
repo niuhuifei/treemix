@@ -58,6 +58,7 @@ public:
 	void set_ncomp_ef();
 	pair<double, double> calculate_f4();
 	map< string, map< string, map<string, double> > > calculate_f3s();
+	double calculate_f2(int, int);
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;

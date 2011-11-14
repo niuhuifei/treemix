@@ -27,7 +27,7 @@ void printopts(){
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
 	cout << "-quick Do fast optimization of migration weights\n";
 	cout << "-nofrac Force migration nodes to fall in the middle of their branches\n";
-	cout << "-nose Do not calculate standard errors of migration weights\n";
+	cout << "-se Calculate standard errors of migration weights (computationally expensive)\n";
 	cout << "\n";
 }
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-nothing")) p.alfreq_scaling = 4;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
-    if (cmdline.HasSwitch("-nose")) p.calc_se = false;
+    if (cmdline.HasSwitch("-se")) p.calc_se = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]){
 
      		treeout << state.tree->g[*it].weight<< " ";
      		if (p.calc_se){
-     			pair<double, double> se = state.calculate_se_fromsamp( *it);
+     			pair<double, double> se = state.calculate_se_fromsamp(*it);
      			treeout << se.first << " "<< se.second << " ";
      			double test = se.first/ se.second;
      			double pval = 1-gsl_cdf_tdist_P(test, 1);

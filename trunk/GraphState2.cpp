@@ -1224,8 +1224,6 @@ void GraphState2::set_branches_ls_wmig(){
 
 
 	map<Graph::vertex_descriptor, int> vertex2index;
-	//cout << "here1\n"; cout.flush();
-	tree->print("testout");
 	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
 	//cout << "here1.1\n"; cout.flush();
 	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
@@ -1292,6 +1290,142 @@ void GraphState2::set_branches_ls_wmig(){
 		//cout << tree->g[t2].index << " "<< tree->g[t].index << " "<< f<< " "<< tree->g[*it].len << "\n";
 		//cout << tree->g[source(*it, tree->g)].index << " "<< tree->g[t].index << " "<< f << " "<< f2 << "\n";
 		//cout << tree->g[t].index << "\n";
+		if (root_adj.find(index_vertex) != root_adj.end()) f = f/2;
+		int i;
+		if (vertex2index.find(index_vertex) == vertex2index.end()){
+			cerr << "Error in least squares estimation: vertex "<< tree->g[index_vertex].index << " not found in the list of vertices\n";
+			exit(1);
+		}
+		else i = vertex2index[index_vertex];
+		//cout << tree->g[source(*it, tree->g)].index<< " "<< tree->g[target(*it, tree->g)].index << " "<<  tree->g[index_vertex].index << " "<< f<< "\n";
+		edge2index.insert(make_pair(*it, i));
+		edge2frac.insert(make_pair(*it, f));
+	}
+	//cout <<  "\n";
+	//cout << "here3\n"; cout.flush();
+	//initialize the workspace
+	int n = current_npops * current_npops; //n is the total number of entries in the covariance matrix
+	int p = 2*current_npops -3; // p is the number of branches lengths to be estimated
+	int total = countdata->npop; //total is the total number of populations (for the bias correction)
+	double inv_total = 1.0/ (double) total;
+	double inv_total2 = 1.0/ ( (double) total * (double) total);
+
+	//set up the workspace
+	gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc (n, p);
+	gsl_matrix * X = gsl_matrix_alloc(n, p); //X holds the weights on each branch. In the simplest model, this is 1s and 0s corresponding to whether the branch (weighted by the migration weights)
+	                                         //   is in the path to the root. With the bias correction, will contain terms with 1/n and 1/n^2, where n is the total number of populations
+
+	gsl_vector * y  = gsl_vector_alloc(n);  // y contains the entries of the empirical covariance matrix
+	gsl_vector * c = gsl_vector_alloc(p);   // c will be estimated, contains the entries of the fitted covariance matrix
+	gsl_matrix * cov = gsl_matrix_alloc(p, p);
+	double chisq;
+	gsl_matrix_set_zero(X);
+	//cout << "here\n";
+	set_branch_coefs(X, y, &edge2index, &edge2frac);
+	//cout << "here2\n";
+	// fit the least squares estimates
+	gsl_multifit_linear(X, y, c, cov, &chisq, work);
+	//and put in the solutions in the graph
+	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
+		if (tree->g[*it].is_mig) continue;
+		int i = edge2index[*it];
+		double frac = edge2frac[*it];
+		double l = gsl_vector_get(c, i);
+		tree->g[*it].len = l*frac;
+	}
+	//cout << "here3.1\n";
+	//and the corrected covariance matrix
+	index = 0;
+	for (int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			double pred = 0;
+			for (int k = 0; k < p; k++) {
+				pred += gsl_matrix_get(X, index, k) * gsl_vector_get(c, k);
+			}
+			gsl_matrix_set(sigma_cor, i, j, pred);
+			index++;
+		}
+
+	}
+
+	//cout << "here4\n";
+	//free memory
+	gsl_multifit_linear_free(work);
+	gsl_matrix_free(X);
+	gsl_vector_free(y);
+	gsl_vector_free(c);
+	gsl_matrix_free(cov);
+
+}
+
+
+void GraphState2::set_branches_ls_wmig_estmig(){
+
+	/*
+	 * Also estimate branch lengths to/from migration nodes
+    */
+
+
+	map<Graph::vertex_descriptor, int> vertex2index;
+	vector<Graph::vertex_descriptor> i_nodes = tree->get_inorder_traversal(current_npops); //get descriptors for all the nodes
+	set<Graph::vertex_descriptor> root_adj = tree->get_root_adj(); //get the ones next to the root
+	vector<Graph::vertex_descriptor> i_nodes2;  //remove the ones next to the root
+
+	int index = 0;
+
+	for (int i = 0; i < i_nodes.size(); i++){
+		if (root_adj.find(i_nodes[i]) == root_adj.end() && !tree->g[ i_nodes[i] ].is_root) {
+			i_nodes2.push_back( i_nodes[i] );
+			vertex2index.insert(make_pair(i_nodes[i], index));
+			index++;
+		}
+	}
+
+	int joint_index = i_nodes2.size(); //the index of the parameter for the sum of the two branch lengths next to the root
+
+	for(set<Graph::vertex_descriptor>::iterator it = root_adj.begin(); it != root_adj.end(); it++) vertex2index[*it] = joint_index;
+	index++;
+	//cout << "here1.1\n"; cout.flush();
+	vector<Graph::vertex_descriptor> mig_nodes;
+	for(Graph::vertex_iterator it = vertices(tree->g).first; it != vertices(tree->g).second; it++){
+		if ( tree->g[*it].is_mig ) {
+			mig_nodes.push_back(*it);
+			vertex2index[*it] = index;
+			index++;
+		}
+	}
+	//cout << "here2\n"; cout.flush();
+	// now get the edge to index and edge to fraction maps
+	map<Graph::edge_descriptor, int> edge2index;
+	map<Graph::edge_descriptor, double> edge2frac;
+	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
+		Graph::vertex_descriptor index_vertex, t;
+		double f = 1.0;
+		double f2 = 1.0;
+		t = target(*it, tree->g);
+		Graph::vertex_descriptor t2 = source(*it, tree->g);
+		//cout << tree->g[t].index << "\n";
+		if (tree->g[*it].is_mig) continue;
+		else if ( tree->g[t].is_mig) {
+			index_vertex = tree->get_child_node_mig(t);
+		}
+		else index_vertex = t;
+
+		if (tree->g[t].is_mig || tree->g[t2].is_mig){
+			if (tree->g[t].is_mig && tree->g[t2].is_mig)	{
+				//cout << "here?\n"; cout.flush();
+				f = tree->g[t].mig_frac - tree->g[t2].mig_frac;
+			}
+			else if (tree->g[t].is_mig) {
+				//cout << "here2 "<< tree->g[t].mig_frac << "\n";
+				f = tree->g[t].mig_frac;
+			}
+			else if (tree->g[t2].is_mig) {
+				//cout << "here3 "<< tree->g[t2].mig_frac << "\n";
+				f = 1-tree->g[t2].mig_frac;
+			}
+		}
+
 		if (root_adj.find(index_vertex) != root_adj.end()) f = f/2;
 		int i;
 		if (vertex2index.find(index_vertex) == vertex2index.end()){
@@ -2514,17 +2648,42 @@ Graph::vertex_descriptor GraphState2::get_neighborhood(Graph::vertex_descriptor 
 bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor v2, gsl_matrix * fitted){
 	map<string, Graph::vertex_descriptor> tips1 = tree->get_tips(v1);
 	map<string, Graph::vertex_descriptor> tips2 = tree->get_tips(v2);
-	for (map<string, Graph::vertex_descriptor>::iterator it1 = tips1.begin(); it1 != tips1.end(); it1++){
-		string p1 = it1->first;
-		int index1 = popname2index[p1];
-		for (map<string, Graph::vertex_descriptor>::iterator it2 = tips2.begin(); it2 != tips2.end(); it2++){
-			string p2 = it2->first;
-			int index2 = popname2index[p2];
-			if (p1==p2) continue;
-			double resid = countdata->get_cov(p1, p2) -  gsl_matrix_get(fitted, index1, index2);
-			if ( resid < 0) return false;
+	string test1 = tips1.begin()->first;
+	if (tips2.find(test1) == tips2.end()){
+		for (map<string, Graph::vertex_descriptor>::iterator it1 = tips1.begin(); it1 != tips1.end(); it1++){
+			string p1 = it1->first;
+			int index1 = popname2index[p1];
+
+			for (map<string, Graph::vertex_descriptor>::iterator it2 = tips2.begin(); it2 != tips2.end(); it2++){
+				string p2 = it2->first;
+				int index2 = popname2index[p2];
+				if (p1==p2) continue;
+				double resid = countdata->get_cov(p1, p2) -  gsl_matrix_get(fitted, index1, index2);
+				if ( resid < 0) return false;
+			}
 		}
+
 	}
+	else{
+		int totalcount = 0;
+		int totalneg = 0;
+		for (map<string, Graph::vertex_descriptor>::iterator it1 = tips1.begin(); it1 != tips1.end(); it1++){
+			string p1 = it1->first;
+			int index1 = popname2index[p1];
+
+			for (map<string, Graph::vertex_descriptor>::iterator it2 = tips2.begin(); it2 != tips2.end(); it2++){
+				string p2 = it2->first;
+				int index2 = popname2index[p2];
+				if (p1==p2) continue;
+				double resid = countdata->get_cov(p1, p2) -  gsl_matrix_get(fitted, index1, index2);
+				if ( resid < 0) totalneg++;
+				totalcount++;
+			}
+		}
+		double frac = (double) totalneg/ (double) totalcount;
+		if (frac < 0.6) return false;
+	}
+
 	return true;
 }
 

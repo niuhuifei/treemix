@@ -80,6 +80,7 @@ public:
 	// for a given topology by least squares
 	void set_branches_ls();
 	void set_branches_ls_wmig();
+	void set_branches_ls_wmig_estmig();
 	void set_branch_coefs(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	//functions used by the above least squares fitting
 	map<Graph::vertex_descriptor, int> get_v2index();
@@ -136,8 +137,9 @@ public:
 	Graph::edge_descriptor add_mig(int, int);
 	Graph::edge_descriptor add_mig_noopt(int, int);
 	void rearrange(int, int);
-
 	bool has_loop();
+
+
 };
 
 #endif /* GRAPHSTATE2_H_ */
