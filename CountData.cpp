@@ -1075,6 +1075,23 @@ map<string, map<string, map<string, double> > > CountData::calculate_f3s(){
 	return toreturn;
 }
 
+double CountData::calculate_f2(int p1, int p2){
+	double toreturn = 0;
+	for (int i = 0; i < nsnp; i++){
+		double n1 = mean_ninds[p1];
+		double n2 = mean_ninds[p2];
+		double f1 = gsl_matrix_get(alfreqs, i, p1);
+		double f2 = gsl_matrix_get(alfreqs, i, p2);
+
+		double diff = f1-f2;
+		double hz1 = f1*(1-f1);
+		double hz2 = f2*(1-f2);
+		double toadd = diff*diff - hz1/(2*n1) - hz2/ (2*n2);
+		toreturn += toadd;
+	}
+	toreturn = toreturn/ (double) nsnp;
+	return toreturn;
+}
 void CountData::set_cov_jackknife(int which){
 	gsl_matrix_set_zero(cov);
 	for(int i = 0; i < npop; i++){
