@@ -545,6 +545,107 @@ void CountData::set_cov(){
 }
 
 
+void CountData::set_cov_f2(){
+	/*
+	 * Calculate matrix of f_2 statistics in blocks
+	 *
+	 */
+	gsl_matrix_free(cov);
+	gsl_matrix_free(cov_var);
+	//cout << npop << "\n";
+	cov = gsl_matrix_alloc(npop, npop);
+	cov_var = gsl_matrix_alloc(npop, npop);
+	//cov_var2 = gsl_matrix_alloc(npop, npop);
+	//initialize block estimation of covariance matrix
+	vector<vector<vector<double> > > cov_block;
+	for (int i = 0; i < npop; i++){
+		vector<vector<double> > tmp1;
+		for(int j = 0; j < npop; j++){
+			vector<double> tmp;
+			tmp1.push_back(tmp);
+		}
+		cov_block.push_back(tmp1);
+	}
+	vector<string> popnames = list_pops();
+	cov_samp.clear();
+	for (int i = 0; i < popnames.size(); i++){
+		map<string, vector<double> > tmp;
+		for (int j = 0; j < popnames.size(); j++){
+			vector<double> tmp2;
+			tmp.insert(make_pair(popnames[j], tmp2));
+		}
+		cov_samp.insert(make_pair(popnames[i], tmp));
+	}
+	//if trimming covariances, get the amount to trim
+	map<string,double> trim;
+	double sumtrim = 0;
+	for ( map<string, int>::iterator it = pop2id.begin(); it!= pop2id.end(); it++){
+		int id = it->second;
+		string pop = it->first;
+		double meanhzy = mean_hzy.find(id)->second;
+		double mean_n = mean_ninds.find(id)->second;
+		double t = meanhzy / (4.0* mean_n);
+		sumtrim+= t;
+		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
+		trim.insert(make_pair(pop, t));
+	}
+	//calculate the covariance matrix in each block
+	cout << "Estimating f_2 matrix in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
+	for (int k = 0; k < nblock ; k++){
+		int index = 0;
+		for(int i = 0; i < npop; i++){
+			for (int j = i; j < npop; j++){
+				double c = 0;
+				for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
+					if (isnan(gsl_matrix_get(alfreqs, n, i))) continue;
+					double toadd = (gsl_matrix_get(alfreqs, n, i) - gsl_matrix_get(alfreqs, n, j));
+					toadd = toadd*toadd;
+					c+= toadd;
+				}
+				double cov = c/ (double) params->window_size;
+				//cout << k << " "<< index << " "<< cov << "\n";
+				string p1 = id2pop[i];
+				string p2 = id2pop[j];
+				if (params->sample_size_correct){
+					double bias1 = trim[p1];
+					double bias2 = trim[p2];
+					cov = cov - bias1 -bias2;
+				}
+				cov_samp[p1][p2].push_back(cov);
+				if (p1 != p2) cov_samp[p2][p1].push_back(cov);
+				//gsl_matrix_set(cov_samp, k, index, cov);
+				//cout << k << " "<< index << " "<< gsl_matrix_get(cov_samp, k, index) << "\n";
+				cov_block[i][j].push_back(cov);
+				index++;
+			}
+		}
+	}
+	//ofstream tout("test");
+	//calculate the mean, standard error of covariance estimates
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			vector<double> all_covs = cov_block[i][j];
+			double sum = 0;
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= *it;
+			double mean = sum/nblock;
+			gsl_matrix_set(cov, i, j, mean);
+			gsl_matrix_set(cov, j, i, mean);
+
+			// and standard error
+			sum = 0;
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
+			//double sd = sqrt(sum/ (double) nblock);
+			double c = sqrt(sum) /(double) nblock;
+			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
+			gsl_matrix_set(cov_var, i, j, c);
+			gsl_matrix_set(cov_var, j, i, c);
+		}
+	}
+	//get the covariance in the estimates of the covariance matrix
+	gsl_matrix_set_zero(cov_cov);
+}
+
+
 void CountData::set_cov2(){
 	/*
 	 * Get SE of covariance matrix without blocks
