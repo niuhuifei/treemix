@@ -68,6 +68,7 @@ public:
 
 	void set_root(Graph::vertex_descriptor);
 	set<Graph::vertex_descriptor> get_root_adj();
+	set<Graph::edge_descriptor> get_root_adj_edge();
 	void print();
 	void print(string);
 	void print(string, map<string, double>*);

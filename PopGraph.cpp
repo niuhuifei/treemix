@@ -683,6 +683,16 @@ set<Graph::vertex_descriptor> PopGraph::get_root_adj(){
 	return toreturn;
 }
 
+
+set<Graph::edge_descriptor> PopGraph::get_root_adj_edge(){
+	set<Graph::edge_descriptor> toreturn;
+	pair<Graph::out_edge_iterator, Graph::out_edge_iterator> oute = out_edges(root, g);
+	toreturn.insert( *oute.first);
+	oute.first++;
+	toreturn.insert( *oute.first);
+	return toreturn;
+}
+
 double PopGraph::get_dist_to_root(Graph::vertex_descriptor v){
 	double toreturn = 0;
 	if (g[v].is_root) return 0;
