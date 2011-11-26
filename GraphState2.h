@@ -81,7 +81,9 @@ public:
 	void set_branches_ls();
 	void set_branches_ls_wmig();
 	void set_branches_ls_wmig_estmig();
+	void set_branches_ls_f2();
 	void set_branch_coefs(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
+	void set_branch_coefs_f2(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	//functions used by the above least squares fitting
 	map<Graph::vertex_descriptor, int> get_v2index();
 
@@ -118,6 +120,7 @@ public:
 	bool try_mig(Graph::vertex_descriptor, Graph::vertex_descriptor, gsl_matrix*);
 	void add_mig();
 	pair<bool, pair<int, int> > add_mig_targeted();
+	pair<bool, pair<int, int> > add_mig_targeted_f2();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
 	double get_mig_targeted(string, string, set<pair<int, int> >*);
 	Graph::vertex_descriptor get_neighborhood(Graph::vertex_descriptor); // get the vertex descriptor at the LCA of the neighborhood of a vertex

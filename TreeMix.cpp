@@ -11,8 +11,7 @@
 
 string infile;
 string outstem = "TreeMix";
-int nthread = 1;
-int norm_type = 0;
+
 void printopts(){
 	cout << "\nTreeMix v.0.2 \n\n";
 	cout << "Options:\n";
@@ -73,6 +72,10 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
+    if (cmdline.HasSwitch("-f2"))	{
+    	p.f2 = true;
+    	p.alfreq_scaling = 4;
+    }
     if (cmdline.HasSwitch("-root")) {
     	p.set_root = true;
     	p.root = cmdline.GetArgument("-root", 0);
@@ -117,45 +120,27 @@ int main(int argc, char *argv[]){
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << "\n";
-    if (p.nrand > 0){
-    	string randfile = outstem+".randllk.gz";
-		ogzstream randout(randfile.c_str());
-    	for (int i = 0; i < p.nrand; i++){
-    		vector<string> pops = state.allpopnames;
-    		CountData randcount(&counts, pops, state.sigma_cor, &p,  r);
-    		GraphState2 randstate(&randcount, &p);
-    		randstate.set_graph(&state);
-    		p.smooth_lik = false;
-    		double llk0 = randstate.llik();
-    		p.smooth_lik = true;
-    		randstate.add_mig_targeted();
-    		if (!p.nofrac) state.optimize_fracs();
-    		state.optimize_weights();
-    		p.smooth_lik = false;
-    		double llk1 = randstate.llik();
-    		p.smooth_lik = true;
-    		randout << llk0 << " "<< llk1 << "\n";
 
-    	}
-    }
     for (int i = 0; i < p.nmig; i++){
     	double st = state.llik();
 
-    	pair<bool, pair<int, int> > add = state.add_mig_targeted();
+    	pair<bool, pair<int, int> > add;
+    	if (p.f2) add = state.add_mig_targeted_f2();
+    	else state.add_mig_targeted();
 
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
 
     	//cout << "Optim 1\n";
     	if (p.quick){
     		p.quick = false;
-    		if (!p.nofrac) state.optimize_fracs();
+    		//if (!p.nofrac) state.optimize_fracs();
     		state.optimize_weights();
 
     		p.quick = true;
     	}
     	else{
 
-    		if (!p.nofrac) state.optimize_fracs();
+    		//if (!p.nofrac) state.optimize_fracs();
     		state.optimize_weights();
 
     	}
@@ -165,7 +150,8 @@ int main(int argc, char *argv[]){
     	state.flip_mig();
     	//state.tree->print("before_trim2");
     	state.trim_mig();
-    	state.set_branches_ls_wmig();
+    	if (p.f2) state.set_branches_ls_f2();
+    	else state.set_branches_ls_wmig();
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 

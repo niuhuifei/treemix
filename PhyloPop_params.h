@@ -56,6 +56,8 @@ public:
 	//
 	bool sample_size_correct;
 	bool calc_se;
+
+	bool f2;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
