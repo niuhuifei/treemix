@@ -28,9 +28,10 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	cov_cov = gsl_matrix_alloc(ncomp, ncomp);
 	set_alfreqs();
 	scale_alfreqs();
-	set_scatter();
+	//set_scatter();
 	//process_scatter();
-	set_cov();
+	if (p->f2) set_cov_f2();
+	else set_cov();
 	///set_cov2();
 	//set_ne();
 	//set_ne2();
@@ -606,9 +607,10 @@ void CountData::set_cov_f2(){
 				//cout << k << " "<< index << " "<< cov << "\n";
 				string p1 = id2pop[i];
 				string p2 = id2pop[j];
-				if (params->sample_size_correct){
+				if (params->sample_size_correct && p1 != p2){
 					double bias1 = trim[p1];
 					double bias2 = trim[p2];
+					//cout << p1 << " "<< bias1 << " "<< p2 <<  " "<< bias2 << "\n";
 					cov = cov - bias1 -bias2;
 				}
 				cov_samp[p1][p2].push_back(cov);
