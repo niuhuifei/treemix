@@ -82,6 +82,7 @@ public:
 	vector< Graph::vertex_descriptor > get_inorder_traversal( int);
 	void inorder_traverse(Graph::vertex_descriptor, int*, vector<Graph::vertex_descriptor >*);
 	vector< Graph::vertex_descriptor > get_inorder_traversal_noroot( int);
+	vector< Graph::vertex_descriptor > get_inorder_traversal_fromindex( int);
 
 	//get the LCA of two tips in the tree
 	Graph::vertex_descriptor get_LCA(Graph::vertex_descriptor, Graph::vertex_descriptor, Graph::vertex_descriptor);

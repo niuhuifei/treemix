@@ -729,6 +729,21 @@ vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal(int nodes){
 	return toreturn;
 }
 
+
+vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal_fromindex(int index){
+	map<int, Graph::vertex_descriptor> i2v = index2vertex();
+	map<string, Graph::vertex_descriptor> t = get_tips( i2v[index]);
+	int nodes = t.size();
+	vector<Graph::vertex_descriptor> toreturn1(2*nodes-1);
+	vector<Graph::vertex_descriptor> toreturn;
+	int count = 0;
+	inorder_traverse(i2v[index], &count, &toreturn1);
+	for (vector<Graph::vertex_descriptor>::iterator it = toreturn1.begin(); it < toreturn1.end(); it++) if (g[*it].index != index) toreturn.push_back(*it);
+	return toreturn;
+}
+
+
+
 vector<Graph::vertex_descriptor > PopGraph::get_inorder_traversal_noroot(int nodes){
 	vector<Graph::vertex_descriptor> toreturn;
 	vector<Graph::vertex_descriptor> tmp = get_inorder_traversal(nodes);

@@ -72,9 +72,9 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
-    if (cmdline.HasSwitch("-f2"))	{
-    	p.f2 = true;
-    	p.alfreq_scaling = 4;
+    if (cmdline.HasSwitch("-nf2"))	{
+    	p.f2 = false;
+    	p.alfreq_scaling = 0;
     }
     if (cmdline.HasSwitch("-root")) {
     	p.set_root = true;
@@ -116,7 +116,8 @@ int main(int argc, char *argv[]){
     if (p.global){
     	cout << "Testing global rearrangements\n"; cout.flush();
     	state.iterate_global_hillclimb();
-    	state.set_branches_ls_wmig();
+    	if (p.f2) state.set_branches_ls_f2();
+    	else state.set_branches_ls_wmig();
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << "\n";
@@ -127,31 +128,21 @@ int main(int argc, char *argv[]){
     	pair<bool, pair<int, int> > add;
     	if (p.f2) add = state.add_mig_targeted_f2();
     	else state.add_mig_targeted();
-
+    	//cout << "here\n"; cout.flush();
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
+    	//cout << "not here\n"; cout.flush();
+    	state.optimize_weights();
+    	state.all_try_changedir();
 
-    	//cout << "Optim 1\n";
-    	if (p.quick){
-    		p.quick = false;
-    		//if (!p.nofrac) state.optimize_fracs();
-    		state.optimize_weights();
-
-    		p.quick = true;
-    	}
-    	else{
-
-    		//if (!p.nofrac) state.optimize_fracs();
-    		state.optimize_weights();
-
-    	}
-    	//state.tree->print("before_trim1");
     	state.trim_mig();
-    	//state.tree->print("before_flip");
-    	state.flip_mig();
-    	//state.tree->print("before_trim2");
-    	state.trim_mig();
+
+    	//state.flip_mig();
+
+    	//state.trim_mig();
+
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls_wmig();
+
     	cout << "ln(likelihood):" << state.current_llik << "\n";
     }
 
@@ -178,7 +169,8 @@ int main(int argc, char *argv[]){
      		else treeout << "NA NA NA ";
 
      		state.tree->g[*it].weight = w;
-     		state.set_branches_ls_wmig();
+     		if (p.f2) state.set_branches_ls_f2();
+     		else state.set_branches_ls_wmig();
 
      		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
      		p1 = state.tree->get_child_node_mig(p1);
