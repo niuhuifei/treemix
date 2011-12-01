@@ -11,7 +11,7 @@
 PhyloPop_params::PhyloPop_params(){
 	bias_correct = true;
 	window_size = 1;
-	alfreq_scaling = 0;
+	alfreq_scaling = 4;
 	global = false;
 	readtree = false;
 	treefile = "NA";
@@ -19,7 +19,7 @@ PhyloPop_params::PhyloPop_params(){
 	minweight = -10;
 	maxweight = 10;
 	nmig = 0;
-	m_neigh = 3;
+	m_neigh = 2;
 	maxit = 10;
 	set_root = false;
 	root = "NA";
@@ -36,5 +36,5 @@ PhyloPop_params::PhyloPop_params(){
 	pops2use = 0;
 	sample_size_correct = true;
 	calc_se = false;
-	f2 = false;
+	f2 = true;
 }

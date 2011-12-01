@@ -123,10 +123,15 @@ public:
 	pair<bool, pair<int, int> > add_mig_targeted_f2();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
 	double get_mig_targeted(string, string, set<pair<int, int> >*);
-	Graph::vertex_descriptor get_neighborhood(Graph::vertex_descriptor); // get the vertex descriptor at the LCA of the neighborhood of a vertex
+	int get_neighborhood(int); // get the vertex descriptor at the LCA of the neighborhood of a vertex
 	int local_hillclimb_wmig(int);
 	int iterate_local_hillclimb_wmig(int);
 	void iterate_mig_hillclimb_and_optimweight(pair<int, int>);
+	int many_local_hillclimb_wmig(int);
+
+	int try_changedir(Graph::edge_descriptor); //try changing the direction of a migration event
+	int all_try_changedir();
+
 	void flip_mig();
 	void trim_mig();
 	//get newick string with trimmed terminal branch lengths
