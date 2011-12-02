@@ -132,8 +132,10 @@ int main(int argc, char *argv[]){
     	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
     	//cout << "not here\n"; cout.flush();
     	state.optimize_weights();
-    	state.all_try_changedir();
 
+    	//cout << "changedir?\n"; cout.flush();
+    	state.all_try_changedir();
+    	//cout << "fail?\n"; cout.flush();
     	state.trim_mig();
 
     	//state.flip_mig();

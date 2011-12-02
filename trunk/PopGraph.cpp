@@ -1154,6 +1154,7 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 	 //cout << get_newick_format(v1) <<"\n";
 	 //print();
 	 bool toreturn = false;
+	 if (g[v1].is_root) return toreturn;
 	 if (which ==1){
 		 v1p = get_parent_node(v1).first;
 		 v1m = get_parent_node_wmig(v1).first;

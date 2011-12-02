@@ -89,12 +89,15 @@ public:
 
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
+	void optimize_weights_quick();
 	void optimize_weights_wish();
 	void optimize_weights(Graph::edge_descriptor);
 	void optimize_weight(Graph::edge_descriptor);
+	void optimize_weight_quick(Graph::edge_descriptor);
 	void optimize_weight_wish(Graph::edge_descriptor);
 	void quick_optimize_weight(Graph::edge_descriptor);
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
+	int golden_section_weight_quick(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_weight_noexp(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_weight_wish(Graph::edge_descriptor, double, double, double, double);
 	void optimize_fracs();
@@ -123,11 +126,12 @@ public:
 	pair<bool, pair<int, int> > add_mig_targeted_f2();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
 	double get_mig_targeted(string, string, set<pair<int, int> >*);
-	int get_neighborhood(int); // get the vertex descriptor at the LCA of the neighborhood of a vertex
+	set<int> get_neighborhood(int); // get the vertex descriptor at the LCA of the neighborhood of a vertex
+	void get_neighborhood(Graph::vertex_descriptor, int, set<int>*);
 	int local_hillclimb_wmig(int);
-	int iterate_local_hillclimb_wmig(int);
+	int iterate_local_hillclimb_wmig(set<int>);
 	void iterate_mig_hillclimb_and_optimweight(pair<int, int>);
-	int many_local_hillclimb_wmig(int);
+	int many_local_hillclimb_wmig(set<int>);
 
 	int try_changedir(Graph::edge_descriptor); //try changing the direction of a migration event
 	int all_try_changedir();
@@ -136,7 +140,7 @@ public:
 	void trim_mig();
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();
-	void iterate_movemig(int);
+	int iterate_movemig(int);
 	pair<bool, int> movemig(int);
 	pair<double, double> calculate_se(Graph::edge_descriptor); //get the SE of the weight on an edge (jackknife on blocks)
 	pair<double, double> calculate_se_fromsamp(Graph::edge_descriptor); //get the SE of the weight on an edge (from each block)
@@ -146,6 +150,18 @@ public:
 	Graph::edge_descriptor add_mig_noopt(int, int);
 	void rearrange(int, int);
 	bool has_loop();
+
+	//For rapid estimation of migration rates, need to keep the paths to the root, the least square design matrix, etc., in memory
+	gsl_matrix *X_current;
+	gsl_vector *y_current;
+	map<Graph::edge_descriptor, int> e2index;
+	map<Graph::edge_descriptor, double> e2frac;
+	map<Graph::edge_descriptor, set<Graph::vertex_descriptor> > e2tips; // the tips affected by each edge
+	map<string, set<pair<double, set<Graph::edge_descriptor> > > > popname2paths;
+	map<string, map<string, int> > popnames2index;
+	void update_mig(Graph::edge_descriptor, double);
+	void initialize_migupdate();
+	void set_branches_ls_f2_precompute();
 
 
 };
