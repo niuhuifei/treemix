@@ -1163,7 +1163,7 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 				 if (!g[v1pp].is_root){
 					 toreturn = true;
 					 // print();
-					 // cout << "1\n"; cout.flush();
+					 //cout << "1\n"; cout.flush();
 					 v1pp = get_parent_node(v1p).first;
 					 v1pm = get_parent_node_wmig(v1p).first;
 					 pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes_wmig(v1p);
@@ -1949,7 +1949,9 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 
 	if ( does_mig_exist( st, sp)) return false;
 
+	//cout << "problem here?\n"; cout.flush();
 	set<pair<double, set<Graph::vertex_descriptor> > > paths = get_paths_to_root(st);
+	//cout << "problem here2?\n"; cout.flush();
 	for (set<pair<double, set<Graph::vertex_descriptor> > >::iterator it = paths.begin(); it!= paths.end(); it++){
 		if (it->second.find(sp) != it->second.end())  return false;
 

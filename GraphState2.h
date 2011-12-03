@@ -90,6 +90,7 @@ public:
 	//maximize the weights on the branches. This will be iterative on each individual weight
 	void optimize_weights();
 	void optimize_weights_quick();
+	void optimize_weights_quick(set<int>);
 	void optimize_weights_wish();
 	void optimize_weights(Graph::edge_descriptor);
 	void optimize_weight(Graph::edge_descriptor);
@@ -126,12 +127,13 @@ public:
 	pair<bool, pair<int, int> > add_mig_targeted_f2();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
 	double get_mig_targeted(string, string, set<pair<int, int> >*);
-	set<int> get_neighborhood(int); // get the vertex descriptor at the LCA of the neighborhood of a vertex
-	void get_neighborhood(Graph::vertex_descriptor, int, set<int>*);
+	pair<set<int>, set<int> > get_neighborhood(int); // get the vertex descriptor at the LCA of the neighborhood of a vertex
+	void get_neighborhood(Graph::vertex_descriptor, int, pair< set<int>, set<int> >*);
 	int local_hillclimb_wmig(int);
-	int iterate_local_hillclimb_wmig(set<int>);
+	int local_hillclimb_wmig(int, set<int>);
+	int iterate_local_hillclimb_wmig(pair< set<int>, set<int> >);
 	void iterate_mig_hillclimb_and_optimweight(pair<int, int>);
-	int many_local_hillclimb_wmig(set<int>);
+	int many_local_hillclimb_wmig(pair<set<int>, set<int> >);
 
 	int try_changedir(Graph::edge_descriptor); //try changing the direction of a migration event
 	int all_try_changedir();
@@ -142,6 +144,7 @@ public:
 	string get_trimmed_newick();
 	int iterate_movemig(int);
 	pair<bool, int> movemig(int);
+	int all_try_movemig();
 	pair<double, double> calculate_se(Graph::edge_descriptor); //get the SE of the weight on an edge (jackknife on blocks)
 	pair<double, double> calculate_se_fromsamp(Graph::edge_descriptor); //get the SE of the weight on an edge (from each block)
 	pair<double, double> calculate_se_bootstrap(gsl_rng *, Graph::edge_descriptor); //bootstrap
@@ -156,7 +159,7 @@ public:
 	gsl_vector *y_current;
 	map<Graph::edge_descriptor, int> e2index;
 	map<Graph::edge_descriptor, double> e2frac;
-	map<Graph::edge_descriptor, set<Graph::vertex_descriptor> > e2tips; // the tips affected by each edge
+	map<Graph::edge_descriptor, set<int> > e2tips; // the tips affected by each edge
 	map<string, set<pair<double, set<Graph::edge_descriptor> > > > popname2paths;
 	map<string, map<string, int> > popnames2index;
 	void update_mig(Graph::edge_descriptor, double);
