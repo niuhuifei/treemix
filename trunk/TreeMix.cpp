@@ -95,7 +95,7 @@ int main(int argc, char *argv[]){
     counts.print_cov_var(cov_sefile);
     if (p.smooth_lik) p.smooth_scale = sqrt( (double) counts.nsnp / (double) p.window_size);
     GraphState2 state(&counts, &p);
-    cout.precision(15);
+    cout.precision(8);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
 
@@ -129,13 +129,11 @@ int main(int argc, char *argv[]){
     	if (p.f2) add = state.add_mig_targeted_f2();
     	else state.add_mig_targeted();
     	//cout << "here\n"; cout.flush();
-    	if (add.first == true) state.iterate_mig_hillclimb_and_optimweight(add.second);
-    	//cout << "not here\n"; cout.flush();
-    	state.optimize_weights();
+    	if (add.first == true) {
+    		cout << "Migration added\n";
+    		state.iterate_mig_hillclimb_and_optimweight(add.second);
+    	}
 
-    	//cout << "changedir?\n"; cout.flush();
-    	state.all_try_changedir();
-    	//cout << "fail?\n"; cout.flush();
     	state.trim_mig();
 
     	//state.flip_mig();
