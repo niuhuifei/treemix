@@ -58,6 +58,9 @@ public:
 	bool calc_se;
 
 	bool f2;
+
+	//penalty for negative branch lengths
+	double neg_penalty;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

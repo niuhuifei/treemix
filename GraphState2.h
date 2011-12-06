@@ -166,6 +166,7 @@ public:
 	void update_mig(Graph::edge_descriptor, double);
 	void initialize_migupdate();
 	void set_branches_ls_f2_precompute();
+	double negsum;
 
 
 };
