@@ -124,7 +124,7 @@ public:
 	pair<Graph::vertex_descriptor, double> get_parent_node_wmig(Graph::vertex_descriptor); // skips migration edges, but will return a migration node. returns the node and distance
 	bool does_mig_exist(Graph::vertex_descriptor, Graph::vertex_descriptor); //does a migration edge already exist between these two nodes?
 	bool is_legal_migration(Graph::vertex_descriptor, Graph::vertex_descriptor); //is migration between these two nodes legal? (no migration already, not the same parent, not creating loop)
-	void set_mig_frac(Graph::edge_descriptor, double);
+	int set_mig_frac(Graph::edge_descriptor, double);
 	//local rearrangements with migration
 	bool local_rearrange_wmig(Graph::vertex_descriptor, int);
 

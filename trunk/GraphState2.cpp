@@ -1919,6 +1919,10 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices){
 	//cout << "here2\n"; cout.flush();
 	pair< set<int>, set<int> > p2 = get_neighborhood(indices.second);
 	//cout << "here3\n"; cout.flush();
+	int moving4 = all_try_movemig();
+	cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << "\n"; cout.flush();
+	int moving3 = all_try_changedir();
+	cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << "\n"; cout.flush();
 	int moving1 = iterate_local_hillclimb_wmig(p1);
 	cout << "Local updates around node 1: "<< moving1 << " ln(lk):"<< current_llik <<"\n"; cout.flush();
 	//cout << "here4\n"; cout.flush();
@@ -1927,7 +1931,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices){
 	//tree->print("after_optim2");
 	//cout << moving1 << " "<< moving2 << "\n";
 	map<int, Graph::vertex_descriptor> vindex = tree->index2vertex(); cout.flush();
-	int moving = moving1+moving2;
+	int moving = moving1+moving2+moving3+moving4;
 	while (moving > 0){
 		//optimize_weights();
 		//optimize_weights_quick();
