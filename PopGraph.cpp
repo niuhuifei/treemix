@@ -2114,11 +2114,12 @@ void PopGraph::place_root(string pops){
 
 }
 
-void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
+int PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
 	if (!g[e].is_mig){
 		cerr << "ERROR: calling set_mig_frac on a non-migration edge\n";
 		exit(1);
 	}
+	int toreturn = 0;
 	Graph::vertex_descriptor v = source(e, g);
 	g[v].mig_frac = newfrac;
 	Graph::vertex_descriptor p = get_parent_node_wmig(v).first;
@@ -2129,6 +2130,7 @@ void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
 	while ( g[p].is_mig && g[p].mig_frac > newfrac){
 		//cout << "here\n";
 		//print ("before");
+		toreturn = 1;
 		Graph::vertex_descriptor p2 = get_parent_node_wmig(p).first;
 		double l = get_parent_node_wmig(p).second;
 		Graph::edge_descriptor ec = edge(v, c, g).first;
@@ -2137,7 +2139,7 @@ void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
 		double l_ec = g[ec].len;
 		double l_ep = g[ep].len;
 		//cout << "her2\n"; cout.flush();
-		Graph::edge_descriptor e = add_edge(p, c, g).first;
+		Graph::edge_descriptor e2 = add_edge(p, c, g).first;
 
 		g[e].weight = 1;
 		g[e].len = l_ec+l_ep;
@@ -2145,12 +2147,12 @@ void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
 		remove_edge(v, c, g);
 		remove_edge(p2, p, g);
 		//cout << "here3\n"; cout.flush();
-		e = add_edge(p2, v, g).first;
-		g[e].weight = 1;
-		g[e].len = l;
+		e2 = add_edge(p2, v, g).first;
+		g[e2].weight = 1;
+		g[e2].len = l;
 		e = add_edge(v, p, g).first;
-		g[e].weight = 1;
-		g[e].len = 0;
+		g[e2].weight = 1;
+		g[e2].len = 0;
 		//cout << "here4\n"; cout.flush();
 		c = p;
 		p = p2;
@@ -2158,6 +2160,7 @@ void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
 	}
 
 	while ( g[c].is_mig && g[c].mig_frac < newfrac){
+		toreturn = 1;
 		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> c2ch = get_child_nodes_wmig(c);
 		Graph::vertex_descriptor c2;
 		if ( g[edge(c, c2ch.first, g).first].is_mig) c2 = c2ch.second;
@@ -2171,22 +2174,23 @@ void PopGraph::set_mig_frac(Graph::edge_descriptor e, double newfrac){
 		double l_ec = g[ec].len;
 		double l_ep = g[ep].len;
 		//cout << "here2\n"; cout.flush();
-		Graph::edge_descriptor e = add_edge(p, c, g).first;
+		Graph::edge_descriptor e2 = add_edge(p, c, g).first;
 
-		g[e].weight = 1;
-		g[e].len = l_ec+l_ep;
+		g[e2].weight = 1;
+		g[e2].len = l_ec+l_ep;
 		remove_edge(p, v, g);
 		remove_edge(v, c, g);
 		remove_edge(c, c2, g);
 		//cout << "here3\n"; cout.flush();
-		e = add_edge(c, v, g).first;
-		g[e].weight = 1;
-		g[e].len = 0;
-		e = add_edge(v, c2, g).first;
-		g[e].weight = 1;
-		g[e].len = l;
+		e2= add_edge(c, v, g).first;
+		g[e2].weight = 1;
+		g[e2].len = 0;
+		e2 = add_edge(v, c2, g).first;
+		g[e2].weight = 1;
+		g[e2].len = l;
 
 		p = c;
 		c = c2;
 	}
+	return toreturn;
 }
