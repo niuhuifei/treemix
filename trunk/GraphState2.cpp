@@ -3023,8 +3023,31 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 	set<pair<int, int> > tested; //hold the pairs of vertices that have been tested
 	cout << "Targeting migration to vicinity of "<< pop1 <<" and "<< pop2 << "\n"; cout.flush();
 	set<pair<string, string> > pops2test;
+
+	map<string, Graph::vertex_descriptor> tips = tree->get_tips(tree->root);
+	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+	pair<set<int>, set<int> > n1 = get_neighborhood( tree->g[ tips[pop1] ].index, 7);
+	pair<set<int>, set<int> > n2 = get_neighborhood( tree->g[ tips[pop2] ].index, 7);
+
+	for (set<int>::iterator it = n1.first.begin();it != n1.first.end(); it++){
+		Graph::vertex_descriptor v1 = i2v[*it];
+		if ( ! tree->g[v1].is_tip) continue;
+		for (set<int>::iterator it2 = n2.first.begin(); it2 != n2.first.end(); it2++){
+			Graph::vertex_descriptor v2 = i2v[*it2];
+			if ( ! tree->g[v2].is_tip) continue;
+			string p1 = tree->g[v1].name;
+			string p2 = tree->g[v2].name;
+			double cov = countdata->get_cov(p1, p2);
+			double fitted = gsl_matrix_get(sigma_cor, popname2index[p1], popname2index[p2]);
+			double diff = cov-fitted;
+			if (diff < max * 0.2){
+				pops2test.insert(make_pair(p1, p2));
+				cout << p1 << " "<< p2 << "\n";
+			}
+		}
+	}
 	// try all pairwise combinations within 20% of the max residual
-	double max_test = max*0.8;
+	/*double max_test = max*0.8;
 	for (int i = 0; i < current_npops; i++){
 		for (int j = i+1; j < current_npops; j++){
 			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
@@ -3039,7 +3062,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 			}
 		}
 	}
-
+*/
 
 	//gsl_vector* alli  = gsl_vector_alloc(current_npops);
 	//* allj  = gsl_vector_alloc(current_npops);
@@ -3321,6 +3344,18 @@ pair< set<int>, set<int> > GraphState2::get_neighborhood(int index){
 	Graph::vertex_descriptor v = i2v[index];
 	//cout << params->m_neigh << " neigh\n";
 	get_neighborhood(v, params->m_neigh, &toreturn);
+	return toreturn;
+}
+
+
+
+pair< set<int>, set<int> > GraphState2::get_neighborhood(int index, int number){
+	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+	pair<set<int>, set<int> > toreturn;
+	toreturn.first.insert(index);
+	Graph::vertex_descriptor v = i2v[index];
+	//cout << params->m_neigh << " neigh\n";
+	get_neighborhood(v, number, &toreturn);
 	return toreturn;
 }
 

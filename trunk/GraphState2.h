@@ -127,7 +127,8 @@ public:
 	pair<bool, pair<int, int> > add_mig_targeted_f2();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
 	double get_mig_targeted(string, string, set<pair<int, int> >*);
-	pair<set<int>, set<int> > get_neighborhood(int); // get the vertex descriptor at the LCA of the neighborhood of a vertex
+	pair<set<int>, set<int> > get_neighborhood(int);
+	pair<set<int>, set<int> > get_neighborhood(int, int);
 	void get_neighborhood(Graph::vertex_descriptor, int, pair< set<int>, set<int> >*);
 	int local_hillclimb_wmig(int);
 	int local_hillclimb_wmig(int, set<int>);
