@@ -39,6 +39,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	X_current = gsl_matrix_alloc(current_npops, current_npops);
 	y_current = gsl_vector_alloc(current_npops);
 	gsl_matrix_set_zero(sigma);
+	negsum = 0;
 
 	if (pa->f2) set_branches_ls_f2();
 	else set_branches_ls();
@@ -1714,11 +1715,13 @@ void GraphState2::set_branches_ls_f2(){
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
 	//and put in the solutions in the graph
+	negsum = 0;
 	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
 		if (tree->g[*it].is_mig) continue;
 		int i = edge2index[*it];
 		double frac = edge2frac[*it];
 		double l = gsl_vector_get(c, i);
+		if (l < 0) negsum += -l;
 		tree->g[*it].len = l*frac;
 	}
 
@@ -1770,6 +1773,7 @@ double GraphState2::llik_normal(){
 			//}
 		}
 	}
+	toreturn = toreturn - negsum*params->neg_penalty;
 	//cout << toreturn << "\n";
 	//cout << "tmp "<< (double) tmp / (double) total <<"\n";
 	return toreturn;
@@ -3649,8 +3653,8 @@ pair<bool, int> GraphState2::movemig( int index ){
 				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch3 = tree->get_child_nodes(p);
 				if ( tree->g[ch3.first].index == tree->g[ch].index )	 p = ch3.second;
 				else p = ch3.first;
-				ch3 = tree->get_child_nodes(p);
-				p = ch3.first;
+				//ch3 = tree->get_child_nodes(p);
+				//p = ch3.first;
 				cout.flush();
 				//cout << tree->g[p].index << "\n";
 			}
@@ -4078,12 +4082,14 @@ void GraphState2::set_branches_ls_f2_precompute(){
 	gsl_multifit_linear(X_current, y_current, c, cov, &chisq, work);
 	//cout << "estimated\n"; cout.flush();
 	//and put in the solutions in the graph
+	negsum =0;
 	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
 		if (tree->g[*it].is_mig) continue;
 		int i = e2index[*it];
 		double frac = e2frac[*it];
 		double l = gsl_vector_get(c, i);
 		tree->g[*it].len = l*frac;
+		if (l < 0) negsum+= -l;
 	}
 
 	//and the corrected covariance matrix
