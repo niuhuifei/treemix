@@ -17,15 +17,12 @@ void printopts(){
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
-	cout << "-scale Rescale the allele frequencies by sqrt( p (1-p) )\n";
 	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global Do a round of global rearrangements after adding all populations\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 	cout << "-m [int] number of migration edges to add (0)\n";
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
-	cout << "-quick Do fast optimization of migration weights\n";
-	cout << "-nofrac Force migration nodes to fall in the middle of their branches\n";
 	cout << "-se Calculate standard errors of migration weights (computationally expensive)\n";
 	cout << "\n";
 }
@@ -68,6 +65,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-nothing")) p.alfreq_scaling = 4;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
+    if (cmdline.HasSwitch("-penalty")) p.neg_penalty = atof(cmdline.GetArgument("-penalty", 0).c_str());;
     if (cmdline.HasSwitch("-se")) p.calc_se = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
