@@ -1773,7 +1773,9 @@ double GraphState2::llik_normal(){
 			//}
 		}
 	}
+	//cout << toreturn << " before\n";
 	toreturn = toreturn - negsum*params->neg_penalty;
+	//cout << toreturn << " after\n";
 	//cout << toreturn << "\n";
 	//cout << "tmp "<< (double) tmp / (double) total <<"\n";
 	return toreturn;
@@ -3009,6 +3011,31 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 	double max = 0;
 	int besti = 0;
 	int bestj = 0;
+	gsl_vector * sum = gsl_vector_alloc(current_npops);
+	for ( int i = 0; i < current_npops; i++){
+		double tmp = 0;
+		for (int j = 0; j < current_npops; j++){
+			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
+			double fitted = gsl_matrix_get(sigma_cor, i, j);
+			double diff = cov-fitted;
+			if (diff < 0) tmp += -diff;
+		}
+		gsl_vector_set(sum, i, tmp);
+	}
+
+	int which_max = gsl_vector_max_index(sum);
+	pop1 = allpopnames[which_max];
+	for (int i = 0; i < current_npops; i++){
+		double cov = countdata->get_cov( pop1, allpopnames[i] );
+		double fitted = gsl_matrix_get(sigma_cor, which_max, i);
+		double diff = cov-fitted;
+		if (diff < max){
+			max = diff;
+			bestj = i;
+			pop2 = allpopnames[i];
+		}
+	}
+	/*
 	for (int i = 0; i < current_npops; i++){
 		for (int j = i+1; j < current_npops; j++){
 			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
@@ -3024,6 +3051,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 			}
 		}
 	}
+	*/
 	set<pair<int, int> > tested; //hold the pairs of vertices that have been tested
 	cout << "Targeting migration to vicinity of "<< pop1 <<" and "<< pop2 << "\n"; cout.flush();
 	set<pair<string, string> > pops2test;
@@ -4072,6 +4100,15 @@ void GraphState2::set_branches_ls_f2_precompute(){
 	int n = (current_npops * (current_npops-1))/2; //n is the total number of entries in the covariance matrix
 	int p = X_current->size2; // p is the number of branches lengths to be estimated
 
+	/*for (int i = 0 ; i < n ; i++){
+		cout << gsl_vector_get(y_current, i) << " " << "y"<<" ";
+		for (int j = 0; j < p ; j++){
+			cout << gsl_matrix_get(X_current, i, j) << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n\n";
+	*/
 	//set up the workspace
 	gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc (n, p);
 

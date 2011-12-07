@@ -37,5 +37,5 @@ PhyloPop_params::PhyloPop_params(){
 	sample_size_correct = true;
 	calc_se = false;
 	f2 = true;
-	neg_penalty = 10;
+	neg_penalty = 100;
 }
