@@ -1193,12 +1193,12 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 					 e = add_edge( v1pm, v1pm2, g).first;
 					 g[e].is_mig = 0;
 					 g[e].weight = 1;
-					 g[e].len = 1;
+					 g[e].len = 0.01;
 
 					 e = add_edge( v1p, v1pp, g).first;
 					 g[e].is_mig = 0;
 					 g[e].weight = 1;
-					 g[e].len = 1;
+					 g[e].len = 0.01;
 
 
 					 if (g[v1pp].is_root) set_root(v1p);
@@ -1209,7 +1209,7 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 						 e = add_edge( v1ppp, v1p, g).first;
 						 g[e].is_mig = 0;
 						 g[e].weight = 1;
-						 g[e].len = 1;
+						 g[e].len = 0.01;
 						 //print();
 						 //cout << "3\n"; cout.flush();
 					 }
@@ -1275,18 +1275,18 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 			 e = add_edge( v1pm, v1pm2, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
-			 g[e].len = 1;
+			 g[e].len = 0.01;
 
 			 remove_edge( edge(v1s, v1sm1, g).first, g);
 			 e = add_edge( v1p, v1sm1, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
-			 g[e].len = 1;
+			 g[e].len = 0.01;
 
 			 e = add_edge( v1s, v1p, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
-			 g[e].len = 1;
+			 g[e].len = 0.01;
 		 }
 	 }
 	 else if (which == 4){
@@ -1357,17 +1357,17 @@ bool PopGraph::local_rearrange_wmig(Graph::vertex_descriptor v1, int which){
 			 e = add_edge( v1pm, v1pm2, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
-			 g[e].len = 1;
+			 g[e].len = 0.01;
 
 			 e = add_edge( v1pp, v1p, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
-			 g[e].len = 1;
+			 g[e].len = 0.01;
 
 			 e = add_edge( v1p, v1ppsm, g).first;
 			 g[e].is_mig = 0;
 			 g[e].weight = 1;
-			 g[e].len = 1;
+			 g[e].len = 0.01;
 
 
 		 }
@@ -1641,7 +1641,16 @@ void PopGraph::print(string stem){
         oute << index[source(*ei, g)] << " "<< index[target(*ei, g)] << " "<< g[*ei].len << " "<< g[*ei].weight << " ";
 		if (g[*ei].is_mig) oute << "MIG ";
 		else oute << "NOT_MIG ";
-		oute << g[source(*ei, g)].mig_frac << "\n";
+		if (g[source(*ei, g)].is_mig){
+			Graph::vertex_descriptor v = source(*ei, g);
+			double num = get_parent_node(v).second;
+			double denom = get_parent_node(get_child_node_mig(v)).second;
+			double f = num/denom;
+			if (f > 1) f = 1;
+			else if (f < 0) f = 0;
+			oute << f << "\n";
+		}
+		else oute << g[source(*ei, g)].mig_frac << "\n";
     }
 }
 
