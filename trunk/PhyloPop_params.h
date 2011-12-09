@@ -61,6 +61,8 @@ public:
 
 	//penalty for negative branch lengths
 	double neg_penalty;
+
+	set<string> hold;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
