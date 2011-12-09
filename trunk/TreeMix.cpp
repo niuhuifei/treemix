@@ -114,7 +114,7 @@ int main(int argc, char *argv[]){
     		p.smooth_scale = p.smooth_scale *2;
     		state.current_llik = state.llik();
     	}
-    	cout << "ln(lk) = " << state.current_llik <<"\n";
+    	cout << "ln(lk) = " << state.current_llik << " (negsum = "<< state.negsum << ")\n";
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]){
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls_wmig();
     	p.smooth_scale = 1;
-    	cout << "ln(likelihood):" << state.current_llik << " (negsum = "<< state.negsum << ")\n";
+    	cout << "ln(likelihood):" << state.llik() << " (negsum = "<< state.negsum << ")\n";
     }
 
     treeout << state.tree->get_newick_format() << "\n";

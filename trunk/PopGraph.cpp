@@ -1984,6 +1984,7 @@ void PopGraph::remove_mig_edge(Graph::edge_descriptor e){
 	double len;
 	Graph::in_edge_iterator init = in_edges(v, g).first;
 	Graph::out_edge_iterator outit = out_edges(v, g).first;
+	if (g[*outit].is_mig) outit++;
 	len = g[*init].len +g[*outit].len;
 
 	parent = source(*init, g);
