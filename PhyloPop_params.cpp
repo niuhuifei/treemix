@@ -15,11 +15,11 @@ PhyloPop_params::PhyloPop_params(){
 	global = false;
 	readtree = false;
 	treefile = "NA";
-	tau = 0.1;
+	tau = 0.01;
 	minweight = -10;
 	maxweight = 10;
 	nmig = 0;
-	m_neigh = 4;
+	m_neigh = 3;
 	maxit = 10;
 	set_root = false;
 	root = "NA";
@@ -37,5 +37,5 @@ PhyloPop_params::PhyloPop_params(){
 	sample_size_correct = true;
 	calc_se = false;
 	f2 = true;
-	neg_penalty = 10;
+	neg_penalty = 100;
 }
