@@ -97,8 +97,8 @@ public:
 	void optimize_weight_quick(Graph::edge_descriptor);
 	void optimize_weight_wish(Graph::edge_descriptor);
 	void quick_optimize_weight(Graph::edge_descriptor);
-	int golden_section_weight(Graph::edge_descriptor, double, double, double, double);
-	int golden_section_weight_quick(Graph::edge_descriptor, double, double, double, double);
+	int golden_section_weight(Graph::edge_descriptor, double, double, double, double, int*);
+	int golden_section_weight_quick(Graph::edge_descriptor, double, double, double, double, int*);
 	int golden_section_weight_noexp(Graph::edge_descriptor, double, double, double, double);
 	int golden_section_weight_wish(Graph::edge_descriptor, double, double, double, double);
 	void optimize_fracs();
@@ -131,10 +131,13 @@ public:
 	pair<set<int>, set<int> > get_neighborhood(int, int);
 	void get_neighborhood(Graph::vertex_descriptor, int, pair< set<int>, set<int> >*);
 	int local_hillclimb_wmig(int);
+	int local_hillclimb_wmig_all(int);
 	int local_hillclimb_wmig(int, set<int>);
 	int iterate_local_hillclimb_wmig(pair< set<int>, set<int> >);
-	void iterate_mig_hillclimb_and_optimweight(pair<int, int>);
+	int iterate_local_hillclimb_wmig_all();
+	void iterate_mig_hillclimb_and_optimweight(pair<int, int>, double);
 	int many_local_hillclimb_wmig(pair<set<int>, set<int> >);
+	int many_local_hillclimb_wmig_all();
 
 	int try_changedir(Graph::edge_descriptor); //try changing the direction of a migration event
 	int all_try_changedir();

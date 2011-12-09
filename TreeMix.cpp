@@ -70,6 +70,13 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
+    if (cmdline.HasSwitch("-hold")){
+    	string tmp = cmdline.GetArgument("-hold", 0);
+    	vector<string> strs;
+    	boost::split(strs, tmp, boost::is_any_of(","));
+    	for(vector<string>::iterator it = strs.begin(); it!= strs.end(); it++) 	p.hold.insert(*it);
+
+    }
     if (cmdline.HasSwitch("-nf2"))	{
     	p.f2 = false;
     	p.alfreq_scaling = 0;
@@ -91,7 +98,7 @@ int main(int argc, char *argv[]){
 
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
-    if (p.smooth_lik) p.smooth_scale = sqrt( (double) counts.nsnp / (double) p.window_size);
+    if (p.smooth_lik) p.smooth_scale = 1; //sqrt( (double) counts.nsnp / (double) p.window_size);
     GraphState2 state(&counts, &p);
     cout.precision(8);
     if (p.readtree) {
@@ -102,13 +109,18 @@ int main(int argc, char *argv[]){
     else if (p.read_graph){
     	state.set_graph(p.vfile, p.efile);
     	cout << "Set tree to: "<< state.tree->get_newick_format() << "\n";
+    	while (state.current_llik <= -DBL_MAX){
+    		cout << "RESCALING\n"; cout.flush();
+    		p.smooth_scale = p.smooth_scale *2;
+    		state.current_llik = state.llik();
+    	}
     	cout << "ln(lk) = " << state.current_llik <<"\n";
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
     	state.add_pop();
     	state.iterate_hillclimb();
-    	cout << "ln(likelihood): "<< state.current_llik << "\n";
+    	cout << "ln(likelihood): "<< state.current_llik << " (negsum = "<< state.negsum << ")\n";
     	cout << state.tree->get_newick_format() << "\n";
     }
     if (p.global){
@@ -118,18 +130,23 @@ int main(int argc, char *argv[]){
     	else state.set_branches_ls_wmig();
     }
     if (p.set_root) state.place_root(p.root);
-    likout << "Tree likelihood: "<< state.llik() << "\n";
+    likout << "Tree likelihood: "<< state.llik() << " (negsum = "<< state.negsum << ")\n";
 
     for (int i = 0; i < p.nmig; i++){
-    	double st = state.llik();
-
+    	state.current_llik = state.llik();
+       	while (state.current_llik <= -DBL_MAX){
+       		cout << "RESCALING\n"; cout.flush();
+       		p.smooth_scale = p.smooth_scale *2;
+       		state.current_llik = state.llik();
+       	}
+    	double current_nsum = state.negsum;
     	pair<bool, pair<int, int> > add;
     	if (p.f2) add = state.add_mig_targeted_f2();
     	else state.add_mig_targeted();
     	//cout << "here\n"; cout.flush();
     	if (add.first == true) {
     		cout << "Migration added\n";
-    		state.iterate_mig_hillclimb_and_optimweight(add.second);
+    		state.iterate_mig_hillclimb_and_optimweight(add.second, current_nsum);
     	}
 
     	state.trim_mig();
@@ -140,8 +157,8 @@ int main(int argc, char *argv[]){
 
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls_wmig();
-
-    	cout << "ln(likelihood):" << state.current_llik << "\n";
+    	p.smooth_scale = 1;
+    	cout << "ln(likelihood):" << state.current_llik << " (negsum = "<< state.negsum << ")\n";
     }
 
     treeout << state.tree->get_newick_format() << "\n";
