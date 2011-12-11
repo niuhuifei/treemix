@@ -148,7 +148,7 @@ int main(int argc, char *argv[]){
     		cout << "Migration added\n";
     		state.iterate_mig_hillclimb_and_optimweight(add.second, current_nsum);
     	}
-
+    	state.optimize_weights_quick();
     	state.trim_mig();
 
     	//state.flip_mig();
