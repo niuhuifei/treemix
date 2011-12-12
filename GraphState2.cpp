@@ -1881,7 +1881,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 		}
 		int moving5 = 0;
 		if (negsum > start_nsum*2){
-			cout << "Doing all local rearrangements\n"; cout.flush();
+			cout << "Trying all local rearrangements\n"; cout.flush();
 			//tree->print("test2");
 			moving5 = iterate_local_hillclimb_wmig_all();
 			start_nsum = negsum;
@@ -1956,6 +1956,8 @@ int GraphState2::all_try_movemig(){
 	//for (Graph::edge_descriptor index = )
 	int i = 0;
 	while (i < mig_edges.size()){
+		initialize_migupdate();
+		optimize_weight_quick(mig_edges[i]);
 		bool test = movemig(tree->g[source(mig_edges[i], tree->g)].index).first;
 		mig_edges = tree->get_mig_edges();
 		if (test ==1) {
