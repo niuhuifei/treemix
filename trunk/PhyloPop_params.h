@@ -63,6 +63,8 @@ public:
 	double neg_penalty;
 
 	set<string> hold;
+
+	bool snpinfo;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

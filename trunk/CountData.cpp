@@ -289,6 +289,11 @@ void CountData::read_counts(string infile){
     id2pop.clear();
     npop = 0;
     nsnp = 0;
+    rss.clear();
+    chr.clear();
+    pos.clear();
+    a1.clear();
+    a2.clear();
     string ext = infile.substr(infile.size()-3, 3);
     if (ext != ".gz"){
     	std::cerr << infile << " is not gzipped (only .gz files accepted)\n";
@@ -318,9 +323,11 @@ void CountData::read_counts(string infile){
     /*
      * make map from header, number populations according to order
      */
-    for(int i = 0; i < line.size(); i++) {
-    	pop2id.insert(make_pair(line[i], i));
-    	id2pop.insert(make_pair(i, line[i]));
+    int start = 0;
+    if (params->snpinfo) start = 5;
+    for(int i = start; i < line.size(); i++) {
+    	pop2id.insert(make_pair(line[i], i-start));
+    	id2pop.insert(make_pair(i-start, line[i]));
     	npop ++;
     }
 
@@ -336,18 +343,26 @@ void CountData::read_counts(string infile){
             }
             vector<pair<int, int> > topush;
 
-            for ( vector<string>::iterator it = line.begin(); it != line.end(); it++){
+            if (params->snpinfo){
+            	rss.push_back(line[0]);
+            	chr.push_back(line[1]);
+            	pos.push_back(line[2]);
+            	a1.push_back(line[3]);
+            	a2.push_back(line[4]);
+            }
+            for ( int i = start; i < line.size(); i++){
+            	//cout <<  line[i] << "\n";
                 typedef boost::tokenizer<boost::char_separator<char> >
                 tokenizer;
                 boost::char_separator<char> sep(",");
-                tokenizer tokens(*it, sep);
+                tokenizer tokens(line[i], sep);
                 vector<int> tmpcounts;
                 for (tokenizer::iterator tok_iter = tokens.begin();  tok_iter != tokens.end(); ++tok_iter){
                         int tmp = atoi(tok_iter->c_str());
                         tmpcounts.push_back(tmp);
                 }
                 if (tmpcounts.size() != 2){
-                	std::cerr << *it << " does not have two alleles\n";
+                	std::cerr << line[i] << " does not have two alleles\n";
                 	exit(1);
                 }
                 topush.push_back(make_pair(tmpcounts[0], tmpcounts[1]));
@@ -357,6 +372,18 @@ void CountData::read_counts(string infile){
     }
 }
 
+pair< vector<string>, vector<double> > CountData::get_freqs(int i){
+	pair<vector<string>, vector<double> > toreturn;
+	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++){
+		toreturn.first.push_back(it->first);
+		int j = it->second;
+		double f = gsl_matrix_get(alfreqs, i, j);
+		toreturn.second.push_back(f);
+	}
+	return toreturn;
+
+
+}
 void CountData::set_alfreqs(){
 	mean_ninds.clear();
 	mean_hzy.clear();

@@ -1822,26 +1822,44 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 	int moving1 = iterate_local_hillclimb_wmig(p1);
 	cout << "Local updates around node 1: "<< moving1 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << "; start "<< start_nsum << ")\n"; cout.flush();
-	if (moving1> 0) p1 = get_neighborhood(indices.first);
+	if (moving1> 0) {
+		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
+		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
+		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
+	}
 	//tree->print("after_1");
 
 	int moving2 = iterate_local_hillclimb_wmig(p2);
 	cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
-	if (moving2 > 0) p2 = get_neighborhood(indices.second);
+	if (moving2 > 0) {
+		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.second);
+		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
+		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+	}
 	//tree->print("after_2");
 
 	int moving4 = all_try_movemig();
 	cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 	if (moving4 > 0) {
-		p1 = get_neighborhood(indices.first);
-		p2 = get_neighborhood(indices.second);
+		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
+		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
+		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
+
+		p_tmp = get_neighborhood(indices.second);
+		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
+		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 	}
 	//tree->print("after_move");
 	int moving3 = all_try_changedir();
 	cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 	if (moving3 > 0){
-		p1 = get_neighborhood(indices.first);
-		p2 = get_neighborhood(indices.second);
+		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
+		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
+		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
+
+		p_tmp = get_neighborhood(indices.second);
+		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
+		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 	}
 
 	//	cout << "n1 "<< *it << "\n";
@@ -1857,25 +1875,47 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 			moving1 = iterate_local_hillclimb_wmig(p1);
 			cout << "Local updates around node 1: "<< moving1 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
-			if (moving1> 0) p1 = get_neighborhood(indices.first);
+			if (moving1> 0) {
+
+				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
+				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
+				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
+
+			}
 
 
 			moving2 = iterate_local_hillclimb_wmig(p2);
-			if (moving2 > 0) p2 = get_neighborhood(indices.second);
+			if (moving2 > 0) {
+				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.second);
+				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
+				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+			}
 			cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 
 			int moving3 = all_try_changedir();
 			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 			if (moving3 > 0){
-				p1 = get_neighborhood(indices.first);
-				p2 = get_neighborhood(indices.second);
+
+				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
+				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
+				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
+
+				p_tmp = get_neighborhood(indices.second);
+				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
+				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+
 			}
 
 			int moving4 = all_try_movemig();
 			cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 			if (moving4 > 0) {
-				p1 = get_neighborhood(indices.first);
-				p2 = get_neighborhood(indices.second);
+				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
+				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
+				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
+
+				p_tmp = get_neighborhood(indices.second);
+				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
+				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 			}
 			moving = moving1+moving2+moving3+moving4;
 		}
@@ -4068,7 +4108,7 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 		//if (i == 1) countdata->print_cov("cov2.gz");
 		//double oldweight = tree->g[e].weight;
 		double min, max, guess;
-		guess = oldweight;
+		guess = 0;
 		min = params->minweight;
 		max = params->maxweight;
 		//guess = exp(guess) / (1+exp(guess));
@@ -4105,6 +4145,7 @@ pair<double, double> GraphState2::calculate_se_bootstrap(gsl_rng *r, Graph::edge
 		max = params->maxweight;
 		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
 		samps.push_back(tree->g[e].weight);
+		cout<< i << " "<< tree->g[e].weight << "\n";
 
 	}
 	double mean = 0;

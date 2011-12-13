@@ -38,4 +38,5 @@ PhyloPop_params::PhyloPop_params(){
 	calc_se = false;
 	f2 = true;
 	neg_penalty = 100;
+	snpinfo = false;
 }
