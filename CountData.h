@@ -57,6 +57,7 @@ public:
 	void print_cov_cov(string);
 	void print_cov_samp(string);
 	void set_ncomp_ef();
+	pair< vector<string>, vector<double> > get_freqs(int);
 	pair<double, double> calculate_f4();
 	map< string, map< string, map<string, double> > > calculate_f3s();
 	double calculate_f2(int, int);
@@ -65,6 +66,11 @@ public:
 	gsl_matrix *U, *scatter_prime;
 	int ne, ne2, ncomp, nblock;
 	int ncomp_ef;
+	vector<string> rss;
+	vector<string> pos;
+	vector<string> chr;
+	vector<string> a1;
+	vector<string> a2;
 	void set_ne();
 	void set_ne2();
 };
