@@ -1151,13 +1151,13 @@ int GraphState2::golden_section_weight_quick(Graph::edge_descriptor e, double mi
 }
 
 
-int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double min, double guess, double max, double tau){
+int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double min, double guess, double max, double tau, int *nit){
 	double x;
 
 	//cout << min << " "<< guess << " "<< max << "\n"; cout.flush();
 	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
 	else x = guess - resphi *(guess-min);
-	if (fabs(max-min) < tau * (fabs(guess)+fabs(max))) {
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max)) || *nit > params->maxit) {
 		//cout << "here "<< min << " "<< max << "\n";
 		double new_logweight = (min+max)/2;
 		double neww = new_logweight;
@@ -1167,6 +1167,7 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 		current_llik = llik();
 		return 0;
 	}
+	*nit = *nit+1;
 	double w = x;
 	tree->g[e].weight = w;
 	//cout << "here\n"; cout.flush();
@@ -1184,13 +1185,13 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 	//cout << "not here2\n"; cout.flush();
 	double f_guess = -llik();
 	if (f_x < f_guess){
-		if ( (max-guess) > (guess-min) )	return golden_section_weight_noexp(e, guess, x, max, tau);
+		if ( (max-guess) > (guess-min) )	return golden_section_weight_noexp(e, guess, x, max, tau, nit);
 
-		else return golden_section_weight_noexp(e, min, x, guess, tau);
+		else return golden_section_weight_noexp(e, min, x, guess, tau, nit);
 	}
 	else{
-		if ( (max - guess) > (guess - min)  ) return golden_section_weight_noexp(e, min, guess, x, tau);
-		else return golden_section_weight_noexp(e, x, guess, max, tau);
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight_noexp(e, min, guess, x, tau, nit);
+		else return golden_section_weight_noexp(e, x, guess, max, tau, nit);
 	}
 }
 
@@ -4111,9 +4112,8 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 		guess = 0;
 		min = params->minweight;
 		max = params->maxweight;
-		//guess = exp(guess) / (1+exp(guess));
-		//golden_section_weight(e, min, guess, max, 0.01);
-		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
+		int nit = 0;
+		golden_section_weight_noexp(e, -1, guess, 1, 0.005, &nit);
 		samps.push_back(tree->g[e].weight);
 		//cout <<i << " "<< tree->g[e].weight << "\n";
 	}
@@ -4143,7 +4143,8 @@ pair<double, double> GraphState2::calculate_se_bootstrap(gsl_rng *r, Graph::edge
 		guess = oldweight;
 		min = params->minweight;
 		max = params->maxweight;
-		golden_section_weight_noexp(e, -1, guess, 1, 0.005);
+		int nit = 0;
+		golden_section_weight_noexp(e, -1, guess, 1, 0.005, &nit);
 		samps.push_back(tree->g[e].weight);
 		cout<< i << " "<< tree->g[e].weight << "\n";
 
@@ -4175,7 +4176,8 @@ pair<double, double> GraphState2::calculate_se_fromsamp(Graph::edge_descriptor e
 		guess = oldweight;
 		min = params->minweight;
 		max = params->maxweight;
-		golden_section_weight_noexp(e, -1, 0, 1, 0.0005);
+		int nit = 0;
+		golden_section_weight_noexp(e, -1, 0, 1, 0.0005, &nit);
 		samps.push_back(tree->g[e].weight);
 		cout << i << " "<< tree->g[e].weight << "\n";
 	}
