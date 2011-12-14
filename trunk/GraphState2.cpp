@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1323471670;
+	//seed = 1323903485;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -822,7 +822,7 @@ void GraphState2::optimize_weights_quick(set<int> n){
 	double start_llik = current_llik;
 	bool done = false;
 	int nit = 0;
-	while(!done && nit < params->maxit){
+	while(!done && nit < params->maxit2){
 		for (map<Graph::edge_descriptor, set<int> >::iterator it = e2tips.begin(); it != e2tips.end(); it++) 	{
 			int test = tree->g[source(it->first, tree->g)].index;
 			if (n.find(test) == n.end()) continue;
@@ -1802,10 +1802,13 @@ int GraphState2::iterate_local_hillclimb_wmig(pair< set<int>, set<int> > indices
 	int moving = many_local_hillclimb_wmig(indices);
 	//cout << moving <<" first iter\n";
 	if (moving  == 0 ) return 0;
+	int nit = 0;
+	while (moving > 0 && nit < params->maxit2) {
+		moving = many_local_hillclimb_wmig(indices);
+		nit++;
+	}
 
-	while (moving > 0) 	moving = many_local_hillclimb_wmig(indices);
-
-
+	if (nit >= params->maxit2) return 0;
 	return 1;
 }
 
@@ -1854,13 +1857,8 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 	int moving3 = all_try_changedir();
 	cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 	if (moving3 > 0){
-		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
-		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
-		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
-
-		p_tmp = get_neighborhood(indices.second);
-		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
-		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+		p2 = get_neighborhood(indices.first);
+		p1 = get_neighborhood(indices.second);
 	}
 
 	//	cout << "n1 "<< *it << "\n";
@@ -1896,14 +1894,8 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 			int moving3 = all_try_changedir();
 			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 			if (moving3 > 0){
-
-				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
-				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
-				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
-
-				p_tmp = get_neighborhood(indices.second);
-				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
-				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+				p2 = get_neighborhood(indices.first);
+				p1 = get_neighborhood(indices.second);
 
 			}
 
@@ -1994,19 +1986,29 @@ int GraphState2::all_try_movemig(){
 	int toreturn =0;
 	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
 	vector<int> mig_index;
+	//tree->print("test");
 	//for (Graph::edge_descriptor index = )
 	int i = 0;
-	while (i < mig_edges.size()){
+	while (i < mig_edges.size() && toreturn < params->maxit2){
 		initialize_migupdate();
 		optimize_weight_quick(mig_edges[i]);
+		//cout << tree->g[source(mig_edges[i], tree->g)].index << "\n"; cout.flush();
 		bool test = movemig(tree->g[source(mig_edges[i], tree->g)].index).first;
+		//cout << test << "\n"; cout.flush();
+		//stringstream ss;
+		//ss <<  "test";
+		//ss << toreturn;
+		//cout << llik() << "\n";
+		//string f(ss.str());
+		//tree->print(f);
 		mig_edges = tree->get_mig_edges();
-		if (test ==1) {
+		if (test) {
 			toreturn++;
 			i=0;
 		}
 		else i++;
 	}
+	if ( toreturn >= params->maxit2) return 0;
 	return toreturn;
 }
 
@@ -4464,5 +4466,33 @@ void GraphState2::update_mig(Graph::edge_descriptor e, double w){
 	//cout << "here4\n"; cout.flush();
 	set_branches_ls_f2_precompute();
 	//cout << "branches_set\n"; cout.flush();
+
+}
+
+void GraphState2::clean_negedge(){
+
+	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
+	int i = 0;
+	while (i < m.size()){
+		//cout << i <<" in trim\n";
+		Graph::edge_descriptor e = m[i];
+		Graph::vertex_descriptor v = source( e, tree->g);
+		Graph::in_edge_iterator it = in_edges(v, tree->g).first;
+		Graph::edge_descriptor e2 = *it;
+		Graph::vertex_descriptor c = tree->get_child_node_mig(v);
+		double l = tree->get_parent_node(c).second;
+		if ( !tree->g[source(e2, tree->g)].is_mig && tree->g[e2].len < 0 && l > 0 ){
+			Graph::vertex_descriptor v2 = source(e2, tree->g);
+			Graph::vertex_descriptor t = target(e, tree->g);
+			tree->remove_mig_edge(e);
+			Graph::edge_descriptor enew = tree->add_mig_edge(v2, t);
+			initialize_migupdate();
+			optimize_weight_quick(enew);
+			m = tree->get_mig_edges();
+			i = 0;
+		}
+
+		i++;
+	}
 
 }

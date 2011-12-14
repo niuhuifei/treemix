@@ -20,7 +20,8 @@ PhyloPop_params::PhyloPop_params(){
 	maxweight = 10;
 	nmig = 0;
 	m_neigh = 3;
-	maxit = 20;
+	maxit  = 100;
+	maxit2 = 20;
 	set_root = false;
 	root = "NA";
 	read_graph = false;
