@@ -157,6 +157,7 @@ public:
 	Graph::edge_descriptor add_mig_noopt(int, int);
 	void rearrange(int, int);
 	bool has_loop();
+	void clean_negedge();
 
 	//For rapid estimation of migration rates, need to keep the paths to the root, the least square design matrix, etc., in memory
 	gsl_matrix *X_current;

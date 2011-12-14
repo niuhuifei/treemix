@@ -150,7 +150,6 @@ int main(int argc, char *argv[]){
     	}
     	state.optimize_weights_quick();
     	state.trim_mig();
-
     	//state.flip_mig();
 
     	//state.trim_mig();
@@ -160,7 +159,7 @@ int main(int argc, char *argv[]){
     	p.smooth_scale = 1;
     	cout << "ln(likelihood):" << state.llik() << " (negsum = "<< state.negsum << ")\n";
     }
-
+	state.clean_negedge();
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
     //state.current_llik_w = state.llik_wishart();
@@ -175,6 +174,7 @@ int main(int argc, char *argv[]){
 
      		treeout << state.tree->g[*it].weight<< " ";
      		if (p.calc_se){
+     			p.neg_penalty = 0;
      			pair<double, double> se = state.calculate_se(*it);
      			treeout << se.first << " "<< se.second << " ";
      			double test = se.first/ se.second;
