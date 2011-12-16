@@ -862,7 +862,7 @@ void GraphState2::optimize_weights(){
 	int nit = 0;
 	while(!done){
 		for (vector<Graph::edge_descriptor>::iterator it = mig_edges.begin(); it != mig_edges.end(); it++) optimize_weight(*it);
-		if (current_llik < start_llik+0.1) done = true;
+		if (current_llik < start_llik+params->epsilon) done = true;
 		else start_llik = current_llik;
 		nit++;
 	}
@@ -888,7 +888,7 @@ void GraphState2::optimize_weights_quick(){
 			//cout << "quick\n"; cout.flush();
 			optimize_weight_quick(it->first);
 		}
-		if (current_llik < start_llik+0.1) done = true;
+		if (current_llik < start_llik+params->epsilon) done = true;
 		else start_llik = current_llik;
 		//cout << nit << " "<< current_llik << " "<< start_llik << "\n"; cout.flush();
 		nit++;
@@ -1116,7 +1116,7 @@ void GraphState2::optimize_frac(Graph::edge_descriptor e){
 			//cout << nit << "\n"; cout.flush();
 			double min, max, guess;
 			guess = tree->g[source(e, tree->g)].mig_frac;
-			guess = exp(guess) / (1+exp(guess));
+			guess = log (guess/(1-guess));
 			min = params->minweight;
 			max = params->maxweight;
 			golden_section_frac(e, min, guess, max, params->tau);
@@ -1786,7 +1786,7 @@ void GraphState2::set_branches_ls_f2(){
 
 	//fit NNLS
 	bool converged = nnls.solve(A, p, b, x, rNorm);
-
+	//cout << converged << " conv\n";
 
 	/*for (int i = 0 ; i < n ; i++){
 		cout << gsl_vector_get(y, i) << " " << "y"<<" ";
@@ -2070,7 +2070,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 			}
 
-
+			tree->print("after1");
 			moving2 = iterate_local_hillclimb_wmig(p2);
 			if (moving2 > 0) {
 				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.second);
@@ -2078,7 +2078,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 			}
 			cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
-
+			tree->print("after2");
 			int moving3 = all_try_changedir();
 			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 			if (moving3 > 0){
@@ -2098,6 +2098,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
 				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 			}
+			tree->print("after4");
 			moving = moving1+moving2+moving3+moving4;
 		}
 		int moving5 = 0;
@@ -2178,8 +2179,8 @@ int GraphState2::all_try_movemig(){
 	//for (Graph::edge_descriptor index = )
 	int i = 0;
 	while (i < mig_edges.size() && toreturn < params->maxit2){
-		initialize_migupdate();
-		optimize_weight_quick(mig_edges[i]);
+		//initialize_migupdate();
+		//optimize_weight_quick(mig_edges[i]);
 		//cout << tree->g[source(mig_edges[i], tree->g)].index << "\n"; cout.flush();
 		bool test = movemig(tree->g[source(mig_edges[i], tree->g)].index).first;
 		//cout << test << "\n"; cout.flush();
@@ -2437,7 +2438,7 @@ int GraphState2::local_hillclimb_wmig(int index, set<int> n){
 			optimize_weights_quick(n);
 
 			double lk = llik();
-			if (lk > max){
+			if (lk > max+params->epsilon){
 				max = lk;
 				max_negsum = negsum;
 				toreturn = 1;
@@ -4023,7 +4024,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 				//optimize_weight(e2);
 				//tree->print("test0");
 				//cout << i << " "<< current_llik << " "<< max << "\n";
-				if ( current_llik > max){
+				if ( current_llik > max+params->epsilon){
 					max = current_llik;
 					max_negsum = negsum;
 
@@ -4047,7 +4048,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 					//optimize_weight(e2);
 					//tree->print("test0");
 					//cout << i << " "<< current_llik << " "<< max << "\n";
-					if ( current_llik > max){
+					if ( current_llik > max +params->epsilon){
 						max = current_llik;
 
 						max_negsum = negsum;
@@ -4072,7 +4073,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 					//cout << "here\n"; cout.flush();
 					//tree->print("test1");
 					//cout << i << " "<< current_llik << " "<< max << "\n";
-					if ( current_llik > max){
+					if ( current_llik > max +params->epsilon){
 						max = current_llik;
 
 						max_negsum = negsum;
@@ -4097,7 +4098,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 					//optimize_weight(e2);
 					//tree->print("test2");
 					//cout << i << " "<< current_llik << " "<< max << "\n";
-					if ( current_llik > max){
+					if ( current_llik > max +params->epsilon){
 						max = current_llik;
 
 						max_negsum = negsum;
@@ -4135,7 +4136,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 
 				//tree->print("test3");
 				//cout << i << " "<< current_llik << " "<< max << "\n";
-				if ( current_llik > max){
+				if ( current_llik > max +params->epsilon){
 					max = current_llik;
 
 					max_negsum = negsum;
@@ -4160,7 +4161,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 				//optimize_weight(e2);
 				//tree->print("test1");
 				//cout << i << " "<< current_llik << " "<< max << "\n";
-				if ( current_llik > max){
+				if ( current_llik > max +params->epsilon){
 					max = current_llik;
 
 					max_negsum = negsum;
@@ -4185,7 +4186,7 @@ pair<bool, int> GraphState2::movemig( int index ){
 				//optimize_weight(e2);
 				//tree->print("test2");
 				//cout << i << " "<< current_llik << " "<< max << "\n";
-				if ( current_llik > max){
+				if ( current_llik > max +params->epsilon){
 					max = current_llik;
 
 					max_negsum = negsum;
