@@ -65,6 +65,7 @@ public:
 	set<string> hold;
 
 	bool snpinfo;
+	double epsilon; //for determining whether the likelihood is being increased
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
