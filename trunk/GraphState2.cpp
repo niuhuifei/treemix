@@ -2070,7 +2070,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 			}
 
-			tree->print("after1");
+			///tree->print("after1");
 			moving2 = iterate_local_hillclimb_wmig(p2);
 			if (moving2 > 0) {
 				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.second);
@@ -2078,7 +2078,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 			}
 			cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
-			tree->print("after2");
+			//tree->print("after2");
 			int moving3 = all_try_changedir();
 			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
 			if (moving3 > 0){
@@ -2098,7 +2098,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
 				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 			}
-			tree->print("after4");
+			//tree->print("after4");
 			moving = moving1+moving2+moving3+moving4;
 		}
 		int moving5 = 0;
