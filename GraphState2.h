@@ -12,6 +12,7 @@
 #include "PopGraph.h"
 #include "CountData.h"
 #include "PhyloPop_params.h"
+#include "nnls.h"
 
 class GraphState2{
 public:
@@ -82,8 +83,13 @@ public:
 	void set_branches_ls_wmig();
 	void set_branches_ls_wmig_estmig();
 	void set_branches_ls_f2();
+	void set_branches_ls_f2_nnls();
+	void set_branches_ls_f2_nnls_precompute();
+	void set_branches_ls_f2_precompute_old();
+	void set_branches_ls_f2_old();
 	void set_branch_coefs(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	void set_branch_coefs_f2(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
+	void set_branch_coefs_f2_nnls(double *, double *, int, int, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	//functions used by the above least squares fitting
 	map<Graph::vertex_descriptor, int> get_v2index();
 
@@ -170,6 +176,7 @@ public:
 	void update_mig(Graph::edge_descriptor, double);
 	void initialize_migupdate();
 	void set_branches_ls_f2_precompute();
+	void print_X();
 	double negsum;
 
 
