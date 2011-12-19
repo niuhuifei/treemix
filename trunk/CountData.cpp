@@ -624,22 +624,24 @@ void CountData::set_cov_f2(){
 		for(int i = 0; i < npop; i++){
 			for (int j = i; j < npop; j++){
 				double c = 0;
+				string p1 = id2pop[i];
+				string p2 = id2pop[j];
 				for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
 					if (isnan(gsl_matrix_get(alfreqs, n, i))) continue;
 					double toadd = (gsl_matrix_get(alfreqs, n, i) - gsl_matrix_get(alfreqs, n, j));
 					toadd = toadd*toadd;
+					if (params->sample_size_correct && p1 != p2){
+						double bias1 = trim[p1];
+						double bias2 = trim[p2];
+						//cout << p1 << " "<< bias1 << " "<< p2 <<  " "<< bias2 << "\n";
+						toadd = toadd - bias1 -bias2;
+					}
 					c+= toadd;
 				}
 				double cov = c/ (double) params->window_size;
 				//cout << k << " "<< index << " "<< cov << "\n";
-				string p1 = id2pop[i];
-				string p2 = id2pop[j];
-				if (params->sample_size_correct && p1 != p2){
-					double bias1 = trim[p1];
-					double bias2 = trim[p2];
-					//cout << p1 << " "<< bias1 << " "<< p2 <<  " "<< bias2 << "\n";
-					cov = cov - bias1 -bias2;
-				}
+
+
 				cov_samp[p1][p2].push_back(cov);
 				if (p1 != p2) cov_samp[p2][p1].push_back(cov);
 				//gsl_matrix_set(cov_samp, k, index, cov);

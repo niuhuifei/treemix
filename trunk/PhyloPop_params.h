@@ -66,6 +66,8 @@ public:
 
 	bool snpinfo;
 	double epsilon; //for determining whether the likelihood is being increased
+
+	int nresid; // number of maximum residuals to search when adding migration
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
