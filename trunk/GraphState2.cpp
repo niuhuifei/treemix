@@ -2057,8 +2057,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 	//exit(1);
 	int moving = moving1+moving2+moving3+moving4;
 	int moving_local = moving;
-	while(moving_local > 0){
-		while (moving > 0){
+	while (moving > 0){
 
 			moving1 = iterate_local_hillclimb_wmig(p1);
 			cout << "Local updates around node 1: "<< moving1 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
@@ -2100,21 +2099,20 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 			}
 			//tree->print("after4");
 			moving = moving1+moving2+moving3+moving4;
-		}
-		int moving5 = 0;
-		if (negsum > start_nsum*2){
-			cout << "Trying all local rearrangements\n"; cout.flush();
-			//tree->print("test2");
-			moving5 = iterate_local_hillclimb_wmig_all();
-			start_nsum = negsum;
-			cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " (negsum = "<< negsum << ")\n";cout.flush();
-		}
-		moving_local = moving5;
-		moving = moving+moving_local;
 
+			int moving5 = 0;
+			if (moving1 == 0 and moving2 == 0){
+				cout << "Trying all local rearrangements\n"; cout.flush();
+				//tree->print("test2");
+				moving5 = iterate_local_hillclimb_wmig_all();
+				cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " (negsum = "<< negsum << ")\n";cout.flush();
+				moving = moving+moving5;
+			}
 	}
-	//optimize_weights_quick();
+
+
 }
+
 
 int GraphState2::many_local_hillclimb_wmig(pair<set<int>, set<int> > indices){
 	//cout << "inmany\n"; cout.flush();
