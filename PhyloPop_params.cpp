@@ -41,4 +41,5 @@ PhyloPop_params::PhyloPop_params(){
 	neg_penalty = 100;
 	snpinfo = false;
 	epsilon = 1e-3;
+	nresid = 4;
 }

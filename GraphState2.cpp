@@ -3317,150 +3317,85 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 	gsl_matrix *tmpfitted2 = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_memcpy( tmpfitted2, sigma_cor);
 
+	// resid holds the current residuals
+	gsl_matrix *resid = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_set_zero(resid);
+
+
 	double llik_bk = current_llik;
 	double negsum_bk = negsum;
 	double max_negsum = negsum;
-	//1. find the largest residual
+
 	pair<bool, pair<int, int> > toreturn;
 	toreturn.first = false;
-	string pop1, pop2;
-	double max = 0;
-	int besti = 0;
-	int bestj = 0;
-	gsl_vector * sum = gsl_vector_alloc(current_npops);
+
+	//1. set the residual matrix
+
 	for ( int i = 0; i < current_npops; i++){
-		double tmp = 0;
 		for (int j = 0; j < current_npops; j++){
 			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
 			double fitted = gsl_matrix_get(sigma_cor, i, j);
 			double diff = cov-fitted;
-			if (diff < 0) tmp += -diff;
-		}
-		gsl_vector_set(sum, i, tmp);
-		//cout << allpopnames[i] << " "<< tmp << "\n";
-	}
-
-	int which_max = gsl_vector_max_index(sum);
-	pop1 = allpopnames[which_max];
-	set<string> other;
-	gsl_vector * allmin = gsl_vector_alloc(current_npops);
-
-	for (int i = 0; i < current_npops; i++){
-		double cov = countdata->get_cov( pop1, allpopnames[i] );
-		double fitted = gsl_matrix_get(sigma_cor, which_max, i);
-		double diff = cov-fitted;
-		gsl_vector_set(allmin, i, diff);
-	}
-	for (int i = 0; i <  3; i++){
-		int which_min = gsl_vector_min_index(allmin);
-		string p = allpopnames[which_min];
-		other.insert(p);
-		gsl_vector_set(allmin, which_min, 0);
-	}
-
-	/*
-	for (int i = 0; i < current_npops; i++){
-		for (int j = i+1; j < current_npops; j++){
-			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
-			double fitted = gsl_matrix_get(sigma_cor, i, j);
-			double diff = cov-fitted;
-			//cout << allpopnames[i] << " "<< allpopnames[j] << " "<< diff << "\n";
-			if (diff < max){
-				pop1 = allpopnames[i];
-				pop2 = allpopnames[j];
-				besti = i;
-				bestj = j;
-				max = diff;
-			}
+			gsl_matrix_set(resid, i, j, diff);
 		}
 	}
-	*/
-	gsl_vector_free(sum);
-	gsl_vector_free(allmin);
+
+	double max;
+	//2. Get the minimum nresid residuals
+	set<pair<string, string> > minresids;
+	cout << "Targeting migration to vicinity of:\n";
+	for (int i = 0; i < params->nresid; i++){
+		size_t min_i, min_j;
+		gsl_matrix_min_index(resid, &min_i, &min_j);
+		string p1 = allpopnames[min_i];
+		string p2 = allpopnames[min_j];
+		if (i == 0) max = gsl_matrix_get(resid, min_i, min_j);
+		minresids.insert(make_pair(p1, p2));
+		gsl_matrix_set(resid, min_i, min_j, 0);
+		gsl_matrix_set(resid, min_j, min_i, 0);
+		cout << p1 << " "<< p2 << "\n";
+	}
+	cout << "\n";
+	//3. get populations in the neighborhood of those to target
+
 	set<pair<int, int> > tested; //hold the pairs of vertices that have been tested
-	cout << "Targeting migration to vicinity of "<< pop1 <<" and ";
-	for (set<string>::iterator it = other.begin(); it != other.end(); it++){
-		cout << *it<< ",";
-	}
-	cout << "\n"; cout.flush();
 	set<pair<string, string> > pops2test;
+
 
 	map<string, Graph::vertex_descriptor> tips = tree->get_tips(tree->root);
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
-	pair<set<int>, set<int> > n1 = get_neighborhood( tree->g[ tips[pop1] ].index, 4);
-	set<int> n2;
-	for (set<string>::iterator it = other.begin(); it != other.end(); it++){
-		pair<set<int>, set<int> > n3 = get_neighborhood( tree->g[ tips[*it] ].index, 4);
-		for (set<int>::iterator it2 = n3.first.begin(); it2!= n3.first.end(); it2++) n2.insert(*it2);
-	}
 
-	//pair<set<int>, set<int> > n2 = get_neighborhood( tree->g[ tips[pop2] ].index, 7);
+	for (set<pair<string, string> >::iterator it = minresids.begin(); it != minresids.end(); it++){
+		string pop1 = it->first;
+		string pop2 = it->second;
+		pair<set<int>, set<int> > n1 = get_neighborhood( tree->g[ tips[pop1] ].index, 4);
+		pair<set<int>, set<int> > n3 = get_neighborhood( tree->g[ tips[pop2] ].index, 4);
 
-	for (set<int>::iterator it = n1.first.begin();it != n1.first.end(); it++){
-		Graph::vertex_descriptor v1 = i2v[*it];
-		if ( ! tree->g[v1].is_tip) continue;
-		for (set<int>::iterator it2 = n2.begin(); it2 != n2.end(); it2++){
-			Graph::vertex_descriptor v2 = i2v[*it2];
-			if ( ! tree->g[v2].is_tip) continue;
-			string p1 = tree->g[v1].name;
-			string p2 = tree->g[v2].name;
-			double cov = countdata->get_cov(p1, p2);
-			double fitted = gsl_matrix_get(sigma_cor, popname2index[p1], popname2index[p2]);
-			double diff = cov-fitted;
-			if (diff < max * 0.1){
-				pops2test.insert(make_pair(p1, p2));
-				cout << p1 << " "<< p2 << "\n";
+		for (set<int>::iterator it = n1.first.begin();it != n1.first.end(); it++){
+			Graph::vertex_descriptor v1 = i2v[*it];
+			if ( ! tree->g[v1].is_tip) continue;
+			for (set<int>::iterator it2 = n3.first.begin(); it2 != n3.first.end(); it2++){
+				Graph::vertex_descriptor v2 = i2v[*it2];
+				if ( ! tree->g[v2].is_tip) continue;
+				string p1 = tree->g[v1].name;
+				string p2 = tree->g[v2].name;
+				double cov = countdata->get_cov(p1, p2);
+				double fitted = gsl_matrix_get(sigma_cor, popname2index[p1], popname2index[p2]);
+				double diff = cov-fitted;
+				if (diff < max * 0.1){
+					pops2test.insert(make_pair(p1, p2));
+					cout << p1 << " "<< p2 << "\n";
+				}
 			}
 		}
 	}
-	// try all pairwise combinations within 20% of the max residual
-	/*double max_test = max*0.8;
-	for (int i = 0; i < current_npops; i++){
-		for (int j = i+1; j < current_npops; j++){
-			double cov = countdata->get_cov( allpopnames[i], allpopnames[j] );
-			double fitted = gsl_matrix_get(sigma_cor, i, j);
-			double diff = cov-fitted;
-			//cout << allpopnames[i] << " "<< allpopnames[j] << " "<< diff << " "<< max_test << s"\n";
-			if (diff < max_test){
-				cout << allpopnames[i] << " "<< allpopnames[j] << " "<< diff << " "<< max_test << "\n";
-				pop1 = allpopnames[i];
-				pop2 = allpopnames[j];
-				pops2test.insert(make_pair(pop1, pop2));
-			}
-		}
-	}
-*/
 
-	//gsl_vector* alli  = gsl_vector_alloc(current_npops);
-	//* allj  = gsl_vector_alloc(current_npops);
-	//for (int i =0; i < current_npops; i++){
-	//	gsl_vector_set(alli, i, countdata->get_cov( allpopnames[besti], allpopnames[i]) - gsl_matrix_get(sigma_cor, besti, i));
-	//	gsl_vector_set(allj, i, countdata->get_cov( allpopnames[bestj], allpopnames[i]) - gsl_matrix_get(sigma_cor, bestj, i));
-	//}
-	//for (int i = 0; i < 4; i++){
-	//	int mini = gsl_vector_min_index (alli);
-	/*	if (gsl_vector_get(alli, mini) < 0) {
-			cout << pop1 << " "<< allpopnames[mini]<<"\n";
-			pops2test.insert(make_pair(pop1, allpopnames[mini]));
-		}
-		gsl_vector_set(alli, mini, 1);
-
-		int minj = gsl_vector_min_index (allj);
-		if (gsl_vector_get(allj, minj) < 0) {
-			cout << pop2 << " "<< allpopnames[minj]<<"\n";
-			pops2test.insert(make_pair(pop2, allpopnames[minj]));
-		}
-		gsl_vector_set(allj, minj, 1);
-	}
-*/
-	//2. Get the paths to the root for both
-	map<string, Graph::vertex_descriptor> p2node = tree->get_tips(tree->root);
 
 
 	//3. try migration to all the pairwise combinations
 
 	double max_llik = current_llik;
-
+	map<string, Graph::vertex_descriptor> p2node = tree->get_tips(tree->root);
 	//tree_bk holds a backup of the current tree; bk_2 the best tree
 	tree_bk->copy(tree);
 	tree_bk2->copy(tree);
@@ -3601,10 +3536,9 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 		tree->copy(tree_bk);
 	}
 
-	//cout << "here!\n"; cout.flush();
-	////tree->print();
 	gsl_matrix_free(tmpfitted);
 	gsl_matrix_free(tmpfitted2);
+	gsl_matrix_free(resid);
 	return toreturn;
 
 }
