@@ -14,7 +14,7 @@ string infile;
 string outstem = "TreeMix";
 
 void printopts(){
-	cout << "\nTreeMix v.0.2 \ntest\n";
+	cout << "\nTreeMix v.0.8 \n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";

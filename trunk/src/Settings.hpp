@@ -27,7 +27,6 @@
 #include "gzstream.h"
 #include <sys/stat.h>
 #include <boost/tokenizer.hpp>
-#include "mvnorm.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
