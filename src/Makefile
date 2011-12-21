@@ -16,6 +16,7 @@
 
 
 
+
 pkgdatadir = $(datadir)/treemix
 pkgincludedir = $(includedir)/treemix
 pkglibdir = $(libdir)/treemix
@@ -34,7 +35,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = treemix$(EXEEXT)
 subdir = src
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -45,7 +47,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_treemix_OBJECTS = treemix.$(OBJEXT) gzstream.$(OBJEXT) \
+am_treemix_OBJECTS = TreeMix.$(OBJEXT) gzstream.$(OBJEXT) \
 	PopGraph.$(OBJEXT) nnls.$(OBJEXT) PhyloPop_params.$(OBJEXT) \
 	CountData.$(OBJEXT) CmdLine.$(OBJEXT) GraphState2.$(OBJEXT)
 treemix_OBJECTS = $(am_treemix_OBJECTS)
@@ -61,6 +63,7 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(treemix_SOURCES)
 DIST_SOURCES = $(treemix_SOURCES)
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -151,7 +154,9 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-treemix_SOURCES = treemix.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp 
+DISTCHECK_CONFIGURE_FLAGS = LDFLAGS=-L/opt/local/lib CXXFLAGS=-I/opt/local/include
+treemix_SOURCES = TreeMix.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp
+noinst_HEADERS = gzstream.h PopGraph.h nnls.h Settings.hpp PhyloPop_params.h CountData.h CmdLine.h GraphState2.h 
 all: all-am
 
 .SUFFIXES:
@@ -238,9 +243,9 @@ include ./$(DEPDIR)/CountData.Po
 include ./$(DEPDIR)/GraphState2.Po
 include ./$(DEPDIR)/PhyloPop_params.Po
 include ./$(DEPDIR)/PopGraph.Po
+include ./$(DEPDIR)/TreeMix.Po
 include ./$(DEPDIR)/gzstream.Po
 include ./$(DEPDIR)/nnls.Po
-include ./$(DEPDIR)/treemix.Po
 
 .cpp.o:
 	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -340,7 +345,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
