@@ -346,14 +346,10 @@ PopGraph.o PopGraph.o: PopGraph.cpp PopGraph.h Settings.hpp \
   /opt/local/include/boost/mpl/aux_/preprocessed/gcc/apply.hpp \
   /opt/local/include/boost/iterator/detail/minimum_category.hpp \
   /opt/local/include/boost/token_functions.hpp \
-  /usr/include/c++/4.2.1/stdexcept mvnorm.h \
-  /opt/local/include/gsl/gsl_sf_gamma.h \
-  /opt/local/include/gsl/gsl_sf_result.h /opt/local/include/gsl/gsl_rng.h \
+  /usr/include/c++/4.2.1/stdexcept /opt/local/include/gsl/gsl_rng.h \
   /opt/local/include/gsl/gsl_types.h /opt/local/include/gsl/gsl_errno.h \
   /usr/include/errno.h /usr/include/sys/errno.h \
-  /opt/local/include/gsl/gsl_inline.h \
-  /opt/local/include/gsl/gsl_randist.h \
-  /opt/local/include/gsl/gsl_vector.h \
+  /opt/local/include/gsl/gsl_inline.h /opt/local/include/gsl/gsl_vector.h \
   /opt/local/include/gsl/gsl_vector_complex_long_double.h \
   /opt/local/include/gsl/gsl_complex.h \
   /opt/local/include/gsl/gsl_check_range.h \
@@ -405,9 +401,11 @@ PopGraph.o PopGraph.o: PopGraph.cpp PopGraph.h Settings.hpp \
   /opt/local/include/gsl/gsl_cblas.h /opt/local/include/gsl/gsl_linalg.h \
   /opt/local/include/gsl/gsl_mode.h \
   /opt/local/include/gsl/gsl_permutation.h \
-  /opt/local/include/gsl/gsl_cdf.h /opt/local/include/gsl/gsl_multifit.h \
-  /opt/local/include/gsl/gsl_math.h /opt/local/include/gsl/gsl_sys.h \
-  /opt/local/include/gsl/gsl_machine.h \
+  /opt/local/include/gsl/gsl_sf_gamma.h \
+  /opt/local/include/gsl/gsl_sf_result.h \
+  /opt/local/include/gsl/gsl_randist.h /opt/local/include/gsl/gsl_cdf.h \
+  /opt/local/include/gsl/gsl_multifit.h /opt/local/include/gsl/gsl_math.h \
+  /opt/local/include/gsl/gsl_sys.h /opt/local/include/gsl/gsl_machine.h \
   /usr/lib/gcc/i686-apple-darwin10/4.2.1/include/float.h \
   /opt/local/include/gsl/gsl_precision.h /opt/local/include/gsl/gsl_nan.h \
   /opt/local/include/gsl/gsl_pow_int.h \
@@ -1819,12 +1817,6 @@ gzstream.h:
 
 /usr/include/c++/4.2.1/stdexcept:
 
-mvnorm.h:
-
-/opt/local/include/gsl/gsl_sf_gamma.h:
-
-/opt/local/include/gsl/gsl_sf_result.h:
-
 /opt/local/include/gsl/gsl_rng.h:
 
 /opt/local/include/gsl/gsl_types.h:
@@ -1836,8 +1828,6 @@ mvnorm.h:
 /usr/include/sys/errno.h:
 
 /opt/local/include/gsl/gsl_inline.h:
-
-/opt/local/include/gsl/gsl_randist.h:
 
 /opt/local/include/gsl/gsl_vector.h:
 
@@ -1944,6 +1934,12 @@ mvnorm.h:
 /opt/local/include/gsl/gsl_mode.h:
 
 /opt/local/include/gsl/gsl_permutation.h:
+
+/opt/local/include/gsl/gsl_sf_gamma.h:
+
+/opt/local/include/gsl/gsl_sf_result.h:
+
+/opt/local/include/gsl/gsl_randist.h:
 
 /opt/local/include/gsl/gsl_cdf.h:
 
