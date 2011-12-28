@@ -14,7 +14,7 @@ string infile;
 string outstem = "TreeMix";
 
 void printopts(){
-	cout << "\nTreeMix v.0.8 \n";
+	cout << "\nTreeMix v. 1.0 \n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -115,13 +115,13 @@ int main(int argc, char *argv[]){
     		p.smooth_scale = p.smooth_scale *2;
     		state.current_llik = state.llik();
     	}
-    	cout << "ln(lk) = " << state.current_llik << " (negsum = "<< state.negsum << ")\n";
+    	cout << "ln(lk) = " << state.current_llik << " \n";
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
     	state.add_pop();
     	state.iterate_hillclimb();
-    	cout << "ln(likelihood): "<< state.current_llik << " (negsum = "<< state.negsum << ")\n";
+    	cout << "ln(likelihood): "<< state.current_llik << " \n";
     	cout << state.tree->get_newick_format() << "\n";
     }
     if (p.global){
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
     	else state.set_branches_ls_wmig();
     }
     if (p.set_root) state.place_root(p.root);
-    likout << "Tree likelihood: "<< state.llik() << " (negsum = "<< state.negsum << ")\n";
+    likout << "Tree likelihood: "<< state.llik() << " \n";
 
     for (int i = 0; i < p.nmig; i++){
     	state.current_llik = state.llik();
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]){
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls_wmig();
     	p.smooth_scale = 1;
-    	cout << "ln(likelihood):" << state.llik() << " (negsum = "<< state.negsum << ")\n";
+    	cout << "ln(likelihood):" << state.llik() << " \n";
     }
 	state.clean_negedge();
     treeout << state.tree->get_newick_format() << "\n";

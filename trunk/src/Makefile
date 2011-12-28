@@ -38,7 +38,8 @@ subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4_ax_boost_base.m4.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -73,6 +74,8 @@ AUTOCONF = ${SHELL} /Users/pickrell/Documents/workspace/PhyloPop/missing --run a
 AUTOHEADER = ${SHELL} /Users/pickrell/Documents/workspace/PhyloPop/missing --run autoheader
 AUTOMAKE = ${SHELL} /Users/pickrell/Documents/workspace/PhyloPop/missing --run automake-1.11
 AWK = awk
+BOOST_CPPFLAGS = -I/opt/local/include
+BOOST_LDFLAGS = -L/opt/local/lib
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
