@@ -106,6 +106,7 @@ public:
 	int golden_section_weight(Graph::edge_descriptor, double, double, double, double, int*);
 	int golden_section_weight_quick(Graph::edge_descriptor, double, double, double, double, int*);
 	int golden_section_weight_noexp(Graph::edge_descriptor, double, double, double, double, int*);
+	int golden_section_weight_noexp_quick(Graph::edge_descriptor, double, double, double, double, int*);
 	int golden_section_weight_wish(Graph::edge_descriptor, double, double, double, double);
 	void optimize_fracs();
 	void optimize_fracs(Graph::edge_descriptor);
