@@ -99,6 +99,7 @@ int main(int argc, char *argv[]){
 
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
+    //counts.print_cov_samp("test.gz");
     if (p.smooth_lik) p.smooth_scale = 1; //sqrt( (double) counts.nsnp / (double) p.window_size);
     GraphState2 state(&counts, &p);
     cout.precision(8);
@@ -175,6 +176,11 @@ int main(int argc, char *argv[]){
 
      		treeout << state.tree->g[*it].weight<< " ";
      		if (p.calc_se){
+        		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
+         		p1 = state.tree->get_child_node_mig(p1);
+         		Graph::vertex_descriptor p2 = target(*it, state.tree->g);
+     			cout << state.tree->get_newick_format(p1) << " ";
+     			cout << state.tree->get_newick_format(p2) << "\n"; cout.flush();
      			p.neg_penalty = 0;
      			pair<double, double> se = state.calculate_se(*it);
      			treeout << se.first << " "<< se.second << " ";

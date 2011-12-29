@@ -401,6 +401,7 @@ void CountData::set_alfreqs(){
 			double f = (double) c1 / ( (double) c1 + (double) c2 );
 			if ( c1+c2 < 1){
 				cerr << "Warning: no counts at SNP "<< i << " population "<< j <<"\n";
+				gsl_matrix_set(alfreqs, i, j, f);
 				continue;
 			}
 			gsl_matrix_set(alfreqs, i, j, f);
@@ -628,6 +629,7 @@ void CountData::set_cov_f2(){
 				string p2 = id2pop[j];
 				for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
 					if (isnan(gsl_matrix_get(alfreqs, n, i))) continue;
+					if (isnan(gsl_matrix_get(alfreqs, n, j))) continue;
 					double toadd = (gsl_matrix_get(alfreqs, n, i) - gsl_matrix_get(alfreqs, n, j));
 					toadd = toadd*toadd;
 					if (params->sample_size_correct && p1 != p2){
@@ -1142,34 +1144,54 @@ void CountData::set_ncomp_ef(){
 pair<double, double> CountData::calculate_f4(){
 	double mean, se;
 	vector<double> f4_block;
-
+	vector<double> f4;
 	//calculate the covariance matrix in each block
 	cout << "Estimating f_4 in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
-	for (int k = 0; k < nblock ; k++){
+	mean = 0;
+	int total_nsnp = 0;
+	for (int i = 0; i < nsnp; i++){
+		if (isnan(gsl_matrix_get(alfreqs, i, 0))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, 1))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, 2))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, 3))) continue;
+		double toadd = (gsl_matrix_get(alfreqs, i, 1) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 2) );
+		f4.push_back(toadd);
+		mean+= toadd;
+		total_nsnp ++;
+	}
+	cout << "total_nsnp "<< total_nsnp << " nsnp "<< nsnp << "\n";
+	mean = mean / (double) total_nsnp;
+	for (int i = 0; i < nblock ; i++){
 		double c = 0;
-		for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
+		int tmp_nsnp = 0;
+		for (int n = 0; n < nsnp; n++){
+
 			if (isnan(gsl_matrix_get(alfreqs, n, 0))) continue;
 			if (isnan(gsl_matrix_get(alfreqs, n, 1))) continue;
 			if (isnan(gsl_matrix_get(alfreqs, n, 2))) continue;
 			if (isnan(gsl_matrix_get(alfreqs, n, 3))) continue;
+			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
 			double toadd = (gsl_matrix_get(alfreqs, n, 1) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 2) );
 			//cout << gsl_matrix_get(alfreqs, n, 0) << " "<< gsl_matrix_get(alfreqs, n, 1) << " "<< gsl_matrix_get(alfreqs, n, 2)<< " "<< gsl_matrix_get(alfreqs, n, 3)<< " "<< toadd << "\n";
 			c+= toadd;
+			tmp_nsnp++;
 		}
-		double cov = c/ (double) params->window_size;
+		double cov = c/ (double) tmp_nsnp;
 		f4_block.push_back(cov);
 
 	}
-	//calculate the mean, standard error of covariance estimates
-	double sum = 0;
-	for (vector<double>::iterator it = f4_block.begin(); it != f4_block.end(); it++) sum+= *it;
-	mean = sum/nblock;
 
 	// and standard error
+	double sum = 0;
+	cout<< "mean1 "<< mean << "\n"; cout.flush();
+	for (vector<double>::iterator it = f4_block.begin(); it != f4_block.end(); it++) sum  += *it;
+	mean = sum/ (double) nblock;
+
 	sum = 0;
 	for (vector<double>::iterator it = f4_block.begin(); it != f4_block.end(); it++) sum+= (*it-mean)*(*it-mean);
 	//double sd = sqrt(sum/ (double) nblock);
-	se = sqrt(sum) /(double) nblock;
+	se = ( (double) nblock- 1.0) / (double) nblock  * sum;
+	se = sqrt(sum);
 
 	return make_pair(mean, se);
 }

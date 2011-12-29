@@ -1280,6 +1280,45 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 	}
 }
 
+
+int GraphState2::golden_section_weight_noexp_quick(Graph::edge_descriptor e, double min, double guess, double max, double tau, int *nit){
+	double x;
+
+	//cout << min << " "<< guess << " "<< max << "\n"; cout.flush();
+	if ( (max - guess) > (guess - min)) x = guess + resphi *( max - guess);
+	else x = guess - resphi *(guess-min);
+	if (fabs(max-min) < tau * (fabs(guess)+fabs(max)) || *nit > params->maxit) {
+		//cout << "here "<< min << " "<< max << "\n";
+		double new_logweight = (min+max)/2;
+		double neww = new_logweight;
+		update_mig(e, neww);
+
+		current_llik = llik();
+		return 0;
+	}
+	*nit = *nit+1;
+	double w = x;
+	update_mig(e, w);
+	//cout << "not here\n"; cout.flush();
+	double f_x = -llik();
+
+	w = guess;
+	tree->g[e].weight = w;
+	//cout << "here2\n"; cout.flush();
+	update_mig(e, w);
+;
+	double f_guess = -llik();
+	if (f_x < f_guess){
+		if ( (max-guess) > (guess-min) )	return golden_section_weight_noexp_quick(e, guess, x, max, tau, nit);
+
+		else return golden_section_weight_noexp_quick(e, min, x, guess, tau, nit);
+	}
+	else{
+		if ( (max - guess) > (guess - min)  ) return golden_section_weight_noexp_quick(e, min, guess, x, tau, nit);
+		else return golden_section_weight_noexp_quick(e, x, guess, max, tau, nit);
+	}
+}
+
 int GraphState2::golden_section_frac(Graph::edge_descriptor e, double min, double guess, double max, double tau){
 	double x;
 
@@ -2076,10 +2115,10 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
 				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
 			}
-			cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
+			cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " \n"; cout.flush();
 			//tree->print("after2");
 			int moving3 = all_try_changedir();
-			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
+			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 			if (moving3 > 0){
 				p2 = get_neighborhood(indices.first);
 				p1 = get_neighborhood(indices.second);
@@ -2087,7 +2126,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 			}
 
 			int moving4 = all_try_movemig();
-			cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " (negsum = "<< negsum << ")\n"; cout.flush();
+			cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 			if (moving4 > 0) {
 				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
 				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
@@ -2105,7 +2144,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 				cout << "Trying all local rearrangements\n"; cout.flush();
 				//tree->print("test2");
 				moving5 = iterate_local_hillclimb_wmig_all();
-				cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " (negsum = "<< negsum << ")\n";cout.flush();
+				cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
 				moving = moving+moving5;
 			}
 	}
@@ -4237,9 +4276,10 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 		min = params->minweight;
 		max = params->maxweight;
 		int nit = 0;
-		golden_section_weight_noexp(e, -1, guess, 1, 0.005, &nit);
+		initialize_migupdate();
+		golden_section_weight_noexp_quick(e, -1, guess, 1, 0.005, &nit);
 		samps.push_back(tree->g[e].weight);
-		//cout <<i << " "<< tree->g[e].weight << "\n";
+		//cout <<i << " "<< tree->g[e].weight << "\n"; cout.flush();
 	}
 	double mean = 0;
 	for (vector<double>::iterator it = samps.begin(); it!= samps.end(); it++) mean += *it;
@@ -4253,7 +4293,7 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 	double se = ( (double) (countdata->nblock -1)/ (double) countdata->nblock) * sum;
 	se = sqrt(se);
 	tree->g[e].weight = oldweight;
-	//cout << se << " se\n";
+	//cout << mean << " " << se << " se\n";
 	return make_pair(mean, se);
 }
 
