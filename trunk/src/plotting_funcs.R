@@ -173,7 +173,7 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 	}
 	print (paste("mse", mse))
         lines(c(0, mse*10), c(ybar, ybar))
-	text( 0, ybar - 0.03, lab = "10 SE", adj = 0)
+	text( 0, ybar - 0.04, lab = "10 SE", adj = 0, cex  = 0.8)
 	lines( c(0, 0), c( ybar - 0.01, ybar+0.01))
 	lines( c(mse*10, mse*10), c(ybar- 0.01, ybar+ 0.01))
         if (mbar){

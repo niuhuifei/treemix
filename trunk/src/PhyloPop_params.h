@@ -68,6 +68,7 @@ public:
 	double epsilon; //for determining whether the likelihood is being increased
 
 	int nresid; // number of maximum residuals to search when adding migration
+	double search_delta; // in golden section search, do "backup search" in window of size search_delta around current weight
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

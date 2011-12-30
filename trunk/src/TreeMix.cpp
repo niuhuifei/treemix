@@ -152,9 +152,6 @@ int main(int argc, char *argv[]){
     	}
     	state.optimize_weights_quick();
     	state.trim_mig();
-    	//state.flip_mig();
-
-    	//state.trim_mig();
 
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls_wmig();
