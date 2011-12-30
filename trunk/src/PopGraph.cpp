@@ -274,7 +274,7 @@ Graph::edge_descriptor PopGraph::add_mig_edge(Graph::vertex_descriptor st, Graph
 	else g[e].len = oldlen/2;
 
 	e = add_edge(p2, sp, g).first;
-	g[e].weight = 0.25;
+	g[e].weight = 0.1;
 	g[e].len = 0;
 	g[e].is_mig = true;
 

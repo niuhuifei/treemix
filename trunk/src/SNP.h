@@ -18,7 +18,7 @@ public:
 	double lambda;
 	F2_matrix * f2;
 	double ss();
-	void optimize_lambda();
+	int optimize_lambda();
 	int golden_section_lambda(double, double, double, double, int *);
 	double phi, resphi;
 	int maxit;

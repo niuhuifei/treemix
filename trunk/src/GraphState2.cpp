@@ -1101,6 +1101,12 @@ void GraphState2::optimize_weight_quick(Graph::edge_descriptor e){
 	max = params->maxweight;
 	int nit = 0;
 	golden_section_weight_quick(e, min, guess, max, params->tau, &nit);
+	//cout << llik() << " "<< tree->g[e].weight << "\n";
+	//for (int i = 0; i < 60; i+=5){
+	//	double tmp = (double)i /100.0;
+	//	update_mig(e, tmp);
+	//	cout << i << " "<< llik() << " "<< current_llik << "\n";
+	//}
 	if (start_llik > current_llik){
 		//cout << "optim_weight did not improve "<< start_llik << " "<< current_llik << " "<< start_weight << " "<< tree->g[e].weight << "\n"; cout.flush();
 		update_mig(e, start_weight);
@@ -2044,13 +2050,17 @@ int GraphState2::global_hillclimb(int inorder_index){
 }
 
 int GraphState2::iterate_local_hillclimb_wmig(pair< set<int>, set<int> > indices){
+	double start_lik = current_llik;
 	int moving = many_local_hillclimb_wmig(indices);
 	//cout << moving <<" first iter\n";
-	if (moving  == 0 ) return 0;
+	if (moving  == 0 || current_llik < start_lik + params->epsilon) return 0;
+	start_lik = current_llik;
 	int nit = 0;
 	while (moving > 0 && nit < params->maxit2) {
 		moving = many_local_hillclimb_wmig(indices);
 		nit++;
+		if ( current_llik < start_lik +params->epsilon) moving = 0;
+		else start_lik = current_llik;
 	}
 
 	if (nit >= params->maxit2) return 0;
@@ -2059,9 +2069,15 @@ int GraphState2::iterate_local_hillclimb_wmig(pair< set<int>, set<int> > indices
 
 
 int GraphState2::iterate_local_hillclimb_wmig_all(){
+	double start_lik = current_llik;
 	int moving = many_local_hillclimb_wmig_all();
-	if (moving  == 0 ) return 0;
-	while (moving > 0) moving = many_local_hillclimb_wmig_all();
+	if (moving  == 0 || current_llik < start_lik+ params->epsilon) return 0;
+	start_lik = current_llik;
+	while (moving > 0) {
+		moving = many_local_hillclimb_wmig_all();
+		if (current_llik < start_lik +params->epsilon) moving = 0;
+		start_lik = current_llik;
+	}
 	return 1;
 }
 
@@ -2071,32 +2087,21 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 	//tree->print("incoming");
 	int moving1 = iterate_local_hillclimb_wmig(p1);
 	cout << "Local updates around node 1: "<< moving1 << " ln(lk):"<< current_llik << " \n"; cout.flush();
-	if (moving1> 0) {
-		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
-		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
-		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
-	}
+	if (moving1> 0) p1 = get_neighborhood(indices.first);
+
 	//tree->print("after_1");
 
 	int moving2 = iterate_local_hillclimb_wmig(p2);
 	cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " \n"; cout.flush();
-	if (moving2 > 0) {
-		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.second);
-		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
-		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
-	}
+	if (moving2 > 0) 	p2 = get_neighborhood(indices.second);
+
 	//tree->print("after_2");
 
 	int moving4 = all_try_movemig();
 	cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 	if (moving4 > 0) {
-		pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
-		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
-		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
-
-		p_tmp = get_neighborhood(indices.second);
-		for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
-		for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+		p1 = get_neighborhood(indices.first);
+		p2 = get_neighborhood(indices.second);
 	}
 	//tree->print("after_move");
 	int moving3 = all_try_changedir();
@@ -2106,33 +2111,18 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 		p1 = get_neighborhood(indices.second);
 	}
 
-	//	cout << "n1 "<< *it << "\n";
-	//}
-	//for (set<int>::iterator it = p1.second.begin(); it != p1.second.end(); it++){
-	//	cout << "n1m "<< *it << "\n";
-	//}
-	//exit(1);
 	int moving = moving1+moving2+moving3+moving4;
 	int moving_local = moving;
 	while (moving > 0){
 
 			moving1 = iterate_local_hillclimb_wmig(p1);
 			cout << "Local updates around node 1: "<< moving1 << " ln(lk):"<< current_llik << " \n"; cout.flush();
-			if (moving1> 0) {
-
-				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
-				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
-				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
-
-			}
+			if (moving1> 0) p1 = get_neighborhood(indices.first);
 
 			///tree->print("after1");
 			moving2 = iterate_local_hillclimb_wmig(p2);
-			if (moving2 > 0) {
-				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.second);
-				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
-				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
-			}
+			if (moving2 > 0) p2 = get_neighborhood(indices.second);
+
 			cout << "Local updates around node 2: "<< moving2 << " ln(lk):"<< current_llik << " \n"; cout.flush();
 			//tree->print("after2");
 			int moving3 = all_try_changedir();
@@ -2146,13 +2136,8 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 			int moving4 = all_try_movemig();
 			cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 			if (moving4 > 0) {
-				pair<set<int>, set<int> >p_tmp = get_neighborhood(indices.first);
-				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p1.first.insert(*it);
-				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p1.second.insert(*it);
-
-				p_tmp = get_neighborhood(indices.second);
-				for (set<int>::iterator it = p_tmp.first.begin(); it != p_tmp.first.end(); it++) p2.first.insert(*it);
-				for (set<int>::iterator it = p_tmp.second.begin(); it != p_tmp.second.end(); it++) p2.second.insert(*it);
+				p1 = get_neighborhood(indices.first);
+				p2= get_neighborhood(indices.second);
 			}
 			//tree->print("after4");
 			moving = moving1+moving2+moving3+moving4;
@@ -2160,7 +2145,6 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 			int moving5 = 0;
 			if (moving1 == 0 and moving2 == 0 and moving3 ==0 and moving4==0){
 				cout << "Trying all local rearrangements\n"; cout.flush();
-				//tree->print("test2");
 				moving5 = iterate_local_hillclimb_wmig_all();
 				cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
 				moving = moving+moving5;
@@ -2172,14 +2156,9 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 
 int GraphState2::many_local_hillclimb_wmig(pair<set<int>, set<int> > indices){
-	//cout << "inmany\n"; cout.flush();
 	int toreturn = 0;
 	for (set<int>::iterator it = indices.first.begin(); it != indices.first.end(); it++){
-		//cout << *it << "\n";
-		//tree->print("before");
 		toreturn+= local_hillclimb_wmig(*it, indices.second);
-		//tree->print("after");
-		//cout << *it << " done\n"; cout.flush();
 	}
 	return toreturn;
 }
@@ -2188,19 +2167,14 @@ int GraphState2::many_local_hillclimb_wmig(pair<set<int>, set<int> > indices){
 int GraphState2::many_local_hillclimb_wmig_all(){
 	int toreturn = 0;
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
-	//cout << "got inorder\n"; cout.flush();
 	vector<int> allindex;
 	for (vector<Graph::vertex_descriptor>::iterator it = inorder.begin(); it != inorder.end(); it++) {
 		if (tree->g[*it].is_root) continue;
 		allindex.push_back(tree->g[*it].index);
 	}
-	//cout << "got indices\n"; cout.flush();
+
 	for (vector<int>::iterator it = allindex.begin(); it != allindex.end(); it++){
-		//cout << *it << "\n"; cout.flush();
-		//tree->print("before");
 		toreturn+= local_hillclimb_wmig_all(*it);
-		//tree->print("after");
-		//cout << *it << " done\n"; cout.flush();
 	}
 	return toreturn;
 }
@@ -3453,7 +3427,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 				double cov = countdata->get_cov(p1, p2);
 				double fitted = gsl_matrix_get(sigma_cor, popname2index[p1], popname2index[p2]);
 				double diff = cov-fitted;
-				if (diff < max * 0.1){
+				if (diff < max * 0.3){
 					pops2test.insert(make_pair(p1, p2));
 					cout << p1 << " "<< p2 << "\n";
 				}
@@ -4544,7 +4518,7 @@ void GraphState2::initialize_migupdate(){
 		}
 	}
 	set_branches_ls_f2_precompute();
-	current_llik = llik();
+	//current_llik = llik();
 }
 
 void GraphState2::print_X(){
@@ -4796,7 +4770,7 @@ void GraphState2::update_mig(Graph::edge_descriptor e, double w){
 	//cout << "updated_mig\n"; cout.flush();
 	//cout << "here4\n"; cout.flush();
 	set_branches_ls_f2_precompute();
-	current_llik = llik();
+	//current_llik = llik();
 
 }
 

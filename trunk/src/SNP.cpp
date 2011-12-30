@@ -14,7 +14,7 @@ SNP::SNP(vector<double> f, vector<string> n, F2_matrix* fm, map<string, double> 
 	lambda = 1;
 	phi = (1+sqrt(5))/2;
 	resphi = 2-phi;
-	maxit = 20;
+	maxit = 50;
 	trim = t;
 }
 
@@ -23,6 +23,7 @@ double SNP::ss(){
 	for (int i = 0; i < names.size(); i++){
 		for (int j = i+1; j < names.size(); j++){
 			double tmp1 = freqs[i] - freqs[j];
+			if (isnan(tmp1)) continue;
 			double t1 = trim->find(names[i])->second;
 			double t2 = trim->find(names[j])->second;
 			tmp1 = (tmp1* tmp1)- t1 - t2;
@@ -30,6 +31,7 @@ double SNP::ss(){
 			double tmp3 = tmp1-tmp2;
 			//cout << names[i] << " "<< names[j] << " "<< freqs[i] << " "<< freqs[j] <<" "<< f2->get(names[i], names[j]) << " "<< tmp1 << " "<< tmp2 << " "<< tmp3 << "\n";
 			toreturn+= tmp3*tmp3;
+			//cout << names[i] << " "<< names[j]<< " "<< tmp3 << " "<< toreturn << "\n";
 		}
 	}
 	return toreturn;
@@ -67,7 +69,7 @@ int SNP::golden_section_lambda(double min, double guess, double max, double tau,
 }
 
 
-void SNP::optimize_lambda(){
+int SNP::optimize_lambda(){
 
 	double min, max, guess;
 	guess = 1;
@@ -75,6 +77,8 @@ void SNP::optimize_lambda(){
 	min = -10;
 	max =10;
 	int nit = 0;
-	golden_section_lambda(min, guess, max, 0.001, &nit);
+	golden_section_lambda(min, guess, max, 0.01, &nit);
+	if (nit > maxit) return 1;
+	else return 0;
 
 }
