@@ -2158,7 +2158,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 			moving = moving1+moving2+moving3+moving4;
 
 			int moving5 = 0;
-			if (moving1 == 0 and moving2 == 0){
+			if (moving1 == 0 and moving2 == 0 and moving3 ==0 and moving4==0){
 				cout << "Trying all local rearrangements\n"; cout.flush();
 				//tree->print("test2");
 				moving5 = iterate_local_hillclimb_wmig_all();
@@ -2457,31 +2457,66 @@ int GraphState2::local_hillclimb_wmig(int index, set<int> n){
 	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
 	gsl_matrix_memcpy( tmpfitted, sigma_cor);
 	int toreturn = 0;
-	for (int i = 1; i <=4; i++){
 
+	for (int i = 1; i <=2; i++){
 		map<int, Graph::vertex_descriptor> index2v = tree->index2vertex();
 		Graph::vertex_descriptor v = index2v[index];
-		bool rearr = tree->local_rearrange_wmig(v, i);
+		if (tree->g[v].is_root || tree->g[v].is_tip) return toreturn;
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = tree->get_child_nodes(v);
+		Graph::vertex_descriptor p = tree->get_parent_node(v).first;
+		if (tree->g[p].is_root) return toreturn;
+		if (i == 1){
+			bool rearr = tree->local_rearrange_wmig(ch.first, 4);
+			//tree->print("test0");
+			if ( has_loop() ) {
+				//cout << "has loop!\n";
+				tree->copy(tree_bk);
+				continue;
+			}
+			if (rearr){
 
-		if ( has_loop() ) {
-			tree->copy(tree_bk);
-			continue;
+				set_branches_ls_f2();
+				optimize_weights_quick(n);
+				//tree->print("test0");
+				double lk = llik();
+				//cout << i << " "<< lk << " "<< max << "\n";
+				if (lk > max){
+					max = lk;
+					max_negsum = negsum;
+
+					toreturn = 1;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted, sigma_cor);
+				}
+				tree->copy(tree_bk);
+			}
 		}
 
+		else if (i == 2){
+			bool rearr = tree->local_rearrange_wmig(ch.second, 4);
+			if ( has_loop() ) {
 
-		if (rearr){
-
-			optimize_weights_quick(n);
-
-			double lk = llik();
-			if (lk > max+params->epsilon){
-				max = lk;
-				max_negsum = negsum;
-				toreturn = 1;
-				tree_bk2->copy(tree);
-				gsl_matrix_memcpy( tmpfitted, sigma_cor);
+				tree->copy(tree_bk);
+				continue;
 			}
-			tree->copy(tree_bk);
+			if (rearr){
+
+				set_branches_ls_f2();
+				optimize_weights_quick(n);
+				//tree->print("test1");
+
+				double lk = llik();
+
+				//cout << i << " "<< lk << " "<< max << "\n";
+				if (lk > max){
+					max = lk;
+					max_negsum = negsum;
+					toreturn = 1;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted, sigma_cor);
+				}
+				tree->copy(tree_bk);
+			}
 		}
 	}
 
@@ -4266,9 +4301,6 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 	//for (int i = 0; i < 1; i++){
 	for (int i = 0; i < countdata->nblock; i++){
 		countdata->set_cov_jackknife(i);
-		//if (i == 0) countdata->print_cov("cov1.gz");
-		//if (i == 1) countdata->print_cov("cov2.gz");
-		//double oldweight = tree->g[e].weight;
 		double min, max, guess;
 		guess = oldweight;
 		min = params->minweight;
@@ -4281,17 +4313,20 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 		int tmpnit = nit;
 		nit = 0;
 		golden_section_weight_noexp_quick(e, -1, 0, 1, 0.005, &nit);
-		cout <<i << " "<< tree->g[e].weight << " " <<  llik() << " "<< tmpw << " "<< tmpllk << " "<< nit << " "<< tmpnit << "\n"; cout.flush();
+		double newllk = llik();
+		//cout <<i << " "<< tree->g[e].weight << " " <<  llik() << " "<< tmpw << " "<< tmpllk << " "<< nit << " "<< tmpnit << "\n"; cout.flush();
 		//for (int j = 0; j < 90; j++){
 		//	double tj = (double) j/ 100.0;
 		//	update_mig(e, tj);
 		//	cout << i << " "<< j << " "<< llik() << "\n";
 		//}
-		samps.push_back(tree->g[e].weight);
-		stringstream ss;
+		if (tmpllk > newllk) samps.push_back(tmpw);
+		else samps.push_back(tree->g[e].weight);
+
+		//stringstream ss;
 		//ss << "cov" << i << ".gz";
-		string tmp = ss.str();
-		countdata->print_cov(tmp);
+		//string tmp = ss.str();
+		//countdata->print_cov(tmp);
 
 	}
 	double mean = 0;
