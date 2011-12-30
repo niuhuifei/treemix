@@ -28,11 +28,26 @@ int main (void)
 	//CountData tmpcount("/Users/pickrell/projects/treemix/sims/rosenburg_model_20pop2_phylopop_in.gz", &p);
 	CountData tmpcount("/Users/pickrell/projects/treemix/hgdp_reich_asc/harvard_hgdp_yoruba_asc_noprimate_phylopop.gz", &p);
 	GraphState2 state(&tmpcount, &p);
-	state.set_graph("/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/after_2.vertices.gz", "/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/after_2.edges.gz");
+	state.set_graph("/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/yoruba1_3mig.vertices.gz", "/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/yoruba1_3mig.edges.gz");
 	cout << state.llik() << "\n";
-	state.all_try_movemig();
+	state.add_mig_targeted_f2();
+	Graph::edge_descriptor e = state.add_mig(355, 2345);
+	//state.tree->g[e].weight = 0.0458838;
+	//state.set_branches_ls_f2();
+	//for (int i = 0; i < 50; i+=5){
+	//	double tmp = (double) i/ 100.0;
+	//	state.tree->g[e].weight = tmp;
+	//	state.set_branches_ls_f2();
+	//	cout << i << " "<< state.llik() << "\n";
+	//}
 	cout << state.llik() << "\n";
-	state.tree->print("test3");
+	state.tree->g[e].weight = 0.0456788;
+	state.set_branches_ls_f2();
+	cout << state.llik() << "\n";
+	state.tree->g[e].weight = 0.0458838;
+	state.set_branches_ls_f2();
+	cout << state.llik() << "\n";
+	//state.tree->print("test3");
 	//state.set_graph("/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/yoruba1.vertices.gz", "/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/yoruba1.edges.gz");
 	//state.initialize_migupdate();
 	//cout << state.llik() << "\n";
