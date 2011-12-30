@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1323903485;
+	seed = 1325285063;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -1234,8 +1234,15 @@ int GraphState2::golden_section_weight_quick(Graph::edge_descriptor e, double mi
 	if (fabs(max-min) < tau * (fabs(guess)+fabs(max)) || *nit > params->maxit) {
 		double new_logweight = (min+max)/2;
 		double neww = 1/ (1+exp(-new_logweight));
+
 		update_mig(e, neww);
 		current_llik = llik();
+		if (current_llik < DBL_MIN){
+			neww = 1/ (1+exp(-guess));
+			update_mig(e, neww);
+			current_llik = llik();
+		}
+		//cout << "returning "<< neww << " "<< current_llik<< "\n";
 		return 0;
 	}
 	//cout << *nit << "\n";
@@ -1243,11 +1250,12 @@ int GraphState2::golden_section_weight_quick(Graph::edge_descriptor e, double mi
 	double w = 1/(1+exp(-x));
 	update_mig(e, w);
 	double f_x = -llik();
-
+	//cout << w << " x " << f_x << "\n";
 	w = 1/(1+exp(-guess));
 	update_mig(e, w);
 	double f_guess = -llik();
-	//cout << guess << " "<< f_guess << "\n";
+	//cout << w << " guess " << f_guess << "\n";
+
 	if (f_x < f_guess){
 		if ( (max-guess) > (guess-min) )	return golden_section_weight_quick(e, guess, x, max, tau, nit);
 
@@ -4518,7 +4526,7 @@ void GraphState2::initialize_migupdate(){
 		}
 	}
 	set_branches_ls_f2_precompute();
-	//current_llik = llik();
+	current_llik = llik();
 }
 
 void GraphState2::print_X(){
