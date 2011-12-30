@@ -28,9 +28,9 @@ int main (void)
 	//CountData tmpcount("/Users/pickrell/projects/treemix/sims/rosenburg_model_20pop2_phylopop_in.gz", &p);
 	CountData tmpcount("/Users/pickrell/projects/treemix/hgdp_reich_asc/harvard_hgdp_yoruba_asc_noprimate_phylopop.gz", &p);
 	GraphState2 state(&tmpcount, &p);
-	state.set_graph("/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/yoruba3_6mig.vertices.gz", "/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/yoruba3_6mig.edges.gz");
+	state.set_graph("/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/after_2.vertices.gz", "/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/mig_replicates/after_2.edges.gz");
 	cout << state.llik() << "\n";
-	state.iterate_local_hillclimb_wmig_all();
+	state.all_try_movemig();
 	cout << state.llik() << "\n";
 	state.tree->print("test3");
 	//state.set_graph("/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/yoruba1.vertices.gz", "/Users/pickrell/projects/treemix/hgdp_reich_asc/trees/tree_replicates_nnls/yoruba1.edges.gz");

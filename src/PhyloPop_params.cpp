@@ -42,4 +42,5 @@ PhyloPop_params::PhyloPop_params(){
 	snpinfo = false;
 	epsilon = 1e-3;
 	nresid = 4;
+	search_delta = 0.1;
 }
