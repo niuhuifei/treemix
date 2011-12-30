@@ -16,7 +16,7 @@ PhyloPop_params::PhyloPop_params(){
 	readtree = false;
 	treefile = "NA";
 	tau = 0.01;
-	minweight = -10;
+	minweight = -15;
 	maxweight = 10;
 	nmig = 0;
 	m_neigh = 3;

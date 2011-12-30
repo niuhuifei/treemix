@@ -52,9 +52,9 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < counts.nsnp; i++){
     	pair<vector<string>, vector<double> > freqs = counts.get_freqs(i);
     	SNP tmpsnp(freqs.second, freqs.first, &f2, &trim);
-    	tmpsnp.optimize_lambda();
+    	int status = tmpsnp.optimize_lambda();
     	out << counts.rss.at(i) << " "<< counts.chr.at(i) << " "<< counts.pos.at(i) << " "<< counts.a1.at(i) << " "<< counts.a2.at(i) << " ";
-    	out << tmpsnp.lambda << " "<< tmpsnp.ss() << "\n"; out.flush();
+    	out << tmpsnp.lambda << " "<< tmpsnp.ss() << " "<< status << "\n"; out.flush();
     }
 
 
