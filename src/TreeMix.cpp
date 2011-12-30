@@ -14,7 +14,7 @@ string infile;
 string outstem = "TreeMix";
 
 void printopts(){
-	cout << "\nTreeMix v. 1.0 \n";
+	cout << "\nTreeMix v. 1.0\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -183,7 +183,13 @@ int main(int argc, char *argv[]){
      			treeout << se.first << " "<< se.second << " ";
      			double test = se.first/ se.second;
      			double pval = 1-gsl_cdf_gaussian_P(test, 1);
-     			treeout << pval << " ";
+     			if (pval < DBL_MIN){
+     				pval = DBL_MIN;
+     				treeout << "<"<< pval << " ";
+     			}
+     			else{
+     				treeout << pval << " ";
+     			}
      		}
      		else treeout << "NA NA NA ";
 
