@@ -806,28 +806,41 @@ void GraphState2::set_branch_coefs_f2_nnls(double * A, double * b, int n, int p,
 			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = name2paths[p1];
 			set<pair<double, set<Graph::edge_descriptor> > > paths_2 = name2paths[p2];
 
+			//Variances of population 1
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
 				for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
 					if ( tree->g[*it3].is_mig) continue;
 					double frac = edge2frac->find(*it3)->second;
 					int addindex = edge2index->find(*it3)->second;
 					double add = it1->first * it1->first *frac;
-					//if (p1 == "pop3" && p2 == "pop10") cout << index << " "<< addindex << " "<< add << "\n";
-					//if (index  == 12 && addindex   == 0) cout << "addind for pop "<< p2 << " "<< add << "\n";
+					set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+					it4++;
+					while (it4 != paths_1.end()){
+						if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
+						it4++;
+					}
 					A[addindex* n + index]+=add;
 				}
 			}
 
+			//Variances of population 2
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_2.begin(); it1 != paths_2.end(); it1++){
 					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
 						if ( tree->g[*it3].is_mig) continue;
 						double frac = edge2frac->find(*it3)->second;
 						int addindex = edge2index->find(*it3)->second;
 						double add = it1->first * it1->first *frac;
+						set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+						it4++;
+						while (it4 != paths_2.end()){
+							if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
+							it4++;
+						}
 						A[addindex* n + index]+=add;
 					}
 				}
 
+			//Covariances
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
 				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_2.begin(); it2 != paths_2.end(); it2++){
 					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
@@ -2979,9 +2992,9 @@ Graph::edge_descriptor GraphState2::add_mig(int index1, int index2){
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
 		e = tree->add_mig_edge(i2v[index1], i2v[index2]);
-		initialize_migupdate();
-		optimize_weight_quick(e);
-		//optimize_weight(e);
+		//initialize_migupdate();
+		//optimize_weight_quick(e);
+		optimize_weight(e);
 		cout << tree->g[e].weight <<"\n";
 
 	}
@@ -4463,6 +4476,7 @@ void GraphState2::initialize_migupdate(){
 			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = popname2paths[p1];
 			set<pair<double, set<Graph::edge_descriptor> > > paths_2 = popname2paths[p2];
 
+			//variances of 1
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
 				for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
 					if ( tree->g[*it3].is_mig) continue;
@@ -4470,6 +4484,12 @@ void GraphState2::initialize_migupdate(){
 					int addindex = e2index.find(*it3)->second;
 
 					double add = it1->first * it1->first *frac;
+					set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+					it4++;
+					while (it4 != paths_1.end()){
+						if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
+						it4++;
+					}					}
 					//if (addindex ==1){
 					//	cout << add << " "<< it1->first << " "<< frac << " "<< p1 << "\n";
 					//}
@@ -4477,12 +4497,19 @@ void GraphState2::initialize_migupdate(){
 				}
 			}
 
+			//variances of 2
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_2.begin(); it1 != paths_2.end(); it1++){
 					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
 						if ( tree->g[*it3].is_mig) continue;
 						double frac = e2frac.find(*it3)->second;
 						int addindex = e2index.find(*it3)->second;
 						double add = it1->first * it1->first *frac;
+						set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+						it4++;
+						while (it4 != paths_2.end()){
+							if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
+							it4++;
+						}
 						//if (p1 == "pop3" && p2 == "pop10") cout << index << " "<< addindex << " "<< add << "\n";
 						//if (index  == 12 && addindex   == 0) cout << "addind for pop "<< p2 << " "<< add << "\n";
 						//if (addindex ==1){
@@ -4492,6 +4519,7 @@ void GraphState2::initialize_migupdate(){
 					}
 				}
 
+			//covariances
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
 				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_2.begin(); it2 != paths_2.end(); it2++){
 					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
@@ -4642,16 +4670,6 @@ void GraphState2::set_branches_ls_f2_precompute(){
 	bool converged = nnls.solve(A, p, b, x, rNorm);
 
 
-	/*for (int i = 0 ; i < n ; i++){
-		cout << gsl_vector_get(y, i) << " " << "y"<<" ";
-		for (int j = 0; j < p ; j++){
-			cout << gsl_matrix_get(X, i, j) << " ";
-		}
-		cout << "\n";
-	}
-	cout << "\n\n";
-	*///cout << "here2\n";
-
 	//and put in the solutions in the graph
 	negsum = 0;
 	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
@@ -4733,6 +4751,12 @@ void GraphState2::update_mig(Graph::edge_descriptor e, double w){
 					double frac = e2frac.find(*it3)->second;
 					int addindex = e2index.find(*it3)->second;
 					double add = it1->first * it1->first *frac;
+					set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+					it4++;
+					while (it4 != paths_1.end()){
+						if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
+						it4++;
+					}
 					gsl_matrix_set(X_current, index, addindex, gsl_matrix_get(X_current, index, addindex)+add);
 				}
 			}
@@ -4743,6 +4767,12 @@ void GraphState2::update_mig(Graph::edge_descriptor e, double w){
 						double frac = e2frac.find(*it3)->second;
 						int addindex = e2index.find(*it3)->second;
 						double add = it1->first * it1->first *frac;
+						set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+						it4++;
+						while (it4 != paths_2.end()){
+							if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
+							it4++;
+						}
 						//if (p1 == "pop3" && p2 == "pop10") cout << index << " "<< addindex << " "<< add << "\n";
 						//if (index  == 12 && addindex   == 0) cout << "addind for pop "<< p2 << " "<< add << "\n";
 						gsl_matrix_set(X_current, index, addindex, gsl_matrix_get(X_current, index, addindex)+add);

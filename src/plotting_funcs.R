@@ -342,6 +342,9 @@ plot_resid = function(stem, pop_order, min = -0.009, max = 0.009, cex = 1, usema
 			if (o[i,1] %in% names(tmp) ==F){
 				print(paste("not found", o[i,1]))
 			}
+			if (o[j,1] %in% names(tmp) ==F){
+				print(paste("not found", o[j,1]))
+			}
         	        toplot[i, j] = tmp[which(names(tmp)==o[i,1]), which(names(tmp)==o[j,1])]
         	}
 	}
