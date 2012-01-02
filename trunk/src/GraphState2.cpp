@@ -4446,12 +4446,6 @@ void GraphState2::initialize_migupdate(){
 	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
 	for( map<string, Graph::vertex_descriptor>::iterator it = popname2tip.begin(); it != popname2tip.end(); it++){
 		set<pair<double, set<Graph::edge_descriptor> > > tmpset = tree->get_paths_to_root_edge(it->second);
-		for( set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = tmpset.begin(); it2 != tmpset.end(); it2++){
-			for(set<Graph::edge_descriptor>::iterator it3 = it2->second.begin(); it3 != it2->second.end(); it3++){
-				if (!tree->g[*it3].is_mig) continue;
-				e2tips[*it3].insert(tree->g[it->second].index);
-			}
-		}
 		popname2paths.insert(make_pair(it->first, tmpset));
 	}
 	//cout << "here3\n"; cout.flush();
