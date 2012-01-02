@@ -805,18 +805,31 @@ map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descripto
  		toreturn.insert(make_pair(g[p_rootIterator].name, p_rootIterator));
  	}
  	else{
- 		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children =  get_child_nodes(p_rootIterator);
+ 		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children =  get_child_nodes_wmig(p_rootIterator);
+ 		while (g[children.first].is_mig){
+ 			Graph::out_edge_iterator it = out_edges(children.first, g).first;
+ 			if (!g[*it].is_mig) it++;
+ 			Graph::vertex_descriptor dest = target(*it, g);
+ 			map<string, Graph::vertex_descriptor> tmp = get_tips(dest);
+ 			for (map<string, Graph::vertex_descriptor >::iterator it1 = tmp.begin(); it1 != tmp.end(); it1++)toreturn.insert(make_pair(it1->first, it1->second));
+
+ 			children.first = get_child_node_mig(children.first);
+ 		}
  		map<string, Graph::vertex_descriptor> t1 = get_tips(children.first);
 
+		while (g[children.second].is_mig){
+ 			Graph::out_edge_iterator it = out_edges(children.second, g).first;
+ 			if (!g[*it].is_mig) it++;
+ 			Graph::vertex_descriptor dest = target(*it, g);
+ 			map<string, Graph::vertex_descriptor> tmp = get_tips(dest);
+ 			for (map<string, Graph::vertex_descriptor >::iterator it1 = tmp.begin(); it1 != tmp.end(); it1++)toreturn.insert(make_pair(it1->first, it1->second));
+ 			children.second = get_child_node_mig(children.second);
+ 		}
 
  		map<string, Graph::vertex_descriptor> t2 = get_tips(children.second);
- 		for (map<string, Graph::vertex_descriptor >::iterator it1 = t1.begin(); it1 != t1.end(); it1++){
- 			//pair<int, iterator<NODEDATA> > = std::make_pair(it1->first, it1->second);
- 			toreturn.insert(make_pair(it1->first, it1->second));
- 		}
- 		for (map<string, Graph::vertex_descriptor>::iterator it2 = t2.begin(); it2 != t2.end(); it2++){
- 			toreturn.insert(make_pair(it2->first, it2->second));
- 		}
+ 		for (map<string, Graph::vertex_descriptor >::iterator it1 = t1.begin(); it1 != t1.end(); it1++) toreturn.insert(make_pair(it1->first, it1->second));
+ 		for (map<string, Graph::vertex_descriptor>::iterator it2 = t2.begin(); it2 != t2.end(); it2++)	toreturn.insert(make_pair(it2->first, it2->second));
+
  	}
  	return toreturn;
 }

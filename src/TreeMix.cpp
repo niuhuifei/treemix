@@ -151,14 +151,12 @@ int main(int argc, char *argv[]){
     		state.iterate_mig_hillclimb_and_optimweight(add.second, current_nsum);
     	}
     	state.optimize_weights_quick();
-    	state.trim_mig();
 
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls_wmig();
     	p.smooth_scale = 1;
     	cout << "ln(likelihood):" << state.llik() << " \n";
     }
-	state.clean_negedge();
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
     //state.current_llik_w = state.llik_wishart();
