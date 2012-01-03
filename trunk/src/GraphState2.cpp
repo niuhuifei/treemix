@@ -4489,35 +4489,34 @@ void GraphState2::initialize_migupdate(){
 					while (it4 != paths_1.end()){
 						if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
 						it4++;
-					}					}
-					//if (addindex ==1){
-					//	cout << add << " "<< it1->first << " "<< frac << " "<< p1 << "\n";
-					//}
+					}
 					gsl_matrix_set(X_current, index, addindex, gsl_matrix_get(X_current, index, addindex)+add);
 				}
 			}
 
 			//variances of 2
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_2.begin(); it1 != paths_2.end(); it1++){
-					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
-						if ( tree->g[*it3].is_mig) continue;
-						double frac = e2frac.find(*it3)->second;
-						int addindex = e2index.find(*it3)->second;
-						double add = it1->first * it1->first *frac;
-						set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+				for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
+					if ( tree->g[*it3].is_mig) continue;
+					double frac = e2frac.find(*it3)->second;
+					int addindex = e2index.find(*it3)->second;
+					double add = it1->first * it1->first *frac;
+
+					set<pair<double, set<Graph::edge_descriptor> > >::iterator it4 = it1;
+					it4++;
+					while (it4 != paths_2.end()){
+						if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
 						it4++;
-						while (it4 != paths_2.end()){
-							if (it4->second.find(*it3) != it4->second.end())	add += 2 * it1->first * it4->first * frac;
-							it4++;
-						}
+					}
 						//if (p1 == "pop3" && p2 == "pop10") cout << index << " "<< addindex << " "<< add << "\n";
 						//if (index  == 12 && addindex   == 0) cout << "addind for pop "<< p2 << " "<< add << "\n";
 						//if (addindex ==1){
 						//	cout << add << " "<< it1->first << " "<< frac << " "<< p2 << "\n";
 						//}
-						gsl_matrix_set(X_current, index, addindex, gsl_matrix_get(X_current, index, addindex)+add);
-					}
+					gsl_matrix_set(X_current, index, addindex, gsl_matrix_get(X_current, index, addindex)+add);
 				}
+			}
+
 
 			//covariances
 			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
