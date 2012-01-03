@@ -73,6 +73,7 @@ public:
 	void print(string);
 	void print(string, map<string, double>*);
 	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);
+	map<string, Graph::vertex_descriptor> get_tips_nomig( Graph::vertex_descriptor);
 
 	double get_height(Graph::vertex_descriptor);
 	double get_dist_to_root(Graph::vertex_descriptor); //get the distance to the root for any node in the tree

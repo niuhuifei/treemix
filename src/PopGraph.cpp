@@ -834,6 +834,26 @@ map<string, Graph::vertex_descriptor> PopGraph::get_tips(Graph::vertex_descripto
  	return toreturn;
 }
 
+
+
+map<string, Graph::vertex_descriptor> PopGraph::get_tips_nomig(Graph::vertex_descriptor p_rootIterator){
+	map<string, Graph::vertex_descriptor> toreturn;
+  	if (out_degree(p_rootIterator, g) ==0){
+ 		toreturn.insert(make_pair(g[p_rootIterator].name, p_rootIterator));
+ 	}
+ 	else{
+ 		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> children =  get_child_nodes(p_rootIterator);
+ 		map<string, Graph::vertex_descriptor> t1 = get_tips_nomig(children.first);
+
+
+ 		map<string, Graph::vertex_descriptor> t2 = get_tips_nomig(children.second);
+ 		for (map<string, Graph::vertex_descriptor >::iterator it1 = t1.begin(); it1 != t1.end(); it1++) toreturn.insert(make_pair(it1->first, it1->second));
+ 		for (map<string, Graph::vertex_descriptor>::iterator it2 = t2.begin(); it2 != t2.end(); it2++)	toreturn.insert(make_pair(it2->first, it2->second));
+
+ 	}
+ 	return toreturn;
+}
+
 void PopGraph::move_root(gsl_rng* r){
 	double ran = gsl_rng_uniform(r);
 	Graph::out_edge_iterator it = out_edges(root, g).first;
@@ -1642,7 +1662,7 @@ void PopGraph::print(string stem){
 			if (g[*vp.first].is_tip) outv << "NA NA NA NA ";
 			else {
 				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = get_child_nodes(*vp.first);
-				outv << g[ch.first].index << " "<< get_tips(ch.first).size() << " "<< g[ch.second].index << " "<< get_tips(ch.second).size()<< " ";
+				outv << g[ch.first].index << " "<< get_tips_nomig(ch.first).size() << " "<< g[ch.second].index << " "<< get_tips_nomig(ch.second).size()<< " ";
 			}
 			outv << get_newick_format(*vp.first) <<"\n";
 		}
