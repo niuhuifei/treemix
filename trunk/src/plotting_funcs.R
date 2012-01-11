@@ -143,7 +143,7 @@ set_x_coord = function(d, e, i){
 plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, mbar = F, mse = 0.01){
 	plot(d$x, d$y, axes = F, ylab = "", xlab = "Drift parameter", xlim = c(0, max(d$x)+plus), pch = "")
 	axis(1)
-	mcols = rev(heat.colors(100))
+	mcols = rev(heat.colors(130))
 	for(i in 1:nrow(e)){
 		col = "black"
 		if (e[i,5] == "MIG"){
@@ -177,14 +177,14 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 	lines( c(0, 0), c( ybar - 0.01, ybar+0.01))
 	lines( c(mse*10, mse*10), c(ybar- 0.01, ybar+ 0.01))
         if (mbar){
-                mcols = rev( heat.colors(100) )
+                mcols = rev( heat.colors(130) )
                 mcols = mcols[30:length(mcols)]
                 ymi = ybar+0.15
                 yma = ybar+0.35
                 l = 0.2
-                w = l/70
+                w = l/100
                 xma = max(d$x/20)
-                rect( rep(0, 70), ymi+(0:69)*w, rep(xma, 70), ymi+(1:70)*w, col = mcols, border = mcols)
+                rect( rep(0, 100), ymi+(0:99)*w, rep(xma, 100), ymi+(1:100)*w, col = mcols, border = mcols)
                 text(xma+disp, ymi, lab = "0", adj = 0)
                 text(xma+disp, yma, lab = "0.7", adj = 0)
 		text(0, yma+0.06, lab = "Mig.", adj = 0 )
@@ -224,12 +224,12 @@ plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = ve
 	d = paste(stem, ".vertices.gz", sep = "")
 	e = paste(stem, ".edges.gz", sep = "")
 	se = paste(stem, ".covse.gz", sep = "")
-	d = read.table(gzfile(d), as.is = T)
-	e = read.table(gzfile(e), as.is  = T)
+	d = read.table(gzfile(d), as.is = T, comment.char = "", quote = "")
+	e = read.table(gzfile(e), as.is  = T, comment.char = "", quote = "")
 	if (!is.na(o)){
-		o = read.table(o, as.is = T)
+		o = read.table(o, as.is = T, comment.char = "", quote = "")
 	}
-	e[,3] = e[,3]*e[,4]*e[,4]
+	e[,3] = e[,3]*e[,4]
 	
 	se = read.table(gzfile(se), as.is = T)
 	m1 = apply(se, 1, mean)
@@ -324,10 +324,10 @@ plot_cov = function(stem, pop_order, min = -0.009, max = 0.009, cex = 1, usemax 
 
 
 plot_resid = function(stem, pop_order, min = -0.009, max = 0.009, cex = 1, usemax = T, wcols = "r"){
-	c = read.table(gzfile(paste(stem, ".cov.gz", sep = "")), as.is = T, head = T)
-	m = read.table(gzfile(paste(stem, ".modelcov.gz", sep = "")), as.is = T, head = T)
+	c = read.table(gzfile(paste(stem, ".cov.gz", sep = "")), as.is = T, head = T, quote = "", comment.char = "")
+	m = read.table(gzfile(paste(stem, ".modelcov.gz", sep = "")), as.is = T, head = T, quote = "", comment.char = "")
 	o = read.table(pop_order, as.is = T)
-	se = read.table(gzfile(paste(stem, ".covse.gz", sep = "")), as.is = T, head = T)
+	se = read.table(gzfile(paste(stem, ".covse.gz", sep = "")), as.is = T, head = T, quote = "", comment.char = "")
 	mse = apply(se, 1, mean)
 	mse = mean(mse)
 	print(mse)	

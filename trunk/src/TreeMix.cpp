@@ -68,6 +68,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-global")) p.global = true;
     if (cmdline.HasSwitch("-penalty")) p.neg_penalty = atof(cmdline.GetArgument("-penalty", 0).c_str());;
     if (cmdline.HasSwitch("-se")) p.calc_se = true;
+    if (cmdline.HasSwitch("-emig")) p.end_mig = true;
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
@@ -157,6 +158,7 @@ int main(int argc, char *argv[]){
     	p.smooth_scale = 1;
     	cout << "ln(likelihood):" << state.llik() << " \n";
     }
+    if (p.end_mig) state.optimize_weights();
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
     //state.current_llik_w = state.llik_wishart();

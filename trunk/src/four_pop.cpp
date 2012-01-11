@@ -17,9 +17,12 @@ int main (void)
 	p.window_size = 500;
 	p.alfreq_scaling = 4;
 
-	CountData counts("/Users/pickrell/projects/treemix/dog/data/box_bull_bm_mass.gz", &p);
-	pair<double, double> f4 = counts.calculate_f4();
-	cout << f4.first << " "<< f4.second << "\n";
+	CountData counts("/Users/pickrell/projects/southaf/data/test.gz", &p);
+	set<pair<string, pair<double, double> > >  f4 = counts.calculate_f4();
+	for (set<pair<string, pair<double, double> > >::iterator it = f4.begin(); it != f4.end(); it++){
+		cout << it->first << " "<< it->second.first << " "<< it->second.second << " "<< it->second.first/ it->second.second  << "\n";
+		//
+	}
 	return 0;
 }
 
