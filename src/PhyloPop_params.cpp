@@ -43,4 +43,5 @@ PhyloPop_params::PhyloPop_params(){
 	epsilon = 1e-3;
 	nresid = 4;
 	search_delta = 0.1;
+	end_mig = false;
 }

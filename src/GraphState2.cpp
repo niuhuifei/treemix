@@ -3448,7 +3448,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 				double cov = countdata->get_cov(p1, p2);
 				double fitted = gsl_matrix_get(sigma_cor, popname2index[p1], popname2index[p2]);
 				double diff = cov-fitted;
-				if (diff < max * 0.3){
+				if (diff < max * 0.1){
 					pops2test.insert(make_pair(p1, p2));
 					cout << p1 << " "<< p2 << "\n";
 				}

@@ -659,14 +659,20 @@ void CountData::set_cov_f2(){
 		for (int j = i; j < npop; j++){
 			vector<double> all_covs = cov_block[i][j];
 			double sum = 0;
-			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= *it;
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) {
+				if (isnan(*it)) continue;
+				sum+= *it;
+			}
 			double mean = sum/nblock;
 			gsl_matrix_set(cov, i, j, mean);
 			gsl_matrix_set(cov, j, i, mean);
 
 			// and standard error
 			sum = 0;
-			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) {
+				if (isnan(*it)) continue;
+				sum+= (*it-mean)*(*it-mean);
+			}
 			//double sd = sqrt(sum/ (double) nblock);
 			double c = sqrt(sum) /(double) nblock;
 			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
@@ -1141,13 +1147,21 @@ void CountData::set_ncomp_ef(){
 }
 */
 
-pair<double, double> CountData::calculate_f4(){
-	double mean, se;
-	vector<double> f4_block;
-	vector<double> f4;
+set<pair<string, pair<double, double> > > CountData::calculate_f4(){
+	set<pair<string, pair<double, double> > > toreturn;
+	double mean1, se1, mean2, se2, mean3, se3;
+	vector<double> f4_1;
+	vector<double> f4_2;
+	vector<double> f4_3;
+
+	vector<double> f4_block_1;
+	vector<double> f4_block_2;
+	vector<double> f4_block_3;
 	//calculate the covariance matrix in each block
 	cout << "Estimating f_4 in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
-	mean = 0;
+	mean1 = 0;
+	mean2 = 0;
+	mean3 =0;
 	int total_nsnp = 0;
 	for (int i = 0; i < nsnp; i++){
 		if (isnan(gsl_matrix_get(alfreqs, i, 0))) continue;
@@ -1155,14 +1169,27 @@ pair<double, double> CountData::calculate_f4(){
 		if (isnan(gsl_matrix_get(alfreqs, i, 2))) continue;
 		if (isnan(gsl_matrix_get(alfreqs, i, 3))) continue;
 		double toadd = (gsl_matrix_get(alfreqs, i, 1) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 2) );
-		f4.push_back(toadd);
-		mean+= toadd;
+		f4_1.push_back(toadd);
+		mean1 += toadd;
+
+		toadd = (gsl_matrix_get(alfreqs, i, 2) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 1) );
+		f4_2.push_back(toadd);
+		mean2 += toadd;
+
+		toadd = (gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 2) - gsl_matrix_get(alfreqs, i, 1) );
+		f4_3.push_back(toadd);
+		mean3 += toadd;
 		total_nsnp ++;
 	}
+
 	cout << "total_nsnp "<< total_nsnp << " nsnp "<< nsnp << "\n";
-	mean = mean / (double) total_nsnp;
+	mean1 = mean1 / (double) total_nsnp;
+	mean2 = mean2 / (double) total_nsnp;
+	mean3 = mean3 / (double) total_nsnp;
 	for (int i = 0; i < nblock ; i++){
-		double c = 0;
+		double c1 = 0;
+		double c2 = 0;
+		double c3 = 0;
 		int tmp_nsnp = 0;
 		for (int n = 0; n < nsnp; n++){
 
@@ -1172,28 +1199,74 @@ pair<double, double> CountData::calculate_f4(){
 			if (isnan(gsl_matrix_get(alfreqs, n, 3))) continue;
 			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
 			double toadd = (gsl_matrix_get(alfreqs, n, 1) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 2) );
-			//cout << gsl_matrix_get(alfreqs, n, 0) << " "<< gsl_matrix_get(alfreqs, n, 1) << " "<< gsl_matrix_get(alfreqs, n, 2)<< " "<< gsl_matrix_get(alfreqs, n, 3)<< " "<< toadd << "\n";
-			c+= toadd;
+			c1+= toadd;
+
+			toadd = (gsl_matrix_get(alfreqs, n, 2) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 1) );
+			c2+= toadd;
+
+			toadd = (gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 2) - gsl_matrix_get(alfreqs, n, 1) );
+			c3+= toadd;
 			tmp_nsnp++;
 		}
-		double cov = c/ (double) tmp_nsnp;
-		f4_block.push_back(cov);
+		double cov1 = c1/ (double) tmp_nsnp;
+		double cov2 = c2/ (double) tmp_nsnp;
+		double cov3 = c3/ (double) tmp_nsnp;
+		//cout << i <<  " "<< cov1 << " "<< cov2 << " "<< cov3 << "\n";
+		f4_block_1.push_back(cov1);
+		f4_block_2.push_back(cov2);
+		f4_block_3.push_back(cov3);
 
 	}
 
 	// and standard error
-	double sum = 0;
-	cout<< "mean1 "<< mean << "\n"; cout.flush();
-	for (vector<double>::iterator it = f4_block.begin(); it != f4_block.end(); it++) sum  += *it;
-	mean = sum/ (double) nblock;
+	double sum1 = 0;
+	double sum2 = 0;
+	double sum3 = 0;
 
-	sum = 0;
-	for (vector<double>::iterator it = f4_block.begin(); it != f4_block.end(); it++) sum+= (*it-mean)*(*it-mean);
-	//double sd = sqrt(sum/ (double) nblock);
-	se = ( (double) nblock- 1.0) / (double) nblock  * sum;
-	se = sqrt(sum);
+	for (vector<double>::iterator it = f4_block_1.begin(); it != f4_block_1.end(); it++) sum1  += *it;
+	mean1 = sum1/ (double) nblock;
 
-	return make_pair(mean, se);
+	for (vector<double>::iterator it = f4_block_2.begin(); it != f4_block_2.end(); it++) sum2  += *it;
+	mean2 = sum2/ (double) nblock;
+
+	for (vector<double>::iterator it = f4_block_3.begin(); it != f4_block_3.end(); it++) sum3  += *it;
+	mean3 = sum3/ (double) nblock;
+
+	sum1 = 0;
+	sum2 = 0;
+	sum3 = 0;
+	for (vector<double>::iterator it = f4_block_1.begin(); it != f4_block_1.end(); it++) {
+		//cout << mean1 << " "<< *it << "\n";
+		sum1+= (*it-mean1)*(*it-mean1);
+	}
+	se1 = ( (double) nblock- 1.0) / (double) nblock  * sum1;
+	se1= sqrt(se1);
+
+	for (vector<double>::iterator it = f4_block_2.begin(); it != f4_block_2.end(); it++) {
+		//cout << mean2 << " "<< *it << "\n";
+		sum2+= (*it-mean2)*(*it-mean2);
+	}
+	se2 = ( (double) nblock- 1.0) / (double) nblock  * sum2;
+	se2 = sqrt(se2);
+
+	for (vector<double>::iterator it = f4_block_3.begin(); it != f4_block_3.end(); it++) sum3+= (*it-mean3)*(*it-mean3);
+	se3 = ( (double) nblock- 1.0) / (double) nblock  * sum3;
+	se3 = sqrt(se3);
+
+	pair<double, double> tmp = make_pair(mean1, se1);
+	pair<string, pair<double, double> > tmp2 = make_pair( id2pop[0] +"_"+id2pop[1]+";"+id2pop[2]+"_"+id2pop[3], tmp );
+	toreturn.insert(tmp2);
+
+	tmp = make_pair(mean2, se2);
+	tmp2 = make_pair( id2pop[0] +"_"+id2pop[2]+";"+id2pop[1]+"_"+id2pop[3], tmp );
+	toreturn.insert(tmp2);
+
+	tmp = make_pair(mean3, se3);
+	tmp2 = make_pair( id2pop[0] +"_"+id2pop[3]+";"+id2pop[1]+"_"+id2pop[2], tmp );
+	toreturn.insert(tmp2);
+
+
+	return toreturn;
 }
 
 map<string, map<string, map<string, double> > > CountData::calculate_f3s(){
