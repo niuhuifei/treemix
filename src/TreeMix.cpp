@@ -72,6 +72,10 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
+    if (cmdline.HasSwitch("-target"))	{
+    	p.dotarget = true;
+    	p.target = cmdline.GetArgument("-target", 0);
+    }
     if (cmdline.HasSwitch("-hold")){
     	string tmp = cmdline.GetArgument("-hold", 0);
     	vector<string> strs;
@@ -134,6 +138,7 @@ int main(int argc, char *argv[]){
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << " \n";
+    if (p.dotarget)	state.target_pop();
 
     for (int i = 0; i < p.nmig; i++){
     	state.current_llik = state.llik();

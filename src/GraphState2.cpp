@@ -2987,23 +2987,22 @@ void GraphState2::print_sigma_cor(string outfile){
 	}
 }
 
-Graph::edge_descriptor GraphState2::add_mig(int index1, int index2){
+pair<bool, Graph::edge_descriptor> GraphState2::add_mig(int index1, int index2){
+	//pair<bool, Graph::vertex_descriptor> toreturn;
 	Graph::edge_descriptor e;
+	bool added = false;
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
+		added = true;
 		e = tree->add_mig_edge(i2v[index1], i2v[index2]);
-		//initialize_migupdate();
-		//optimize_weight_quick(e);
+		initialize_migupdate();
+		optimize_weight_quick(e);
 		optimize_weight(e);
-		cout << tree->g[e].weight <<"\n";
+		//cout << tree->g[e].weight <<"\n";
 
 	}
-	else{
-		cerr << "ERROR: not a legal migration between index " << index1 << " and "<< index2 << "\n";
-		exit(1);
-	}
 	current_llik = llik();
-	return(e);
+	return(make_pair(added, e));
 }
 
 
@@ -3027,6 +3026,14 @@ Graph::edge_descriptor GraphState2::add_mig_noopt(int index1, int index2){
 
 void GraphState2::rearrange(int index1, int index2){
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+	if (i2v.find(index1) == i2v.end()){
+		cout << "ERROR: no such index "<< index1 << "\n";
+		exit(1);
+	}
+	if (i2v.find(index2) == i2v.end()){
+		cout << "ERROR: no such index "<< index1 << "\n";
+		exit(1);
+	}
 	tree->global_rearrange(i2v[index1], i2v[index2]);
 	set_branches_ls_f2();
 	current_llik = llik();
@@ -3448,7 +3455,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted_f2(){
 				double cov = countdata->get_cov(p1, p2);
 				double fitted = gsl_matrix_get(sigma_cor, popname2index[p1], popname2index[p2]);
 				double diff = cov-fitted;
-				if (diff < max * 0.1){
+				if (diff < max * 0.3){
 					pops2test.insert(make_pair(p1, p2));
 					cout << p1 << " "<< p2 << "\n";
 				}
@@ -4831,4 +4838,89 @@ void GraphState2::clean_negedge(){
 		i++;
 	}
 
+}
+
+void GraphState2::target_pop(){
+	// do global search for a single population allowing one migration
+
+	// find the relevant vertex
+	map<string, Graph::vertex_descriptor> tips = tree->get_tips_nomig(tree->root);
+	string p = params->target;
+	if (tips.find(p) == tips.end()){
+		cerr << "ERROR: no population "<< p << "  to target" << "\n";
+		exit(1);
+	}
+	Graph::vertex_descriptor t = tips[p];
+	Graph::vertex_descriptor tp = tree->get_parent_node(t).first;
+	if (tree->g[tp].is_root){
+		cerr << "ERROR: cannot target root\n";
+		exit(1);
+	}
+	int ind = tree->g[t].index;
+	int indp = tree->g[tp].index;
+	// make backup of tree structure
+	double max = current_llik;
+	double lik_bk = current_llik;
+	tree_bk->copy(tree);
+	tree_bk2->copy(tree);
+	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted, sigma_cor);
+
+
+	gsl_matrix *tmpfitted2 = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+	//do pairwise comparisons
+
+	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal_noroot(countdata->npop);
+	vector<int> all_indices;
+	for (vector<Graph::vertex_descriptor>::iterator it = inorder.begin(); it != inorder.end(); it++) all_indices.push_back(tree->g[*it].index);
+
+	for (int i = 0; i < all_indices.size(); i++){
+		//cout << i  << "\n";
+		int tomove = all_indices[i];
+		if (tomove == ind || tomove == indp) continue;
+		//cout << "moving\n"; cout.flush();
+		//tree->print("test1");
+		//cout << "printed\n"; cout.flush();
+		rearrange(ind, tomove);
+		//cout << "moved\n"; cout.flush();
+		for (int j = i+1; j < all_indices.size(); j++){
+
+			int indmig = all_indices[j];
+			//cout << i << " "<< j << " "<< tomove << " "<< indmig << "\n";
+			if (indmig == ind) continue;
+			//cout << "adding\n"; cout.flush();
+			pair<bool, Graph::edge_descriptor> added = add_mig(indmig, ind);
+			//cout << "added\n"; cout.flush();
+			if (!added.first) continue;
+			Graph::edge_descriptor e = added.second;
+			//initialize_migupdate();
+			//optimize_weight_quick(e);
+
+    		Graph::vertex_descriptor p1 = source( e, tree->g);
+     		p1 = tree->get_child_node_mig(p1);
+     		Graph::vertex_descriptor p2 = tree->get_parent_node( target(e, tree->g)).first;
+     		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch = tree->get_child_nodes(p2);
+     		if (tree->g[ ch.first ].index  == ind) p2 = ch.second;
+     		else p2 = ch.first;
+     		cout << tree->get_newick_format(p1) << " ---> ";
+     		cout << p;
+     		cout << " <---- "<< tree->get_newick_format(p2) << "\n";
+     		cout << current_llik << " "<< max << "\n";
+			if (current_llik > max){
+				tree_bk2->copy(tree);
+				gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+				max = current_llik;
+			}
+			tree->remove_mig_edge(e);
+		}
+	}
+
+	tree->copy(tree_bk2);
+	gsl_matrix_memcpy( sigma_cor, tmpfitted2);
+	current_llik = max;
+	//cout << "DONE\n"; cout.flush();
+	many_local_hillclimb_wmig_all();
+	gsl_matrix_free(tmpfitted);
+	gsl_matrix_free(tmpfitted2);
 }

@@ -406,7 +406,9 @@ void CountData::set_alfreqs(){
 			}
 			gsl_matrix_set(alfreqs, i, j, f);
 			mean_ninds[j] += ((double) c1+ (double) c2)/2.0;
-			mean_hzy[j] += 2*f*(1-f);
+			double tmp2 = (double) c2 / ((double) c1+ (double) c2 - 1.0);
+			double tmphzy = 2* f * tmp2;
+			mean_hzy[j] += tmphzy; //2*f*(1-f);
 			id2nsnp[j]++;
 		}
 	}
@@ -632,15 +634,16 @@ void CountData::set_cov_f2(){
 					if (isnan(gsl_matrix_get(alfreqs, n, j))) continue;
 					double toadd = (gsl_matrix_get(alfreqs, n, i) - gsl_matrix_get(alfreqs, n, j));
 					toadd = toadd*toadd;
-					if (params->sample_size_correct && p1 != p2){
-						double bias1 = trim[p1];
-						double bias2 = trim[p2];
-						//cout << p1 << " "<< bias1 << " "<< p2 <<  " "<< bias2 << "\n";
-						toadd = toadd - bias1 -bias2;
-					}
 					c+= toadd;
 				}
 				double cov = c/ (double) params->window_size;
+				if (params->sample_size_correct && p1 != p2){
+					//cout << "HERE\n"; cout.flush();
+					double bias1 = trim[p1];
+					double bias2 = trim[p2];
+					//cout << p1 << " "<< bias1 << " "<< p2 <<  " "<< bias2 << "\n";
+					cov = cov - bias1 -bias2;
+				}
 				//cout << k << " "<< index << " "<< cov << "\n";
 
 
@@ -1147,7 +1150,7 @@ void CountData::set_ncomp_ef(){
 }
 */
 
-set<pair<string, pair<double, double> > > CountData::calculate_f4(){
+set<pair<string, pair<double, double> > > CountData::calculate_f4(int i0, int i1, int i2, int i3){
 	set<pair<string, pair<double, double> > > toreturn;
 	double mean1, se1, mean2, se2, mean3, se3;
 	vector<double> f4_1;
@@ -1164,19 +1167,19 @@ set<pair<string, pair<double, double> > > CountData::calculate_f4(){
 	mean3 =0;
 	int total_nsnp = 0;
 	for (int i = 0; i < nsnp; i++){
-		if (isnan(gsl_matrix_get(alfreqs, i, 0))) continue;
-		if (isnan(gsl_matrix_get(alfreqs, i, 1))) continue;
-		if (isnan(gsl_matrix_get(alfreqs, i, 2))) continue;
-		if (isnan(gsl_matrix_get(alfreqs, i, 3))) continue;
-		double toadd = (gsl_matrix_get(alfreqs, i, 1) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 2) );
+		if (isnan(gsl_matrix_get(alfreqs, i, i0))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, i1))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, i2))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, i3))) continue;
+		double toadd = (gsl_matrix_get(alfreqs, i, i1) - gsl_matrix_get(alfreqs, i, i0))*(gsl_matrix_get(alfreqs, i, i3) - gsl_matrix_get(alfreqs, i, i2) );
 		f4_1.push_back(toadd);
 		mean1 += toadd;
 
-		toadd = (gsl_matrix_get(alfreqs, i, 2) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 1) );
+		toadd = (gsl_matrix_get(alfreqs, i, i2) - gsl_matrix_get(alfreqs, i, i0))*(gsl_matrix_get(alfreqs, i, i3) - gsl_matrix_get(alfreqs, i, i1) );
 		f4_2.push_back(toadd);
 		mean2 += toadd;
 
-		toadd = (gsl_matrix_get(alfreqs, i, 3) - gsl_matrix_get(alfreqs, i, 0))*(gsl_matrix_get(alfreqs, i, 2) - gsl_matrix_get(alfreqs, i, 1) );
+		toadd = (gsl_matrix_get(alfreqs, i, i3) - gsl_matrix_get(alfreqs, i, i0))*(gsl_matrix_get(alfreqs, i, i2) - gsl_matrix_get(alfreqs, i, i1) );
 		f4_3.push_back(toadd);
 		mean3 += toadd;
 		total_nsnp ++;
@@ -1193,18 +1196,18 @@ set<pair<string, pair<double, double> > > CountData::calculate_f4(){
 		int tmp_nsnp = 0;
 		for (int n = 0; n < nsnp; n++){
 
-			if (isnan(gsl_matrix_get(alfreqs, n, 0))) continue;
-			if (isnan(gsl_matrix_get(alfreqs, n, 1))) continue;
-			if (isnan(gsl_matrix_get(alfreqs, n, 2))) continue;
-			if (isnan(gsl_matrix_get(alfreqs, n, 3))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, i0))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, i1))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, i2))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, i3))) continue;
 			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
-			double toadd = (gsl_matrix_get(alfreqs, n, 1) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 2) );
+			double toadd = (gsl_matrix_get(alfreqs, n, i1) - gsl_matrix_get(alfreqs, n, i0))*(gsl_matrix_get(alfreqs, n, i3) - gsl_matrix_get(alfreqs, n, i2) );
 			c1+= toadd;
 
-			toadd = (gsl_matrix_get(alfreqs, n, 2) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 1) );
+			toadd = (gsl_matrix_get(alfreqs, n, i2) - gsl_matrix_get(alfreqs, n, i0))*(gsl_matrix_get(alfreqs, n, i3) - gsl_matrix_get(alfreqs, n, i1) );
 			c2+= toadd;
 
-			toadd = (gsl_matrix_get(alfreqs, n, 3) - gsl_matrix_get(alfreqs, n, 0))*(gsl_matrix_get(alfreqs, n, 2) - gsl_matrix_get(alfreqs, n, 1) );
+			toadd = (gsl_matrix_get(alfreqs, n, i3) - gsl_matrix_get(alfreqs, n, i0))*(gsl_matrix_get(alfreqs, n, i2) - gsl_matrix_get(alfreqs, n, i1) );
 			c3+= toadd;
 			tmp_nsnp++;
 		}
@@ -1254,15 +1257,15 @@ set<pair<string, pair<double, double> > > CountData::calculate_f4(){
 	se3 = sqrt(se3);
 
 	pair<double, double> tmp = make_pair(mean1, se1);
-	pair<string, pair<double, double> > tmp2 = make_pair( id2pop[0] +"_"+id2pop[1]+";"+id2pop[2]+"_"+id2pop[3], tmp );
+	pair<string, pair<double, double> > tmp2 = make_pair( id2pop[i0] +","+id2pop[i1]+";"+id2pop[i2]+","+id2pop[i3], tmp );
 	toreturn.insert(tmp2);
 
 	tmp = make_pair(mean2, se2);
-	tmp2 = make_pair( id2pop[0] +"_"+id2pop[2]+";"+id2pop[1]+"_"+id2pop[3], tmp );
+	tmp2 = make_pair( id2pop[i0] +","+id2pop[i2]+";"+id2pop[i1]+","+id2pop[i3], tmp );
 	toreturn.insert(tmp2);
 
 	tmp = make_pair(mean3, se3);
-	tmp2 = make_pair( id2pop[0] +"_"+id2pop[3]+";"+id2pop[1]+"_"+id2pop[2], tmp );
+	tmp2 = make_pair( id2pop[i0] +","+id2pop[i3]+";"+id2pop[i1]+","+id2pop[i2], tmp );
 	toreturn.insert(tmp2);
 
 

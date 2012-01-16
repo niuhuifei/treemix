@@ -44,4 +44,6 @@ PhyloPop_params::PhyloPop_params(){
 	nresid = 4;
 	search_delta = 0.1;
 	end_mig = false;
+	target ="NA";
+	dotarget = false;
 }

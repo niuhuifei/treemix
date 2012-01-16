@@ -71,6 +71,9 @@ public:
 	double search_delta; // in golden section search, do "backup search" in window of size search_delta around current weight
 
 	bool end_mig; //optimize migration weights at end
+
+	bool dotarget;
+	string target; //population to target
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
