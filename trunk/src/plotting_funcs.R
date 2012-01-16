@@ -140,7 +140,7 @@ set_x_coord = function(d, e, i){
 	return(d)
 }
 
-plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, mbar = F, mse = 0.01){
+plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01){
 	plot(d$x, d$y, axes = F, ylab = "", xlab = "Drift parameter", xlim = c(0, max(d$x)+plus), pch = "")
 	axis(1)
 	mcols = rev(heat.colors(130))
@@ -171,11 +171,13 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 	else{
 	text(tmp$x+disp, tmp$y, labels = tmp[,2], adj = 0, cex = cex)
 	}
+	if (scale){
 	print (paste("mse", mse))
         lines(c(0, mse*10), c(ybar, ybar))
 	text( 0, ybar - 0.04, lab = "10 SE", adj = 0, cex  = 0.8)
 	lines( c(0, 0), c( ybar - 0.01, ybar+0.01))
 	lines( c(mse*10, mse*10), c(ybar- 0.01, ybar+ 0.01))
+	}
         if (mbar){
                 mcols = rev( heat.colors(130) )
                 mcols = mcols[30:length(mcols)]
@@ -220,7 +222,7 @@ set_mig_coords = function(d, e){
 }
 
 
-plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, ybar = 0.1, mbar = F){
+plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F){
 	d = paste(stem, ".vertices.gz", sep = "")
 	e = paste(stem, ".edges.gz", sep = "")
 	se = paste(stem, ".covse.gz", sep = "")
@@ -251,7 +253,7 @@ plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = ve
 	d = set_x_coords(d, e)
 	print(d)
 	d = set_mig_coords(d, e)
-	plot_tree_internal(d, e, o = o, cex = cex, disp = disp, plus = plus, arrow = arrow, ybar = ybar, mbar = mbar, mse = m)
+	plot_tree_internal(d, e, o = o, cex = cex, disp = disp, plus = plus, arrow = arrow, ybar = ybar, mbar = mbar, mse = m, scale = scale)
 	return(list( d= d, e = e))
 }
 
@@ -334,7 +336,9 @@ plot_resid = function(stem, pop_order, min = -0.009, max = 0.009, cex = 1, usema
 	c = c[order(names(c)), order(names(c))]
 	m = m[order(names(m)), order(names(m))]
 	tmp = c -m 
-
+	tmp = m - c
+	#tmp = (m-c)/m
+	#print(tmp)
 	toplot = data.frame(matrix(nrow = nrow(tmp), ncol = ncol(tmp)))
 	for(i in 1:nrow(o)){
 	        for( j in 1:nrow(o)){
@@ -350,7 +354,7 @@ plot_resid = function(stem, pop_order, min = -0.009, max = 0.009, cex = 1, usema
 	}
 	#print(toplot)
 	if (usemax){
-		m1 = max(abs(toplot))
+		m1 = max(abs(toplot), na.rm = T)
 		max = m1*1.02
 		min = -(m1*1.02)	
 	}
@@ -433,11 +437,12 @@ plot_resid_internal = function(d, o = NA, max = 0.009, min = -0.009, cex =0.5, w
 	colors = c("red", "orange","yellow", "white", "green", "blue", "black")
 	pal = colorRampPalette(colors)
 	ncol = 80
-	cols = rev(pal(ncol))
+	cols = pal(ncol)
         plot("NA", xlim = c(0, 1), ylim = c(0, 1), axes = F, xlab = "", ylab = "")
-        for (i in 1:npop){
-                for( j in 1:i){
+        for (i in 2:npop){
+                for( j in 1:(i-1)){
                         v = d[i,j]
+			print(paste(i, j, v))
                         col= "white"
                         if (v < 0){
 				if (wcols == "rb"){

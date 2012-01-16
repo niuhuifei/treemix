@@ -58,7 +58,7 @@ public:
 	void print_cov_samp(string);
 	void set_ncomp_ef();
 	pair< vector<string>, vector<double> > get_freqs(int);
-	set<pair<string, pair<double, double> > > calculate_f4();
+	set<pair<string, pair<double, double> > > calculate_f4(int, int, int, int);
 	map< string, map< string, map<string, double> > > calculate_f3s();
 	double calculate_f2(int, int);
 	double scatter_det, scatter_gamma;
