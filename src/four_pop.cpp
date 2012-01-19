@@ -13,7 +13,7 @@
 
 
 void printopts(){
-	cout << "\nfourpop v. 1.0\n";
+	cout << "\nfourpop v. 0.1\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-k [int] number of SNPs per block for estimation of standard errors (1)\n";
