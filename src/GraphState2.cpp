@@ -4309,7 +4309,7 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 		max = params->maxweight;
 		int nit = 0;
 		initialize_migupdate();
-		golden_section_weight_noexp_quick(e, guess -0.1, guess, guess+0.1, 0.005, &nit);
+		golden_section_weight_noexp_quick(e, guess -0.02, guess, guess+0.02, 0.005, &nit);
 		double tmpllk = llik();
 		double tmpw = tree->g[e].weight;
 		int tmpnit = nit;
