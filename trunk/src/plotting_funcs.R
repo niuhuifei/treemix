@@ -187,10 +187,10 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
                 w = l/100
                 xma = max(d$x/20)
                 rect( rep(0, 100), ymi+(0:99)*w, rep(xma, 100), ymi+(1:100)*w, col = mcols, border = mcols)
-                text(xma+disp, ymi, lab = "0", adj = 0)
-                text(xma+disp, yma, lab = "0.7", adj = 0)
-		text(0, yma+0.06, lab = "Mig.", adj = 0 )
-		text(0, yma+0.03, lab = "weight", adj = 0 )
+                text(xma+disp, ymi, lab = "0", adj = 0, cex = 0.8)
+                text(xma+disp, yma, lab = "1", adj = 0, cex =0.8)
+		text(0, yma+0.06, lab = "Mig.", adj = 0 , cex = 0.8)
+		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.8)
         }	
 }
 
