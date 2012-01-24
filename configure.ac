@@ -1,4 +1,4 @@
-AC_INIT([TreeMix], [0.1], [joepickrell@gmail.com], [treemix], [http://treemix.googlecode.com/])
+AC_INIT([TreeMix], [1.0], [joepickrell@gmail.com], [treemix], [http://treemix.googlecode.com/])
 AC_PROG_CXX
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_CONFIG_HEADERS([config.h])

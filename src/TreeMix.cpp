@@ -72,6 +72,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-k"))	p.window_size = atoi(cmdline.GetArgument("-k", 0).c_str());
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
+    if (cmdline.HasSwitch("-bootstrap"))	p.bootstrap = true;
     if (cmdline.HasSwitch("-target"))	{
     	p.dotarget = true;
     	p.target = cmdline.GetArgument("-target", 0);
@@ -101,12 +102,14 @@ int main(int argc, char *argv[]){
     //p.bias_correct = false;
     ogzstream treeout(treefile.c_str());
     CountData counts(infile, &p);
+    if (p.bootstrap) counts.set_cov_bootstrap(r);
 
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
     //counts.print_cov_samp("test.gz");
     if (p.smooth_lik) p.smooth_scale = 1; //sqrt( (double) counts.nsnp / (double) p.window_size);
     GraphState2 state(&counts, &p);
+
     cout.precision(8);
     if (p.readtree) {
     	state.set_graph_from_file(p.treefile);
