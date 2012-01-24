@@ -74,6 +74,8 @@ public:
 
 	bool dotarget;
 	string target; //population to target
+
+	bool bootstrap;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

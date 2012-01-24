@@ -345,7 +345,7 @@ map<Graph::vertex_descriptor, int> GraphState2::get_v2index(){
 	return vertex2index;
 
 }
-void GraphState2::set_branches_ls(){
+void GraphState2::set_branches_ls_wmig(){
 
 	/* one parameter for each non-migration node (minus 1 for the root and 1 for the unidentifiable branch length next to the root), one for each migration nodde
 	 *
@@ -389,6 +389,7 @@ void GraphState2::set_branches_ls(){
 	int total = countdata->npop; //total is the total number of populations (for the bias correction)
 	double inv_total = 1.0/ (double) total;
 	double inv_total2 = 1.0/ ( (double) total * (double) total);
+
 
 	//set up the workspace
 	gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc (n, p);
@@ -504,20 +505,6 @@ void GraphState2::set_branches_ls(){
 
 	}
 
-/*
-		for(int i = 0; i < n ; i ++){
-			cout << gsl_vector_get(y, i) << " ";
-			for (int j = 0; j < p; j++){
-				cout << gsl_matrix_get(X, i, j) << " ";
-			}
-			cout << "\n";
-		}
-		cout << "\n\n";
-*/
-
-
-
-
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
 
@@ -545,7 +532,7 @@ void GraphState2::set_branches_ls(){
 			for (int k = 0; k < p; k++) {
 				pred += gsl_matrix_get(X, index, k) * gsl_vector_get(c, k);
 			}
-
+			//cout << i << " "<< j << " "<< pred << "\n";
 			//cout << index << " "<< i << " "<< j << " "<< pred << "\n";
 			gsl_matrix_set(sigma_cor, i, j, pred);
 			//cout << "not here\n";
@@ -858,6 +845,129 @@ void GraphState2::set_branch_coefs_f2_nnls(double * A, double * b, int n, int p,
 			index++;
 		}
 	}
+}
+
+
+void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, map<Graph::edge_descriptor, int>* edge2index, map<Graph::edge_descriptor, double>* edge2frac){
+
+	//
+	// y = Xc
+	//
+	// y is the observed matrix, X contains the contribution of each branch length to each entry in y
+	//
+	//
+
+	for (int i = 0; i < n; i++){
+		for (int j = 0; j < p ; j++) A[j*n+i] = 0.0;
+
+	}
+
+	for (int i = 0; i < p; i ++) b[i] = 0.0;
+	// get all the paths to the root from each tip
+
+	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
+	map<string, set<pair<double, set<Graph::edge_descriptor> > > > name2paths;
+	for( map<string, Graph::vertex_descriptor>::iterator it = popname2tip.begin(); it != popname2tip.end(); it++){
+		set<pair<double, set<Graph::edge_descriptor> > > tmpset = tree->get_paths_to_root_edge(it->second);
+		name2paths.insert(make_pair(it->first, tmpset));
+	}
+
+	double inv_total = 1.0/ (double) countdata->npop;
+	double inv_total2 = 1.0/ ( (double) countdata->npop * (double) countdata->npop);
+
+	// Set up the matrices from the tree
+	int index = 0;
+	int zmax = current_npops*current_npops;
+	for( int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			string p1 = allpopnames[i];
+			string p2 = allpopnames[j];
+
+			double empirical_cov = countdata->get_cov(p1, p2);
+			b[index] = empirical_cov;
+
+			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = name2paths[p1];
+			set<pair<double, set<Graph::edge_descriptor> > > paths_2 = name2paths[p2];
+
+
+			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
+				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_2.begin(); it2 != paths_2.end(); it2++){
+					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
+						if ( tree->g[*it3].is_mig) continue;
+						if (it2->second.find(*it3) != it2->second.end()){
+							int addindex = edge2index->find(*it3)->second;
+							double frac = edge2frac->find(*it3)->second;
+							double add = it1->first * it2->first *frac;
+							double inv2add = add*inv_total2;
+							A[addindex* n + index]+=add;
+							for (int z = 0; z < zmax ; z++){
+								A[addindex* n + z]+=inv2add;
+							}
+						}
+					}
+				}
+			}
+			index++;
+		}
+	}
+/*
+	for (int i = 0; i < zmax; i++){
+		cout << b[i] << " ";
+		for(int j = 0; j < p ; j++){
+			cout << A[j* n + i] << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+*/
+	// Now add the bias terms
+	index = 0;
+	for( int i = 0; i < current_npops; i++){
+		for (int j = 0; j < current_npops; j++){
+			string p1 = allpopnames[i];
+			string p2 = allpopnames[j];
+			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = name2paths[p1];
+			set<pair<double, set<Graph::edge_descriptor> > > paths_2 = name2paths[p2];
+
+			for (int k = 0; k < current_npops; k++){
+				string p3 = allpopnames[k];
+				set<pair<double, set<Graph::edge_descriptor> > > paths_3 = name2paths[p3];
+				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
+					for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_3.begin(); it2 != paths_3.end(); it2++){
+						for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
+							if (tree->g[*it3].is_mig)continue;
+							if (it2->second.find(*it3) != it2->second.end()){
+								int addindex = edge2index->find(*it3)->second;
+								double frac = edge2frac->find(*it3)->second;
+								double weight = it1->first*it2->first*frac;
+								double invadd = weight*inv_total;
+								A[addindex* n + index]-=invadd;
+							}
+						}
+					}
+				}
+
+				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_2.begin(); it1 != paths_2.end(); it1++){
+					for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_3.begin(); it2 != paths_3.end(); it2++){
+						for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
+							if (it2->second.find(*it3) != it2->second.end()){
+								if (tree->g[*it3].is_mig)continue;
+								int addindex = edge2index->find(*it3)->second;
+								double frac = edge2frac->find(*it3)->second;
+								double weight = it1->first*it2->first *frac;
+								double invadd = weight*inv_total;
+								A[addindex* n + index]-=invadd;
+							}
+						}
+					}
+				}
+			}
+			index++;
+		}
+
+	}
+
+
 }
 
 
@@ -1631,13 +1741,13 @@ void GraphState2::set_branches_ls_wmig_estmig(){
 }
 
 
-void GraphState2::set_branches_ls_wmig(){
+void GraphState2::set_branches_ls(){
 
 	/*
 	 * Also estimate branch lengths to/from migration nodes
     */
 
-
+	//cout << "HERE\n"; cout.flush();
 	map<Graph::edge_descriptor, int> edge2index;
 	set<Graph::edge_descriptor> root_adj = tree->get_root_adj_edge(); //get the ones next to the root
 	vector<Graph::edge_descriptor> i_nodes2;  //remove the ones next to the root
@@ -1662,34 +1772,42 @@ void GraphState2::set_branches_ls_wmig(){
 	index++;
 
 	//initialize the workspace
-	int n = current_npops * current_npops; //n is the total number of entries in the covariance matrix
+	int n = (current_npops * current_npops); //n is the total number of entries in the covariance matrix
 	int p = index; // p is the number of branches lengths to be estimated
-	int total = countdata->npop; //total is the total number of populations (for the bias correction)
-	double inv_total = 1.0/ (double) total;
-	double inv_total2 = 1.0/ ( (double) total * (double) total);
 
 	//set up the workspace
-	gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc (n, p);
-	gsl_matrix * X = gsl_matrix_alloc(n, p); //X holds the weights on each branch. In the simplest model, this is 1s and 0s corresponding to whether the branch (weighted by the migration weights)
-	                                         //   is in the path to the root. With the bias correction, will contain terms with 1/n and 1/n^2, where n is the total number of populations
+	// solve Ax = b  with x >=0
+	// A = weighted branches
+	// x = branch lengths (to be solved)
+	// b = observed f_2 matrix
+	//cout << p << " P \n";
+	//cout << n << " N \n";
+	NNLS_SOLVER nnls(n, p);
 
-	gsl_vector * y  = gsl_vector_alloc(n);  // y contains the entries of the empirical covariance matrix
-	gsl_vector * c = gsl_vector_alloc(p);   // c will be estimated, contains the entries of the fitted covariance matrix
-	gsl_matrix * cov = gsl_matrix_alloc(p, p);
-	double chisq;
-	gsl_matrix_set_zero(X);
-	//cout << "here\n";
-	set_branch_coefs(X, y, &edge2index, &edge2frac);
-	//cout << "here2\n";
-	// fit the least squares estimates
-	gsl_multifit_linear(X, y, c, cov, &chisq, work);
+
+	double * A = new double[n*p]; //A holds the weights on each branch. In the simplest model, this is 1s and 0s corresponding to whether the branch (weighted by the migration weights)
+	                                         //   is in the path to the root.
+
+	double * b  = new double[n];  // y contains the entries of the empirical covariance matrix
+	double * x = new double[p];   // x will be estimated, contains the fitted branch lengths
+	double rNorm;
+
+	set_branch_coefs_nnls(A, b, n, p, &edge2index, &edge2frac);
+
+	//fit NNLS
+	bool converged = nnls.solve(A, p, b, x, rNorm);
+	//cout << converged << " conv\n";
+
+
 	//and put in the solutions in the graph
+	negsum = 0;
 	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
 		if (tree->g[*it].is_mig) continue;
 		int i = edge2index[*it];
 		double frac = edge2frac[*it];
-		double l = gsl_vector_get(c, i);
+		double l = x[i];
 		tree->g[*it].len = l*frac;
+		//if (tree->g[source(*it, tree->g)].is_mig  && tree->g[target(*it, tree->g)].is_mig ) continue;
 	}
 
 	//and the corrected covariance matrix
@@ -1698,21 +1816,21 @@ void GraphState2::set_branches_ls_wmig(){
 		for (int j = 0; j < current_npops; j++){
 			double pred = 0;
 			for (int k = 0; k < p; k++) {
-				pred += gsl_matrix_get(X, index, k) * gsl_vector_get(c, k);
+				pred += A[ k * n + index ] * x[k];
 			}
+			//cout << i << " "<< j << " "<< pred << "\n";
 			gsl_matrix_set(sigma_cor, i, j, pred);
+			gsl_matrix_set(sigma_cor, j, i, pred);
 			index++;
 		}
 
 	}
 
-	//cout << "here4\n";
 	//free memory
-	gsl_multifit_linear_free(work);
-	gsl_matrix_free(X);
-	gsl_vector_free(y);
-	gsl_vector_free(c);
-	gsl_matrix_free(cov);
+
+	delete [] A;
+	delete [] b;
+	delete [] x;
 
 }
 
@@ -1872,16 +1990,6 @@ void GraphState2::set_branches_ls_f2(){
 	bool converged = nnls.solve(A, p, b, x, rNorm);
 	//cout << converged << " conv\n";
 
-	/*for (int i = 0 ; i < n ; i++){
-		cout << gsl_vector_get(y, i) << " " << "y"<<" ";
-		for (int j = 0; j < p ; j++){
-			cout << gsl_matrix_get(X, i, j) << " ";
-		}
-		cout << "\n";
-	}
-	cout << "\n\n";
-	*///cout << "here2\n";
-
 	//and put in the solutions in the graph
 	negsum = 0;
 	for( Graph::edge_iterator it = edges(tree->g).first; it != edges(tree->g).second; it++){
@@ -1921,7 +2029,9 @@ void GraphState2::set_branches_ls_f2(){
 double GraphState2::llik_normal(){
 	double toreturn = 0;
 	for (int i = 0; i < current_npops; i++){
-		for (int j = i+1; j < current_npops; j++){
+		int stj = i;
+		if (params->f2) stj++;
+		for (int j = stj; j < current_npops; j++){
 
 			string p1 = allpopnames[i];
 			string p2 = allpopnames[j];
@@ -1939,11 +2049,6 @@ double GraphState2::llik_normal(){
 			//}
 		}
 	}
-	//cout << toreturn << " before\n";
-	toreturn = toreturn - negsum*params->neg_penalty;
-	//cout << toreturn << " after\n";
-	//cout << toreturn << "\n";
-	//cout << "tmp "<< (double) tmp / (double) total <<"\n";
 	return toreturn;
 }
 

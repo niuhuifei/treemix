@@ -90,6 +90,7 @@ public:
 	void set_branch_coefs(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	void set_branch_coefs_f2(gsl_matrix*, gsl_vector*, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	void set_branch_coefs_f2_nnls(double *, double *, int, int, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
+	void set_branch_coefs_nnls(double *, double *, int, int, map<Graph::edge_descriptor, int>*, map<Graph::edge_descriptor, double>*);
 	//functions used by the above least squares fitting
 	map<Graph::vertex_descriptor, int> get_v2index();
 
