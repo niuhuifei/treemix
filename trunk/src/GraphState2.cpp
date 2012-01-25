@@ -233,7 +233,7 @@ void GraphState2::set_graph(string vfile, string efile){
 	gsl_matrix_set_zero(sigma_cor);
 
 	if (params->f2) set_branches_ls_f2();
-	else set_branches_ls_wmig();
+	else set_branches_ls();
 
     current_llik = llik();
 }
@@ -448,16 +448,7 @@ void GraphState2::set_branches_ls_wmig(){
 			index++;
 		}
 	}
-/*
-	for(int i = 0; i < n ; i ++){
-		cout << gsl_vector_get(y, i) << " ";
-		for (int j = 0; j < p; j++){
-			cout << gsl_matrix_get(X, i, j) << " ";
-		}
-		cout << "\n";
-	}
-	cout << "\n";
-*/
+
 	// Now add the bias terms
 	index = 0;
 	for( int i = 0; i < current_npops; i++){
@@ -504,6 +495,17 @@ void GraphState2::set_branches_ls_wmig(){
 		}
 
 	}
+/*
+
+	for(int i = 0; i < n ; i ++){
+		cout << gsl_vector_get(y, i) << " ";
+		for (int j = 0; j < p; j++){
+			cout << gsl_matrix_get(X, i, j) << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	*/
 
 	// fit the least squares estimates
 	gsl_multifit_linear(X, y, c, cov, &chisq, work);
@@ -595,10 +597,12 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 							int addindex = edge2index->find(*it3)->second;
 							double frac = edge2frac->find(*it3)->second;
 							double add = it1->first * it2->first *frac;
+							//if ( i != j ) add = add*2;
 							double inv2add = add*inv_total2;
 							gsl_matrix_set(X, index, addindex, gsl_matrix_get(X, index, addindex)+add);
 							for (int z = 0; z < current_npops*current_npops ; z++){
 								gsl_matrix_set(X, z, addindex, gsl_matrix_get(X, z, addindex) + inv2add);
+
 							}
 						}
 					}
@@ -608,13 +612,13 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 		}
 	}
 
-/*
+
 	for(map<Graph::edge_descriptor, int>::iterator it = edge2index->begin(); it != edge2index->end(); it++){
 		cout << tree->g[source(it->first, tree->g)].index << " "<<  tree->g[target(it->first, tree->g)].index << " "<< it->second << " "<< edge2frac->find(it->first)->second << "\n";
 
 	}
 	cout <<  "\n";
-*/
+
 	// Now add the bias terms
 	index = 0;
 	for( int i = 0; i < current_npops; i++){
@@ -636,6 +640,7 @@ void GraphState2::set_branch_coefs(gsl_matrix* X, gsl_vector* y, map<Graph::edge
 								double frac = edge2frac->find(*it3)->second;
 								double weight = it1->first*it2->first*frac;
 								double invadd = weight*inv_total;
+								//if (i != j) invadd = invadd*2;
 								gsl_matrix_set(X, index, addindex, gsl_matrix_get(X, index, addindex)-invadd);
 							}
 						}
@@ -856,6 +861,8 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 	// y is the observed matrix, X contains the contribution of each branch length to each entry in y
 	//
 	//
+	gsl_matrix * tmpA = gsl_matrix_alloc(n, p);
+	gsl_matrix_set_zero(tmpA);
 
 	for (int i = 0; i < n; i++){
 		for (int j = 0; j < p ; j++) A[j*n+i] = 0.0;
@@ -871,15 +878,93 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 		set<pair<double, set<Graph::edge_descriptor> > > tmpset = tree->get_paths_to_root_edge(it->second);
 		name2paths.insert(make_pair(it->first, tmpset));
 	}
-
+	// trying to speed up by calculating all covariances once
+	//
+	//
+	//
 	double inv_total = 1.0/ (double) countdata->npop;
 	double inv_total2 = 1.0/ ( (double) countdata->npop * (double) countdata->npop);
+	gsl_vector * pbias = gsl_vector_alloc(p);
+	gsl_vector_set_zero(pbias);
+	int indextmp =0;
+	map<pair<int, int>, int> pop_pair2index; //hold the index for i and j
 
+	for (int i = 0; i < current_npops; i++){
+		for (int j = i; j < current_npops; j++){
+			pop_pair2index.insert(make_pair( make_pair(i, j), indextmp));
+			pop_pair2index.insert(make_pair( make_pair(j, i), indextmp));
+			string p1 = allpopnames[i];
+			string p2 = allpopnames[j];
+
+			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = name2paths[p1];
+			set<pair<double, set<Graph::edge_descriptor> > > paths_2 = name2paths[p2];
+
+
+			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
+				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_2.begin(); it2 != paths_2.end(); it2++){
+					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
+						if ( tree->g[*it3].is_mig) continue;
+						if (it2->second.find(*it3) != it2->second.end()){
+							int addindex = edge2index->find(*it3)->second;
+							double frac = edge2frac->find(*it3)->second;
+							double add = it1->first * it2->first *frac;
+							gsl_matrix_set(tmpA, indextmp, addindex, gsl_matrix_get(tmpA, indextmp, addindex)+add);
+							if (i !=j) add = add*2;
+							double inv2add = add*inv_total2;
+							gsl_vector_set(pbias, addindex, gsl_vector_get(pbias, addindex)+inv2add);
+						}
+					}
+				}
+			}
+			indextmp++;
+		}
+	}
+
+	//
+	// /TEST
+	//
+
+
+
+
+	// TEST
+	int index =0;
+
+	// 1. add on the covariance terms and positive bias terms
+
+	for (int i = 0; i < current_npops; i++){
+		for (int j = i; j < current_npops; j++){
+			string p1 = allpopnames[i];
+			string p2 = allpopnames[j];
+
+			double empirical_cov = countdata->get_cov(p1, p2);
+			b[index] = empirical_cov;
+			// 1. add the covariance term and the positive bias terms
+			for (int k = 0 ; k < p; k++){
+				A[k* n + index]+=gsl_matrix_get(tmpA, index, k);
+				A[k* n + index]+=gsl_vector_get(pbias, k);
+			}
+			for (int k = 0; k < current_npops; k++){
+				int index1 = pop_pair2index[ make_pair(i, k)];
+				int index2 = pop_pair2index[ make_pair(j, k)];
+				for (int l = 0; l < p; l++){
+					A[l* n + index]-= inv_total*gsl_matrix_get(tmpA, index1, l);
+					A[l* n + index]-= inv_total*gsl_matrix_get(tmpA, index2, l);
+				}
+			}
+			index++;
+		}
+	}
+
+
+	// /TEST
+
+	/*
 	// Set up the matrices from the tree
 	int index = 0;
-	int zmax = current_npops*current_npops;
+	int zmax = current_npops*(current_npops-1)/2 +current_npops;
 	for( int i = 0; i < current_npops; i++){
-		for (int j = 0; j < current_npops; j++){
+		for (int j = i; j < current_npops; j++){
 			string p1 = allpopnames[i];
 			string p2 = allpopnames[j];
 
@@ -898,8 +983,15 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 							int addindex = edge2index->find(*it3)->second;
 							double frac = edge2frac->find(*it3)->second;
 							double add = it1->first * it2->first *frac;
-							double inv2add = add*inv_total2;
+
 							A[addindex* n + index]+=add;
+							if (i !=j) add = add*2;
+							double inv2add = add*inv_total2;
+							int index2 = 0;
+							//for (int y = 0; y < current_npops; y++){
+							//	for (int z = y; z< current_npops; z++)
+							//		if ( z == y)
+							//}
 							for (int z = 0; z < zmax ; z++){
 								A[addindex* n + z]+=inv2add;
 							}
@@ -910,20 +1002,12 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 			index++;
 		}
 	}
-/*
-	for (int i = 0; i < zmax; i++){
-		cout << b[i] << " ";
-		for(int j = 0; j < p ; j++){
-			cout << A[j* n + i] << " ";
-		}
-		cout << "\n";
-	}
-	cout << "\n";
-*/
+
+
 	// Now add the bias terms
 	index = 0;
 	for( int i = 0; i < current_npops; i++){
-		for (int j = 0; j < current_npops; j++){
+		for (int j = i; j < current_npops; j++){
 			string p1 = allpopnames[i];
 			string p2 = allpopnames[j];
 			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = name2paths[p1];
@@ -940,6 +1024,7 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 								int addindex = edge2index->find(*it3)->second;
 								double frac = edge2frac->find(*it3)->second;
 								double weight = it1->first*it2->first*frac;
+								//if (i != k && i !=j) weight = weight*2;
 								double invadd = weight*inv_total;
 								A[addindex* n + index]-=invadd;
 							}
@@ -955,6 +1040,7 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 								int addindex = edge2index->find(*it3)->second;
 								double frac = edge2frac->find(*it3)->second;
 								double weight = it1->first*it2->first *frac;
+								//if (j != k && i !=j) weight = weight*2;
 								double invadd = weight*inv_total;
 								A[addindex* n + index]-=invadd;
 							}
@@ -966,8 +1052,20 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 		}
 
 	}
-
-
+	 */
+	/*int zmax = current_npops*(current_npops-1)/2 +current_npops;
+	for (int i = 0; i < zmax; i++){
+		cout << b[i] << " ";
+		for(int j = 0; j < p ; j++){
+			cout << A[j* n + i] << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	tree->print();
+*/
+	gsl_matrix_free(tmpA);
+	gsl_vector_free(pbias);
 }
 
 
@@ -1224,33 +1322,13 @@ void GraphState2::optimize_weight_quick(Graph::edge_descriptor e){
 	max = params->maxweight;
 	int nit = 0;
 	golden_section_weight_quick(e, min, guess, max, params->tau, &nit);
-	//cout << llik() << " "<< tree->g[e].weight << "\n";
-	//for (int i = 0; i < 60; i+=5){
-	//	double tmp = (double)i /100.0;
-	//	update_mig(e, tmp);
-	//	cout << i << " "<< llik() << " "<< current_llik << "\n";
-	//}
+
 	if (start_llik > current_llik){
 		//cout << "optim_weight did not improve "<< start_llik << " "<< current_llik << " "<< start_weight << " "<< tree->g[e].weight << "\n"; cout.flush();
 		update_mig(e, start_weight);
 		current_llik = start_llik;
 	}
-	//double tmplik = current_llik;
-	//double w_est = tree->g[e].weight;
-	//if (tmplik < start_llik || fabs(w_est-start_weight) > 0.1){
-	//	double tmpmin = start_weight - params->search_delta;
-	//	double tmpmax = start_weight + params->search_delta;
-	//	if (tmpmin < 1e-8) tmpmin = min;
-	//	else tmpmin = log(tmpmin/ (1-tmpmin));
-	//	if (tmpmax > 1) tmpmax = max;
-	//	else tmpmax = log(tmpmax/ (1-tmpmax));
-	//	nit = 0;
-	//	golden_section_weight_quick(e, tmpmin, guess, tmpmax, params->tau, &nit);
-	//	if (current_llik < tmplik){
-	//		current_llik = tmplik;
-	//		update_mig(e, w_est);
-	//	}
-	//}
+
 
 }
 
@@ -1302,6 +1380,7 @@ void GraphState2::optimize_frac_wish(Graph::edge_descriptor e){
 
 
 }
+
 int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, double guess, double max, double tau, int* nit){
 	double x;
 
@@ -1313,7 +1392,7 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 		double neww = 1/ (1+exp(-new_logweight));
 		tree->g[e].weight = neww;
 		if (params->f2) set_branches_ls_f2();
-		else set_branches_ls_wmig();
+		else set_branches_ls();
 
 		current_llik = llik();
 		return 0;
@@ -1323,7 +1402,7 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 	tree->g[e].weight = w;
 	//cout << "here\n"; cout.flush();
 	if (params->f2) set_branches_ls_f2();
-	else set_branches_ls_wmig();
+	else set_branches_ls();
 
 	//cout << "not here\n"; cout.flush();
 	double f_x = -llik();
@@ -1332,7 +1411,7 @@ int GraphState2::golden_section_weight(Graph::edge_descriptor e, double min, dou
 	tree->g[e].weight = w;
 	//cout << "here2\n"; cout.flush();
 	if (params->f2) set_branches_ls_f2();
-	else set_branches_ls_wmig();
+	else set_branches_ls();
 	//cout << "not here2\n"; cout.flush();
 	double f_guess = -llik();
 	//cout << guess << " "<< -llik() << "\n";
@@ -1772,7 +1851,7 @@ void GraphState2::set_branches_ls(){
 	index++;
 
 	//initialize the workspace
-	int n = (current_npops * current_npops); //n is the total number of entries in the covariance matrix
+	int n = (current_npops * (current_npops-1))/2 + current_npops; //n is the total number of entries in the covariance matrix
 	int p = index; // p is the number of branches lengths to be estimated
 
 	//set up the workspace
@@ -1813,7 +1892,7 @@ void GraphState2::set_branches_ls(){
 	//and the corrected covariance matrix
 	index = 0;
 	for (int i = 0; i < current_npops; i++){
-		for (int j = 0; j < current_npops; j++){
+		for (int j = i; j < current_npops; j++){
 			double pred = 0;
 			for (int k = 0; k < p; k++) {
 				pred += A[ k * n + index ] * x[k];
@@ -3100,8 +3179,9 @@ pair<bool, Graph::edge_descriptor> GraphState2::add_mig(int index1, int index2){
 	if ( tree->is_legal_migration( i2v[index1], i2v[index2])){
 		added = true;
 		e = tree->add_mig_edge(i2v[index1], i2v[index2]);
-		initialize_migupdate();
-		optimize_weight_quick(e);
+
+		//initialize_migupdate();
+		//optimize_weight_quick(e);
 		optimize_weight(e);
 		//cout << tree->g[e].weight <<"\n";
 
@@ -3293,48 +3373,6 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					}
 
 					tree->remove_mig_edge(e);
-
-					/*
-					// test to see if one of these is around the root
-					if (root_adj.find(*it) != root_adj.end()){
-						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
-						if (tree->g[*rit].index == tree->g[*it].index) rit++;
-							if (tree->is_legal_migration(*rit, *it2)){
-								Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it2);
-								optimize_weight(e);
-								cout << "1 (root) ->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-								if (current_llik > max_llik){
-									tree_bk2->copy(tree);
-									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-									max_llik = current_llik;
-									best_edge.first = tree->g[*rit].index;
-									best_edge.second = tree->g[*it2].index;
-									toreturn.first = true;
-								}
-
-								tree->remove_mig_edge(e);
-							}
-					}
-					if (root_adj.find(*it2) != root_adj.end()){
-						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
-						if (tree->g[*rit].index == tree->g[*it2].index) rit++;
-							if (tree->is_legal_migration(*it, *rit)){
-								Graph::edge_descriptor e = tree->add_mig_edge( *it, *rit);
-								optimize_weight(e);
-								cout << "1->2 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-								if (current_llik > max_llik){
-									tree_bk2->copy(tree);
-									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-									max_llik = current_llik;
-									best_edge.first = tree->g[*it].index;
-									best_edge.second = tree->g[*rit].index;
-									toreturn.first = true;
-								}
-
-								tree->remove_mig_edge(e);
-							}
-					}
-					*/
 					tested.insert(make_pair( tree->g[*it].index, tree->g[*it2].index));
 				}
 
@@ -3357,55 +3395,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					}
 
 					tree->remove_mig_edge(e);
-					/*
-					if (root_adj.find(*it) != root_adj.end()){
 
-						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
-						if (tree->g[*rit].index == tree->g[*it].index) rit++;
-							if (tree->is_legal_migration(*it2, *rit)){
-
-								Graph::edge_descriptor e = tree->add_mig_edge( *it2, *rit);
-
-								optimize_weight(e);
-								cout << "2->1 (root) "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-								if (current_llik > max_llik){
-									tree_bk2->copy(tree);
-									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-									max_llik = current_llik;
-									best_edge.first = tree->g[*it2].index;
-									best_edge.second = tree->g[*rit].index;
-									toreturn.first = true;
-								}
-
-								tree->remove_mig_edge(e);
-							}
-
-					}
-					if (root_adj.find(*it2) != root_adj.end()){
-
-						set<Graph::vertex_descriptor>::iterator rit = root_adj.begin();
-						if (tree->g[*rit].index == tree->g[*it2].index) rit++;
-							if (tree->is_legal_migration(*rit, *it)){
-
-								Graph::edge_descriptor e = tree->add_mig_edge( *rit, *it);
-
-								optimize_weight(e);
-								cout << "2 (root) ->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
-								if (current_llik > max_llik){
-									tree_bk2->copy(tree);
-									gsl_matrix_memcpy( tmpfitted2, sigma_cor);
-									max_llik = current_llik;
-									best_edge.first = tree->g[*rit].index;
-									best_edge.second = tree->g[*it].index;
-									toreturn.first = true;
-								}
-
-
-								tree->remove_mig_edge(e);
-							}
-
-					}
-					*/
 
 					tested.insert(make_pair( tree->g[*it2].index, tree->g[*it].index));
 				}
@@ -4019,7 +4009,7 @@ void GraphState2::flip_mig(){
 			tree->g[e].is_mig = false;
 			tree->g[e].len = 1;
 			if (params->f2) set_branches_ls_f2();
-			else set_branches_ls_wmig();
+			else set_branches_ls();
 			optimize_weight(inc);
 			current_llik = llik();
 			//iterate_movemig( tree->g[newm].index);
