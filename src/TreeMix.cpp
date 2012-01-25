@@ -84,9 +84,9 @@ int main(int argc, char *argv[]){
     	for(vector<string>::iterator it = strs.begin(); it!= strs.end(); it++) 	p.hold.insert(*it);
 
     }
-    if (cmdline.HasSwitch("-nf2"))	{
-    	p.f2 = false;
-    	p.alfreq_scaling = 0;
+    if (cmdline.HasSwitch("-f2"))	{
+    	p.f2 = true;
+    	p.alfreq_scaling = 4;
     }
     if (cmdline.HasSwitch("-root")) {
     	p.set_root = true;
@@ -153,25 +153,23 @@ int main(int argc, char *argv[]){
     	double current_nsum = state.negsum;
     	pair<bool, pair<int, int> > add;
     	if (p.f2) add = state.add_mig_targeted_f2();
-    	else state.add_mig_targeted();
+    	else add = state.add_mig_targeted();
     	//cout << "here\n"; cout.flush();
     	if (add.first == true) {
     		cout << "Migration added\n";
     		state.iterate_mig_hillclimb_and_optimweight(add.second, current_nsum);
     	}
-    	state.optimize_weights_quick();
+    	state.optimize_weights();
 
     	if (p.f2) state.set_branches_ls_f2();
-    	else state.set_branches_ls_wmig();
+    	else state.set_branches_ls();
     	p.smooth_scale = 1;
     	cout << "ln(likelihood):" << state.llik() << " \n";
     }
     if (p.end_mig) state.optimize_weights();
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
-    //state.current_llik_w = state.llik_wishart();
-    //state.optimize_fracs_wish();
-    //state.optimize_weights_wish();
+
     pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);
     Graph::edge_iterator it = eds.first;
     p.smooth_lik = false;
@@ -203,7 +201,7 @@ int main(int argc, char *argv[]){
 
      		state.tree->g[*it].weight = w;
      		if (p.f2) state.set_branches_ls_f2();
-     		else state.set_branches_ls_wmig();
+     		else state.set_branches_ls();
 
      		Graph::vertex_descriptor p1 = source( *it, state.tree->g);
      		p1 = state.tree->get_child_node_mig(p1);
