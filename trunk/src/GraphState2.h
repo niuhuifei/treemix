@@ -98,6 +98,7 @@ public:
 	void optimize_weights();
 	void optimize_weights_quick();
 	void optimize_weights_quick(set<int>);
+	void optimize_weights(set<int>);
 	void optimize_weights_wish();
 	void optimize_weights(Graph::edge_descriptor);
 	void optimize_weight(Graph::edge_descriptor);
