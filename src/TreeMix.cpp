@@ -137,7 +137,7 @@ int main(int argc, char *argv[]){
     	cout << "Testing global rearrangements\n"; cout.flush();
     	state.iterate_global_hillclimb();
     	if (p.f2) state.set_branches_ls_f2();
-    	else state.set_branches_ls_wmig();
+    	else state.set_branches_ls();
     }
     if (p.set_root) state.place_root(p.root);
     likout << "Tree likelihood: "<< state.llik() << " \n";

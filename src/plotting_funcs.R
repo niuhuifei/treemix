@@ -336,7 +336,7 @@ plot_resid = function(stem, pop_order, min = -0.009, max = 0.009, cex = 1, usema
 	c = c[order(names(c)), order(names(c))]
 	m = m[order(names(m)), order(names(m))]
 	tmp = c -m 
-	tmp = m - c
+	#tmp = m - c
 	#tmp = (m-c)/m
 	#print(tmp)
 	toplot = data.frame(matrix(nrow = nrow(tmp), ncol = ncol(tmp)))
