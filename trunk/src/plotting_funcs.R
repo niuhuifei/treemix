@@ -233,7 +233,7 @@ plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = ve
 	}
 	e[,3] = e[,3]*e[,4]
 	
-	se = read.table(gzfile(se), as.is = T)
+	se = read.table(gzfile(se), as.is = T, comment.char = "", quote = "")
 	m1 = apply(se, 1, mean)
 	m = mean(m1)
 	#m = 0
@@ -439,8 +439,8 @@ plot_resid_internal = function(d, o = NA, max = 0.009, min = -0.009, cex =0.5, w
 	ncol = 80
 	cols = pal(ncol)
         plot("NA", xlim = c(0, 1), ylim = c(0, 1), axes = F, xlab = "", ylab = "")
-        for (i in 2:npop){
-                for( j in 1:(i-1)){
+        for (i in 1:npop){
+                for( j in 1:i){
                         v = d[i,j]
 			print(paste(i, j, v))
                         col= "white"

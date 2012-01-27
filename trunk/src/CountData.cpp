@@ -517,12 +517,12 @@ void CountData::set_cov(){
 				//cout << k << " "<< index << " "<< cov << "\n";
 				string p1 = id2pop[i];
 				string p2 = id2pop[j];
-				if (params->sample_size_correct){
-					double bias1 = trim[p1];
-					double bias2 = trim[p2];
-					cov = cov + bias1/ (double) npop + bias2/ (double) npop - sumtrim/( (double) npop* (double) npop);
-					if (i ==j) cov = cov - trim[p1];
-				}
+
+				double bias1 = trim[p1];
+				double bias2 = trim[p2];
+				cov = cov + bias1/ (double) npop + bias2/ (double) npop - sumtrim/( (double) npop* (double) npop);
+				if (i ==j) cov = cov - trim[p1];
+
 				cov_samp[p1][p2].push_back(cov);
 				if (p1 != p2) cov_samp[p2][p1].push_back(cov);
 				//gsl_matrix_set(cov_samp, k, index, cov);
