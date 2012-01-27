@@ -1540,7 +1540,7 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 		double neww = new_logweight;
 		tree->g[e].weight = neww;
 		if (params->f2) set_branches_ls_f2();
-		else set_branches_ls_wmig();
+		else set_branches_ls();
 		current_llik = llik();
 		return 0;
 	}
@@ -1549,7 +1549,7 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 	tree->g[e].weight = w;
 	//cout << "here\n"; cout.flush();
 	if (params->f2) set_branches_ls_f2();
-	else set_branches_ls_wmig();
+	else set_branches_ls();
 
 	//cout << "not here\n"; cout.flush();
 	double f_x = -llik();
@@ -1558,7 +1558,7 @@ int GraphState2::golden_section_weight_noexp(Graph::edge_descriptor e, double mi
 	tree->g[e].weight = w;
 	//cout << "here2\n"; cout.flush();
 	if (params->f2) set_branches_ls_f2();
-	else set_branches_ls_wmig();
+	else set_branches_ls();
 	//cout << "not here2\n"; cout.flush();
 	double f_guess = -llik();
 	if (f_x < f_guess){
@@ -3296,7 +3296,8 @@ void GraphState2::rearrange(int index1, int index2){
 		exit(1);
 	}
 	tree->global_rearrange(i2v[index1], i2v[index2]);
-	set_branches_ls_f2();
+	if (params->f2) set_branches_ls_f2();
+	else set_branches_ls();
 	current_llik = llik();
 }
 
@@ -4540,13 +4541,19 @@ pair<double, double> GraphState2::calculate_se(Graph::edge_descriptor e){
 		min = params->minweight;
 		max = params->maxweight;
 		int nit = 0;
-		initialize_migupdate();
-		golden_section_weight_noexp_quick(e, guess -0.02, guess, guess+0.02, 0.005, &nit);
+
+		if (params->f2){
+			initialize_migupdate();
+			golden_section_weight_noexp_quick(e, guess -0.02, guess, guess+0.02, 0.005, &nit);
+		}
+		else golden_section_weight_noexp(e, guess -0.02, guess, guess+0.02, 0.005, &nit);
+
 		double tmpllk = llik();
 		double tmpw = tree->g[e].weight;
 		int tmpnit = nit;
 		nit = 0;
-		golden_section_weight_noexp_quick(e, -1, 0, 1, 0.005, &nit);
+		if (params->f2) golden_section_weight_noexp_quick(e, -1, 0, 1, 0.005, &nit);
+		else golden_section_weight_noexp(e, -1, 0, 1, 0.005, &nit);
 		double newllk = llik();
 		//cout <<i << " "<< tree->g[e].weight << " " <<  llik() << " "<< tmpw << " "<< tmpllk << " "<< nit << " "<< tmpnit << "\n"; cout.flush();
 		//for (int j = 0; j < 90; j++){
