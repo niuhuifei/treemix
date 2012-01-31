@@ -4008,6 +4008,8 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 	map<string, Graph::vertex_descriptor> tips2 = tree->get_tips(v2);
 	string test1 = tips1.begin()->first;
 	if (tips2.find(test1) == tips2.end()){
+		int totalcount = 0;
+		int totalneg = 0;
 		for (map<string, Graph::vertex_descriptor>::iterator it1 = tips1.begin(); it1 != tips1.end(); it1++){
 			string p1 = it1->first;
 			int index1 = popname2index[p1];
@@ -4016,10 +4018,14 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 				int index2 = popname2index[p2];
 				if (p1==p2) continue;
 				double resid = countdata->get_cov(p1, p2) -  gsl_matrix_get(fitted, index1, index2);
-				if ( !params->f2 && resid < 0) return false;
-				else if ( params->f2 && resid > 0) return false;
+				if (resid < 0 ) totalneg++;
+				totalcount++;
+
 			}
 		}
+		double frac = (double) totalneg/ (double) totalcount;
+		if ( !params->f2 && frac > 0.4 ) return false;
+		else if ( params->f2 && frac < 0.6 ) return false;
 
 	}
 	else{
