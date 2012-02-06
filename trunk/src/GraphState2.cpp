@@ -192,6 +192,8 @@ void GraphState2::set_graph(string vfile, string efile){
 		float w = atof(line[3].c_str());
 		string mig= line[4];
 		Graph::edge_descriptor e = add_edge( i2v[index1], i2v[index2], tree->g).first;
+		Graph::vertex_descriptor t = i2v[index2];
+		if (tree->g[t].is_mig) w = 1;
 		tree->g[e].len = len;
 		tree->g[e].weight = w;
 		if (mig == "MIG") {
@@ -3656,8 +3658,8 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 	for (set<pair<string, string> >::iterator it = minresids.begin(); it != minresids.end(); it++){
 		string pop1 = it->first;
 		string pop2 = it->second;
-		pair<set<int>, set<int> > n1 = get_neighborhood( tree->g[ tips[pop1] ].index, 4);
-		pair<set<int>, set<int> > n3 = get_neighborhood( tree->g[ tips[pop2] ].index, 4);
+		pair<set<int>, set<int> > n1 = get_neighborhood( tree->g[ tips[pop1] ].index, 3);
+		pair<set<int>, set<int> > n3 = get_neighborhood( tree->g[ tips[pop2] ].index, 3);
 
 		for (set<int>::iterator it = n1.first.begin();it != n1.first.end(); it++){
 			Graph::vertex_descriptor v1 = i2v[*it];
@@ -4024,8 +4026,8 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 			}
 		}
 		double frac = (double) totalneg/ (double) totalcount;
-		if ( !params->f2 && frac > 0.4 ) return false;
-		else if ( params->f2 && frac < 0.6 ) return false;
+		if ( !params->f2 && frac > 0 ) return false;
+		else if ( params->f2 && frac < 1 ) return false;
 
 	}
 	else{
@@ -4045,8 +4047,8 @@ bool GraphState2::try_mig(Graph::vertex_descriptor v1, Graph::vertex_descriptor 
 			}
 		}
 		double frac = (double) totalneg/ (double) totalcount;
-		if (!params->f2 && frac < 0.9) return false;
-		else if (params->f2 && frac > 0.1) return false;
+		if (!params->f2 && frac < 1) return false;
+		else if (params->f2 && frac > 0) return false;
 	}
 
 	return true;

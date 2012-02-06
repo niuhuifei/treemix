@@ -513,7 +513,7 @@ void CountData::set_cov(){
 					double toadd = gsl_matrix_get(alfreqs, n, i) * gsl_matrix_get(alfreqs, n, j);
 					c+= toadd;
 				}
-				double cov = c/ (double) params->window_size;
+				double cov = c/ ((double) params->window_size-1);
 				//cout << k << " "<< index << " "<< cov << "\n";
 				string p1 = id2pop[i];
 				string p2 = id2pop[j];
@@ -547,7 +547,7 @@ void CountData::set_cov(){
 			sum = 0;
 			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
 			//double sd = sqrt(sum/ (double) nblock);
-			double c = sqrt(sum) /(double) nblock;
+			double c = sqrt(sum) /sqrt((double) (nblock-1) * (double)nblock);
 			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
 			gsl_matrix_set(cov_var, i, j, c);
 			gsl_matrix_set(cov_var, j, i, c);
