@@ -1670,7 +1670,14 @@ void PopGraph::print(string stem){
 
     graph_traits<Graph>::edge_iterator ei, ei_end;
     for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei){
-        oute << index[source(*ei, g)] << " "<< index[target(*ei, g)] << " "<< g[*ei].len << " "<< g[*ei].weight << " ";
+        oute << index[source(*ei, g)] << " "<< index[target(*ei, g)] << " "<< g[*ei].len << " ";
+        if (g[target(*ei, g)].is_mig){
+        	Graph::vertex_descriptor v = get_child_node_mig(target(*ei, g));
+        	Graph::in_edge_iterator it = in_edges(v, g).first;
+        	while (g[*it].is_mig) it++;
+        	oute << g[*it].weight << " ";
+        }
+        else oute << g[*ei].weight << " ";
 		if (g[*ei].is_mig) oute << "MIG ";
 		else oute << "NOT_MIG ";
 		if (g[source(*ei, g)].is_mig){
