@@ -1,0 +1,7 @@
+Quick installation:
+
+./configure
+make
+make install
+
+Full instructions at treemix.googlecode.com
