@@ -73,6 +73,11 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
     if (cmdline.HasSwitch("-bootstrap"))	p.bootstrap = true;
+    if (cmdline.HasSwitch("-force"))	{
+    	p.forcemig = true;
+    	p.mig_pops.first = cmdline.GetArgument("-force", 0);
+    	p.mig_pops.second = cmdline.GetArgument("-force", 1);
+    }
     if (cmdline.HasSwitch("-target"))	{
     	p.dotarget = true;
     	p.target = cmdline.GetArgument("-target", 0);
@@ -167,6 +172,7 @@ int main(int argc, char *argv[]){
     	cout << "ln(likelihood):" << state.llik() << " \n";
     }
     if (p.end_mig) state.optimize_weights();
+    if (p.forcemig) state.add_mig(p.mig_pops.first, p.mig_pops.second);
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
 

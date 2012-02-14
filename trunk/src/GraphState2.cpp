@@ -5171,3 +5171,10 @@ void GraphState2::target_pop(){
 	gsl_matrix_free(tmpfitted);
 	gsl_matrix_free(tmpfitted2);
 }
+
+void GraphState2::add_mig(string p1, string p2){
+	map<string, Graph::vertex_descriptor> pop2node = tree->get_tips(tree->root);
+	Graph::vertex_descriptor n1 = pop2node[p1];
+	Graph::vertex_descriptor n2 = pop2node[p2];
+	add_mig( tree->g[n1].index, tree->g[n2].index);
+}

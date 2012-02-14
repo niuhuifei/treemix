@@ -143,11 +143,11 @@ set_x_coord = function(d, e, i){
 plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01){
 	plot(d$x, d$y, axes = F, ylab = "", xlab = "Drift parameter", xlim = c(0, max(d$x)+plus), pch = "")
 	axis(1)
-	mcols = rev(heat.colors(130))
+	mcols = rev(heat.colors(150))
 	for(i in 1:nrow(e)){
 		col = "black"
 		if (e[i,5] == "MIG"){
-			w = floor(e[i,4]*100)+30
+			w = floor(e[i,4]*100)+50
 			col = mcols[w]
 		}
 		v1 = d[d[,1] == e[i,1],]
@@ -179,8 +179,8 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 	lines( c(mse*10, mse*10), c(ybar- 0.01, ybar+ 0.01))
 	}
         if (mbar){
-                mcols = rev( heat.colors(130) )
-                mcols = mcols[30:length(mcols)]
+                mcols = rev( heat.colors(150) )
+                mcols = mcols[50:length(mcols)]
                 ymi = ybar+0.15
                 yma = ybar+0.35
                 l = 0.2
@@ -189,7 +189,7 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
                 rect( rep(0, 100), ymi+(0:99)*w, rep(xma, 100), ymi+(1:100)*w, col = mcols, border = mcols)
                 text(xma+disp, ymi, lab = "0", adj = 0, cex = 0.8)
                 text(xma+disp, yma, lab = "1", adj = 0, cex =0.8)
-		text(0, yma+0.06, lab = "Mig.", adj = 0 , cex = 0.8)
+		text(0, yma+0.06, lab = "Migration", adj = 0 , cex = 0.8)
 		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.8)
         }	
 }

@@ -132,6 +132,7 @@ public:
 	pair<string, string> get_max_resid();
 	bool try_mig(Graph::vertex_descriptor, Graph::vertex_descriptor, gsl_matrix*);
 	void add_mig();
+	void add_mig(string, string);
 	pair<bool, pair<int, int> > add_mig_targeted();
 	pair<bool, pair<int, int> > add_mig_targeted_f2();
 	pair< pair<bool, bool>, pair<double, pair<int, int> > > add_mig_targeted(string, string);
