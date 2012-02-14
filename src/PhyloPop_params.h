@@ -75,7 +75,10 @@ public:
 	bool dotarget;
 	string target; //population to target
 
-	bool bootstrap;
+	bool bootstrap; // bootstrap from covariance matrices
+
+	pair<string, string> mig_pops;
+	bool forcemig;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

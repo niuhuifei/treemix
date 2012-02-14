@@ -47,4 +47,5 @@ PhyloPop_params::PhyloPop_params(){
 	target ="NA";
 	dotarget = false;
 	bootstrap = false;
+	forcemig = false;
 }
