@@ -15,6 +15,7 @@ string outstem = "TreeMix";
 
 void printopts(){
 	cout << "\nTreeMix v. 1.0\n";
+	cout << "r$Revision$\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -78,6 +79,11 @@ int main(int argc, char *argv[]){
     	p.mig_pops.first = cmdline.GetArgument("-force", 0);
     	p.mig_pops.second = cmdline.GetArgument("-force", 1);
     }
+    if (cmdline.HasSwitch("-forcei"))	{
+     	p.forcemig_index = true;
+     	p.mig_index.first = atoi(cmdline.GetArgument("-force", 0).c_str());
+     	p.mig_index.second = atoi(cmdline.GetArgument("-force", 1).c_str());
+     }
     if (cmdline.HasSwitch("-target"))	{
     	p.dotarget = true;
     	p.target = cmdline.GetArgument("-target", 0);
@@ -173,6 +179,7 @@ int main(int argc, char *argv[]){
     }
     if (p.end_mig) state.optimize_weights();
     if (p.forcemig) state.add_mig(p.mig_pops.first, p.mig_pops.second);
+    if (p.forcemig_index) state.add_mig(p.mig_index.first, p.mig_index.second);
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
 

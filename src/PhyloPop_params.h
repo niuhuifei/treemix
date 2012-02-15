@@ -79,6 +79,9 @@ public:
 
 	pair<string, string> mig_pops;
 	bool forcemig;
+
+	pair<int, int> mig_index;
+	bool forcemig_index;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
