@@ -15,7 +15,7 @@ string outstem = "TreeMix";
 
 void printopts(){
 	cout << "\nTreeMix v. 1.0\n";
-	cout << "r$Revision$\n";
+	cout << "$Revision$\n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
