@@ -451,6 +451,7 @@ plot_resid_internal = function(d, o = NA, max = 0.009, min = -0.009, cex =0.5, w
 				else{
                                 #col = rgb(0, 0, 1, 0.1+0.9*(v/min))
 				col = cols[ncol/2-floor( (v/min)*(ncol/2))]
+				#col = "white"
 				}
                         }
                         else{

@@ -81,8 +81,8 @@ int main(int argc, char *argv[]){
     }
     if (cmdline.HasSwitch("-forcei"))	{
      	p.forcemig_index = true;
-     	p.mig_index.first = atoi(cmdline.GetArgument("-force", 0).c_str());
-     	p.mig_index.second = atoi(cmdline.GetArgument("-force", 1).c_str());
+     	p.mig_index.first = atoi(cmdline.GetArgument("-forcei", 0).c_str());
+     	p.mig_index.second = atoi(cmdline.GetArgument("-forcei", 1).c_str());
      }
     if (cmdline.HasSwitch("-target"))	{
     	p.dotarget = true;
@@ -178,8 +178,14 @@ int main(int argc, char *argv[]){
     	cout << "ln(likelihood):" << state.llik() << " \n";
     }
     if (p.end_mig) state.optimize_weights();
-    if (p.forcemig) state.add_mig(p.mig_pops.first, p.mig_pops.second);
-    if (p.forcemig_index) state.add_mig(p.mig_index.first, p.mig_index.second);
+    if (p.forcemig) {
+    	state.add_mig(p.mig_pops.first, p.mig_pops.second);
+        cout << "ln(likelihood):" << state.llik() << " \n";
+    }
+    if (p.forcemig_index){
+    	state.add_mig(p.mig_index.first, p.mig_index.second);
+        cout << "ln(likelihood):" << state.llik() << " \n";
+    }
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
 
