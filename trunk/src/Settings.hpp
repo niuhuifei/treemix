@@ -38,7 +38,6 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
 #include <gsl/gsl_multifit.h>
-#include <omp.h>
 #include <cmath>
 #include "CmdLine.h"
 #include <boost/graph/graph_traits.hpp>
