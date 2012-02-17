@@ -384,6 +384,27 @@ pair< vector<string>, vector<double> > CountData::get_freqs(int i){
 
 
 }
+
+
+pair< vector<string>, vector<double> > CountData::get_centered_freqs(int i){
+	pair<vector<string>, vector<double> > toreturn;
+	double mean = 0;
+	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++){
+		int j = it->second;
+		double f = gsl_matrix_get(alfreqs, i, j);
+		if (!isnan(f)) mean+= f;
+		//toreturn.second.push_back(f);
+	}
+	mean = mean/ (double) npop;
+	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++){
+		toreturn.first.push_back(it->first);
+		int j = it->second;
+		double f = gsl_matrix_get(alfreqs, i, j) - mean;
+		toreturn.second.push_back(f);
+	}
+	return toreturn;
+}
+
 void CountData::set_alfreqs(){
 	mean_ninds.clear();
 	mean_hzy.clear();
@@ -1478,6 +1499,49 @@ void CountData::set_cov_fromsamp(int which){
 			double m = cov_samp[p1][p2].at(which);
 			gsl_matrix_set(cov, i, j, m);
 			gsl_matrix_set(cov, j, i, m);
+		}
+	}
+
+}
+
+
+void CountData::set_cov_singlesnp(int which){
+	gsl_matrix_set_zero(cov);
+	double m = 0;
+	for (int i = 0; i < npop; i++) {
+		if (!isnan(gsl_matrix_get(alfreqs, which, i))) m+= gsl_matrix_get(alfreqs, which, i);
+		cout << id2pop[i] << " "<< gsl_matrix_get(alfreqs, which, i) << "\n";
+	}
+	m = m / (double) npop;
+	cout << "mean "<< m << "\n";
+	map<string,double> trim;
+	double sumtrim = 0;
+	for ( map<string, int>::iterator it = pop2id.begin(); it!= pop2id.end(); it++){
+		int id = it->second;
+		string pop = it->first;
+		double meanhzy = mean_hzy.find(id)->second;
+		double mean_n = mean_ninds.find(id)->second;
+		double t = meanhzy / (4.0* mean_n);
+		sumtrim+= t;
+		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
+		trim.insert(make_pair(pop, t));
+	}
+	for(int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			string p1 = id2pop[i];
+			string p2 = id2pop[j];
+			double f1 = gsl_matrix_get(alfreqs, which, i) -m;
+			double f2 = gsl_matrix_get(alfreqs, which, j) -m ;
+			double t1 = trim.find(p1)->second;
+			double t2 = trim.find(p2)->second;
+			double c = f1*f2;
+			if (i == j) c = c - t1;
+			c = c + t1 / (double) npop + t2/ (double) npop;
+			c = c - sumtrim / (double) (npop*npop);
+
+			//double m = cov_samp[p1][p2].at(which);
+			gsl_matrix_set(cov, i, j, f1*f2);
+			gsl_matrix_set(cov, j, i, f1*f2);
 		}
 	}
 

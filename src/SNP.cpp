@@ -16,19 +16,30 @@ SNP::SNP(vector<double> f, vector<string> n, F2_matrix* fm, map<string, double> 
 	resphi = 2-phi;
 	maxit = 50;
 	trim = t;
+	sumtrim = 0;
+	for (map<string, double>::iterator it = trim->begin(); it != trim->end(); it++) sumtrim+= it->second;
+	npop = f.size();
+	//for (int i = 0; i < npop; i++){
+	//	cout << n[i] << " "<< f[i] << "\n";
+	//}
 }
 
 double SNP::ss(){
 	double toreturn = 0;
 	for (int i = 0; i < names.size(); i++){
-		for (int j = i+1; j < names.size(); j++){
-			double tmp1 = freqs[i] - freqs[j];
+		for (int j = i; j < names.size(); j++){
+			double tmp1 = freqs[i] * freqs[j];
+			//cout << tmp1 << "\n";
 			if (isnan(tmp1)) continue;
 			double t1 = trim->find(names[i])->second;
 			double t2 = trim->find(names[j])->second;
-			tmp1 = (tmp1* tmp1)- t1 - t2;
+			if (i == j) tmp1 = tmp1- t1;
+			tmp1 = tmp1 + t1 / (double) npop + t2/ (double) npop;
+			tmp1 = tmp1 - sumtrim / (double) (npop*npop);
+
 			double tmp2 = lambda*(f2->get(names[i], names[j]));
 			double tmp3 = tmp1-tmp2;
+			//cout << names[i] << " "<< names[j] << " "<< tmp1 << " "<< tmp2 << " "<< tmp3 << " "<< lambda<< "\n";
 			//cout << names[i] << " "<< names[j] << " "<< freqs[i] << " "<< freqs[j] <<" "<< f2->get(names[i], names[j]) << " "<< tmp1 << " "<< tmp2 << " "<< tmp3 << "\n";
 			toreturn+= tmp3*tmp3;
 			//cout << names[i] << " "<< names[j]<< " "<< tmp3 << " "<< toreturn << "\n";
@@ -49,7 +60,7 @@ int SNP::golden_section_lambda(double min, double guess, double max, double tau,
 	}
 	*nit = *nit+1;
 	lambda = exp(x);
-
+	//cout << "here\n"; cout.flush();
 	double f_x = ss();
 
 	lambda = exp(guess);
@@ -70,7 +81,7 @@ int SNP::golden_section_lambda(double min, double guess, double max, double tau,
 
 
 int SNP::optimize_lambda(){
-
+	//cout <<"here\n"; cout.flush();
 	double min, max, guess;
 	guess = 1;
 	guess = log(guess);

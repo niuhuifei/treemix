@@ -82,6 +82,9 @@ public:
 
 	pair<int, int> mig_index;
 	bool forcemig_index;
+
+	bool cov_snp;
+	int which_cov_snp;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

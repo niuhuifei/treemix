@@ -40,6 +40,7 @@ public:
 	void set_cov_jackknife(int);
 	void set_cov_bootstrap(gsl_rng *);
 	void set_cov_fromsamp(int);
+	void set_cov_singlesnp(int);
 	void set_cov2();
 	void process_scatter();
 	void process_cov();
@@ -58,6 +59,7 @@ public:
 	void print_cov_samp(string);
 	void set_ncomp_ef();
 	pair< vector<string>, vector<double> > get_freqs(int);
+	pair< vector<string>, vector<double> > get_centered_freqs(int);
 	set<pair<string, pair<double, double> > > calculate_f4(int, int, int, int);
 	set<pair<string, pair<double, double> > > calculate_f3(int, int, int);
 	map< string, map< string, map<string, double> > > calculate_f3s();
