@@ -49,4 +49,5 @@ PhyloPop_params::PhyloPop_params(){
 	bootstrap = false;
 	forcemig = false;
 	forcemig_index = false;
+	cov_snp = false;
 }

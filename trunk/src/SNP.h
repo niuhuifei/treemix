@@ -23,6 +23,8 @@ public:
 	double phi, resphi;
 	int maxit;
 	map<string, double> * trim;
+	double sumtrim;
+	int npop;
 };
 
 

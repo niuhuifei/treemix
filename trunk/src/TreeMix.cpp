@@ -99,6 +99,10 @@ int main(int argc, char *argv[]){
     	p.f2 = true;
     	p.alfreq_scaling = 4;
     }
+    if (cmdline.HasSwitch("-covsnp"))	{
+    	p.cov_snp = true;
+    	p.which_cov_snp = atoi(cmdline.GetArgument("-covsnp", 0).c_str());
+    }
     if (cmdline.HasSwitch("-root")) {
     	p.set_root = true;
     	p.root = cmdline.GetArgument("-root", 0);
@@ -114,7 +118,7 @@ int main(int argc, char *argv[]){
     ogzstream treeout(treefile.c_str());
     CountData counts(infile, &p);
     if (p.bootstrap) counts.set_cov_bootstrap(r);
-
+    if (p.cov_snp) counts.set_cov_singlesnp(p.which_cov_snp);
     counts.print_cov(covfile);
     counts.print_cov_var(cov_sefile);
     //counts.print_cov_samp("test.gz");
