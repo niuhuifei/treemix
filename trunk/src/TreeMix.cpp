@@ -74,6 +74,10 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
     if (cmdline.HasSwitch("-bootstrap"))	p.bootstrap = true;
+    if (cmdline.HasSwitch("-hzy")){
+    	p.hzyfile = cmdline.GetArgument("-hzy", 0);
+    	p.read_hzy = true;
+    }
     if (cmdline.HasSwitch("-force"))	{
     	p.forcemig = true;
     	p.mig_pops.first = cmdline.GetArgument("-force", 0);

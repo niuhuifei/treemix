@@ -50,4 +50,6 @@ PhyloPop_params::PhyloPop_params(){
 	forcemig = false;
 	forcemig_index = false;
 	cov_snp = false;
+	hzyfile = "";
+	read_hzy = false;
 }

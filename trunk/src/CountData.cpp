@@ -28,6 +28,7 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	cov_cov = gsl_matrix_alloc(ncomp, ncomp);
 	set_alfreqs();
 	scale_alfreqs();
+	if (p->read_hzy) set_hzy_fromfile(p->hzyfile);
 	//set_scatter();
 	//process_scatter();
 	if (p->f2) set_cov_f2();
@@ -436,6 +437,7 @@ void CountData::set_alfreqs(){
 	for (int i = 0; i < npop; i++){
 		mean_ninds[i] = mean_ninds[i]/ id2nsnp[i];
 		mean_hzy[i] = mean_hzy[i]/ id2nsnp[i];
+		cout << id2pop[i] << " "<< mean_hzy[i] << "\n";
 	}
 }
 
@@ -1545,4 +1547,35 @@ void CountData::set_cov_singlesnp(int which){
 		}
 	}
 
+}
+
+void CountData::set_hzy_fromfile(string infile){
+
+	ifstream in(infile.c_str());
+    vector<string> line;
+    struct stat stFileInfo;
+    int intStat;
+    string st, buf;
+    intStat = stat(infile.c_str(), &stFileInfo);
+    if (intStat !=0){
+            std::cerr<< "ERROR: cannot open file " << in << "\n";
+            exit(1);
+    }
+    while(getline(in, st)){
+             buf.clear();
+             stringstream ss(st);
+             line.clear();
+             while (ss>> buf){
+                     line.push_back(buf);
+             }
+             string pop = line[0];
+             double hzy = atof(line[1].c_str());
+             if (pop2id.find(pop) == pop2id.end()){
+            	 cerr << "Cannot find population "<< pop << " when reading hzy\n";
+            	 exit(1);
+             }
+             int popid = pop2id[pop];
+             mean_hzy[popid] = hzy;
+             cout << "Set hzy in " << pop << " to "<< hzy << "\n";
+    }
 }
