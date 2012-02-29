@@ -221,6 +221,25 @@ set_mig_coords = function(d, e){
 
 }
 
+get_f = function(stem){
+	d = paste(stem, ".cov.gz", sep = "")
+	d2 = paste(stem, ".modelcov.gz", sep = "")
+	d = read.table(gzfile(d), as.is = T, comment.char = "", quote = "")
+	d2 = read.table(gzfile(d2), as.is = T, comment.char = "", quote = "")
+	d = d[order(names(d)), order(names(d))]
+	d2 = d2[order(names(d2)), order(names(d2))]
+	tmpcf = vector()
+        tmpmcf = vector()
+        for (j in 1:nrow(d)){
+                for (k in (j+1):nrow(d)){
+                        tmpcf = append(tmpcf, d[j,k])
+                        tmpmcf = append(tmpmcf, d[j,k] - d2[j,k])
+                }
+        }
+        tmpv = var(tmpmcf)/var(tmpcf)
+	return(1-tmpv)
+
+}
 
 plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F){
 	d = paste(stem, ".vertices.gz", sep = "")

@@ -49,6 +49,7 @@ public:
 	void print_scatter(string);
 	void print_alfreqs(string);
 	void print_fst(string);
+	void set_hzy_fromfile(string);
 	double get_cov(string, string);
 	double get_cov_var(string, string);
 	double get_scatter(string, string);

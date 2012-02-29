@@ -85,6 +85,10 @@ public:
 
 	bool cov_snp;
 	int which_cov_snp;
+
+	//read heterozygosity from a file (rather than estimate it)
+	bool read_hzy;
+	string hzyfile;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
