@@ -430,6 +430,12 @@ void CountData::set_alfreqs(){
 			mean_ninds[j] += ((double) c1+ (double) c2)/2.0;
 			double tmp2 = (double) c2 / ((double) c1+ (double) c2 - 1.0);
 			double tmphzy = 2* f * tmp2;
+			if (c1+c2 < 2){
+				tmphzy = 2*f*(1-f);
+			}
+			//if (id2pop[j] == "San"){
+			//	cout << i << " "<< c1 << " "<< c2 << " "<< f << " "<< tmp2 << " "<< tmphzy << " "<< mean_hzy[j]<< "\n";
+		//	}
 			mean_hzy[j] += tmphzy; //2*f*(1-f);
 			id2nsnp[j]++;
 		}
@@ -437,7 +443,7 @@ void CountData::set_alfreqs(){
 	for (int i = 0; i < npop; i++){
 		mean_ninds[i] = mean_ninds[i]/ id2nsnp[i];
 		mean_hzy[i] = mean_hzy[i]/ id2nsnp[i];
-		cout << id2pop[i] << " "<< mean_hzy[i] << "\n";
+		//cout << id2pop[i] << " "<< mean_hzy[i] << "\n";
 	}
 }
 
