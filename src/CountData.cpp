@@ -331,7 +331,7 @@ void CountData::read_counts(string infile){
     	id2pop.insert(make_pair(i-start, line[i]));
     	npop ++;
     }
-
+    int headsize = line.size();
     /*
      * read counts, store in allele_counts
      */
@@ -350,6 +350,10 @@ void CountData::read_counts(string infile){
             	pos.push_back(line[2]);
             	a1.push_back(line[3]);
             	a2.push_back(line[4]);
+            }
+            if (line.size() != headsize){
+            	cerr << "ERROR: Line "<< nsnp <<" has "<< line.size() << " entries. Header has "<< headsize <<"\n";
+            	exit(1);
             }
             for ( int i = start; i < line.size(); i++){
             	//cout <<  line[i] << "\n";
