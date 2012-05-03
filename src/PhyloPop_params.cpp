@@ -52,4 +52,31 @@ PhyloPop_params::PhyloPop_params(){
 	cov_snp = false;
 	hzyfile = "";
 	read_hzy = false;
+	cor_f2 = false;
+}
+
+void PhyloPop_params::read_migfracs(string infile){
+	f2_migfracs.clear();
+	ifstream in(infile.c_str());
+    vector<string> line;
+    struct stat stFileInfo;
+    int intStat;
+    string st, buf;
+    intStat = stat(infile.c_str(), &stFileInfo);
+     if (intStat !=0){
+             std::cerr<< "ERROR: cannot open file " << infile << "\n";
+             exit(1);
+     }
+
+    while(getline(in, st)){
+            buf.clear();
+            stringstream ss(st);
+            line.clear();
+            while (ss>> buf){
+                    line.push_back(buf);
+            }
+            string p = line[0];
+            float f = atof(line[1].c_str());
+            f2_migfracs.insert(make_pair(p, f));
+    }
 }

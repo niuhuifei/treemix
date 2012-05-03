@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1325285063;
+	//seed = 1335214415;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -3709,7 +3709,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					optimize_weight(e);
 
 
-					cout << "1->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+					cout << "1->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n"; cout.flush();
 
 					if (current_llik > max_llik){
 						tree_bk2->copy(tree);
@@ -3733,7 +3733,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 					optimize_weight(e);
 
 
-					cout << "2->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+					cout << "2->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n"; cout.flush();
 					if (current_llik > max_llik){
 						tree_bk2->copy(tree);
 						gsl_matrix_memcpy( tmpfitted2, sigma_cor);
@@ -3761,7 +3761,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 
 
 					//cout << "after "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
-					cout << "p1->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+					cout << "p1->2 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n"; cout.flush();
 					if (current_llik > max_llik){
 						tree_bk2->copy(tree);
 						gsl_matrix_memcpy( tmpfitted2, sigma_cor);
@@ -3786,7 +3786,7 @@ pair<bool, pair<int, int> > GraphState2::add_mig_targeted(){
 
 
 					//cout << "after "<< tree->get_newick_format(*it)<< " "<< tree->get_newick_format(*it2)<< "\n";
-					cout << "p2->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n";
+					cout << "p2->1 "<< tree->g[e].weight << " "<< current_llik << " "<< max_llik << "\n"; cout.flush();
 					if (current_llik > max_llik){
 						tree_bk2->copy(tree);
 						gsl_matrix_memcpy( tmpfitted2, sigma_cor);

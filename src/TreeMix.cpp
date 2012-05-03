@@ -111,6 +111,13 @@ int main(int argc, char *argv[]){
     	p.set_root = true;
     	p.root = cmdline.GetArgument("-root", 0);
     }
+    if (cmdline.HasSwitch("-f2_cor")){
+    	p.cor_f2 = true;
+    	p.f2_corpop = cmdline.GetArgument("-f2_cor", 0);
+    	p.read_migfracs(cmdline.GetArgument("-f2_cor", 1) );
+    	p.f2_mixdist = atof(cmdline.GetArgument("-f2_cor", 2).c_str());
+    }
+
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
     string modelcovfile = outstem+".modelcov.gz";
