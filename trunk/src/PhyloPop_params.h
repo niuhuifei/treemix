@@ -89,6 +89,13 @@ public:
 	//read heterozygosity from a file (rather than estimate it)
 	bool read_hzy;
 	string hzyfile;
+
+	//for correcting f2 stats
+	bool cor_f2;
+	map<string, float> f2_migfracs;
+	string f2_corpop;
+	double f2_mixdist;
+	void read_migfracs(string);
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

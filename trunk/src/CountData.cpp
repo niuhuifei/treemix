@@ -31,7 +31,12 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	if (p->read_hzy) set_hzy_fromfile(p->hzyfile);
 	//set_scatter();
 	//process_scatter();
-	if (p->f2) set_cov_f2();
+	if (p->f2) {
+		set_cov_f2();
+		if (p->cor_f2){
+			correct_f2s(p->f2_corpop, p->f2_migfracs, p->f2_mixdist);
+		}
+	}
 	else set_cov();
 	///set_cov2();
 	//set_ne();
@@ -587,25 +592,8 @@ void CountData::set_cov(){
 		}
 	}
 	//get the covariance in the estimates of the covariance matrix
-	gsl_matrix_set_zero(cov_cov);
-	/*for(int i = 0; i < ncomp; i++){
-		double meani = 0;
-		for (int k = 0; k < nblock; k++) meani+= gsl_matrix_get(cov_samp, k, i);
-		meani = meani/ (double) nblock;
+	//gsl_matrix_set_zero(cov_cov);
 
-		for (int j = i ; j < ncomp; j++){
-			double meanj = 0;
-			for (int k = 0; k < nblock; k++) meanj+= gsl_matrix_get(cov_samp, k, j);
-			meanj = meanj/ (double) nblock;
-			double sum = 0;
-			for (int k = 0; k < nblock; k++)		sum += (gsl_matrix_get(cov_samp, k, i)- meani )*(gsl_matrix_get(cov_samp, k, j) - meanj);
-			sum = sum / (double) nblock;
-			//sum = sqrt(sum)/ (double) nblock;
-			gsl_matrix_set(cov_cov, i, j, sum );
-			gsl_matrix_set(cov_cov, j, i, sum );
-		}
-	}
-	*/
 }
 
 
@@ -616,10 +604,10 @@ void CountData::set_cov_f2(){
 	 */
 	gsl_matrix_free(cov);
 	gsl_matrix_free(cov_var);
-	//cout << npop << "\n";
+
 	cov = gsl_matrix_alloc(npop, npop);
 	cov_var = gsl_matrix_alloc(npop, npop);
-	//cov_var2 = gsl_matrix_alloc(npop, npop);
+
 	//initialize block estimation of covariance matrix
 	vector<vector<vector<double> > > cov_block;
 	for (int i = 0; i < npop; i++){
@@ -650,9 +638,9 @@ void CountData::set_cov_f2(){
 		double mean_n = mean_ninds.find(id)->second;
 		double t = meanhzy / (4.0* mean_n);
 		sumtrim+= t;
-		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
 		trim.insert(make_pair(pop, t));
 	}
+
 	//calculate the covariance matrix in each block
 	cout << "Estimating f_2 matrix in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
 	for (int k = 0; k < nblock ; k++){
@@ -671,19 +659,18 @@ void CountData::set_cov_f2(){
 				}
 				double cov = c/ (double) params->window_size;
 				if (params->sample_size_correct && p1 != p2){
-					//cout << "HERE\n"; cout.flush();
+
 					double bias1 = trim[p1];
 					double bias2 = trim[p2];
-					//cout << p1 << " "<< bias1 << " "<< p2 <<  " "<< bias2 << "\n";
+
 					cov = cov - bias1 -bias2;
 				}
-				//cout << k << " "<< index << " "<< cov << "\n";
+
 
 
 				cov_samp[p1][p2].push_back(cov);
 				if (p1 != p2) cov_samp[p2][p1].push_back(cov);
-				//gsl_matrix_set(cov_samp, k, index, cov);
-				//cout << k << " "<< index << " "<< gsl_matrix_get(cov_samp, k, index) << "\n";
+
 				cov_block[i][j].push_back(cov);
 				index++;
 			}
@@ -1588,4 +1575,145 @@ void CountData::set_hzy_fromfile(string infile){
              mean_hzy[popid] = hzy;
              cout << "Set hzy in " << pop << " to "<< hzy << "\n";
     }
+}
+
+void CountData::correct_f2s(string mixpop, map<string, float> fracs, float d_mix){
+	vector<vector<vector<double> > > corrected_blocks;
+	for (int i = 0; i < npop; i++){
+		vector<vector<double> > tmp;
+		for (int j = 0; j < npop; j++){
+			vector<double> tmp2;
+			tmp.push_back(tmp2);
+		}
+		corrected_blocks.push_back(tmp);
+	}
+	cout << "Correcting blocked f2 stats for admixture\n"; cout.flush();
+	for (int k = 0; k < nblock ; k++){
+		//cout <<  k << "\n";
+		int index = 0;
+		for(int i = 0; i < npop; i++){
+			for (int j = i; j < npop; j++){
+				double c = 0;
+				string p1 = id2pop[i];
+				string p2 = id2pop[j];
+				//cout << p1 << " "<< p2 << "\n";
+				if (p1 == p2) {
+
+					corrected_blocks[i][j].push_back(c);
+				}
+				else if(p1 == mixpop && fracs.find(p2) != fracs.end()){
+					c = cov_samp[p1][p2].at(k);
+					c = (c-d_mix)/ ( (1-fracs[p2]) * (1- fracs[p2]));
+					corrected_blocks[i][j].push_back(c);
+					corrected_blocks[j][i].push_back(c);
+				}
+				else if (p2 == mixpop && fracs.find(p1) != fracs.end()){
+					c = cov_samp[p2][p1].at(k);
+					c = (c-d_mix)/ ( (1-fracs[p1])  *(1- fracs[p1]));
+					corrected_blocks[i][j].push_back(c);
+					corrected_blocks[j][i].push_back(c);
+				}
+				else if (fracs.find(p1) != fracs.end() && fracs.find(p2) != fracs.end()){
+					//f2 between two admixed populations, A and B, if mixed with D
+					// f2(A,B) = f2(A', B') + w_A^2 f2(A',D') + w_B^2 f2(B', D') - 2 w_A f3(A';D,B') - 2 w_B f3(B'; D, A') - 2 w_A w_B f3(D'; A',B')
+
+					double f2_ab = cov_samp[p1][p2].at(k);
+					double f2_ad = cov_samp[p1][mixpop].at(k);
+					double f2_bd = cov_samp[p2][mixpop].at(k);
+					double f3_adb = (f2_ad + f2_ab - f2_bd)/2;
+					double f3_bda = (f2_bd + f2_ab  - f2_ad)/2;
+					double f3_dab = (f2_ad+ f2_bd - f2_ab)/2;
+					double wa = fracs[p1];
+					double wb = fracs[p2];
+
+					double f3_dab_cor = (f3_dab - d_mix) / ( ( 1-wb)*(1-wa) );
+					double f2_ad_cor = (f2_ad - d_mix)/ ( (1 - wa)* (1-wa) );
+					double f2_bd_cor = (f2_bd - d_mix) / ( (1- wb)*(1-wb) );
+
+					double f3_adb_cor = (f3_adb + wa*wb*f3_dab_cor - wb*f3_dab_cor + wa*f2_ad_cor - wa*wa*f2_ad_cor)/ (1- wa);
+					double f3_bda_cor = (f3_bda + wa*wb*f3_dab_cor - wa*f3_dab_cor + wb*f2_bd_cor - wb*wb*f2_bd_cor)/ (1- wb);
+
+					double f2_ab_cor = f2_ab + 2*wa*wb*f3_dab_cor + 2*wb*f3_bda_cor + 2*wa*f3_adb_cor - wb*wb*f2_bd_cor - wa*wa*f2_ad_cor;
+					corrected_blocks[i][j].push_back(f2_ab_cor);
+					corrected_blocks[j][i].push_back(f2_ab_cor);
+				}
+				else if ( fracs.find(p1) != fracs.end()){
+					//f2 between an admixed population A and an unadmixed population Y
+					// f2(A,Y) = f2(A',Y) + w^2 f2(D', A) - 2w f3(A'; Y, D)
+					double f2_ay = cov_samp[p1][p2].at(k);
+					double f2_ad = cov_samp[p1][mixpop].at(k);
+					double f2_yd = cov_samp[p2][mixpop].at(k);
+					double f3_dya = (f2_yd+ f2_ad - f2_ay)/2;
+					double f3_ady = (f2_ad + f2_ay - f2_yd)/2;
+					double wa = fracs[p1];
+
+
+					double f3_dya_cor = (f3_dya - d_mix)/ wa;
+
+					double f2_ad_cor = (f2_ad - d_mix)/ ( (1 - wa)* (1-wa) );
+					double f3_ady_cor = f3_ady - wa* f3_dya_cor + 2*wa*f2_ad_cor - wa*wa*f2_ad_cor;
+
+					double f2_ay_cor = f2_ay + 2*wa * f3_ady_cor - wa*wa*f2_ad_cor;
+					corrected_blocks[i][j].push_back(f2_ay_cor);
+					corrected_blocks[j][i].push_back(f2_ay_cor);
+				}
+				else if (fracs.find(p2) != fracs.end()){
+
+					double f2_ay = cov_samp[p1][p2].at(k);
+					double f2_ad = cov_samp[p2][mixpop].at(k);
+					double f2_yd = cov_samp[p1][mixpop].at(k);
+					double f3_dya = (f2_yd+ f2_ad - f2_ay)/2;
+					double f3_ady = (f2_ad + f2_ay - f2_yd)/2;
+					double wa = fracs[p2];
+
+					double f3_dya_cor = (f3_dya - d_mix)/ wa;
+
+					double f2_ad_cor = (f2_ad - d_mix)/ ( (1 - wa)* (1-wa) );
+					double f3_ady_cor = f3_ady - wa* f3_dya_cor + 2*wa*f2_ad_cor - wa*wa*f2_ad_cor;
+
+					double f2_ay_cor = f2_ay + 2*wa * f3_ady_cor - wa*wa*f2_ad_cor;
+					corrected_blocks[i][j].push_back(f2_ay_cor);
+					corrected_blocks[j][i].push_back(f2_ay_cor);
+
+				}
+				else{
+					c = cov_samp[p1][p2].at(k);
+					corrected_blocks[i][j].push_back(c);
+					corrected_blocks[j][i].push_back(c);
+				}
+			}
+		}
+	}
+	//Now replace the entries in the f2 matrix with the corrected versions
+
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			double mean = 0;
+			for (int k = 0; k < nblock; k++){
+				mean += corrected_blocks[i][j][k];
+			}
+			mean = mean/ (double) nblock;
+			gsl_matrix_set(cov, i, j, mean);
+			gsl_matrix_set(cov, j, i, mean);
+		}
+	}
+	//And get the SEs
+	for (int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			if (i == j) gsl_matrix_set(cov_var, i, j, 0);
+			else{
+				double c = 0;
+				double mean = gsl_matrix_get(cov, i, j);
+				for (int k = 0; k < npop; k++){
+					double tmp = corrected_blocks[i][j][k];
+					c += (tmp - mean)*(tmp- mean);
+				}
+
+				c = sqrt(c) /(double) nblock;
+				gsl_matrix_set(cov_var, i, j, c);
+				gsl_matrix_set(cov_var, j, i, c);
+			}
+		}
+	}
+
 }

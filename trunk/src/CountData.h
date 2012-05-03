@@ -31,6 +31,10 @@ public:
 	gsl_matrix *alfreqs, *scatter, *cov, *cov_var, *cov_var2;
 	//gsl_matrix *cov_samp;
 	map<string, map<string, vector<double> > > cov_samp;
+
+
+	void correct_f2s(string, map<string, float>, float);	//correct f2s for mixture
+
 	gsl_matrix *cov_cov;
 	void set_alfreqs();
 	void scale_alfreqs();
