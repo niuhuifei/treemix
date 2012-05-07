@@ -34,7 +34,7 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	if (p->f2) {
 		set_cov_f2();
 		if (p->cor_f2){
-			correct_f2s(p->f2_corpop, p->f2_migfracs, p->f2_mixdist);
+			correct_f2s(p->f2_corpop, p->migfracs, p->f2_mixdist);
 		}
 	}
 	else set_cov();

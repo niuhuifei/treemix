@@ -53,10 +53,12 @@ PhyloPop_params::PhyloPop_params(){
 	hzyfile = "";
 	read_hzy = false;
 	cor_f2 = false;
+	cor_mig = false;
+	climb = false;
 }
 
 void PhyloPop_params::read_migfracs(string infile){
-	f2_migfracs.clear();
+	migfracs.clear();
 	ifstream in(infile.c_str());
     vector<string> line;
     struct stat stFileInfo;
@@ -77,6 +79,7 @@ void PhyloPop_params::read_migfracs(string infile){
             }
             string p = line[0];
             float f = atof(line[1].c_str());
-            f2_migfracs.insert(make_pair(p, f));
+            migfracs.insert(make_pair(p, f));
+            hold.insert(p);
     }
 }

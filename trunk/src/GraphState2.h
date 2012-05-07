@@ -74,6 +74,7 @@ public:
 
 	//add a new population
 	void add_pop();
+	void add_pop(string, string, double);
 	void add_pop(string, string);
 	void process_scatter();
 
@@ -146,6 +147,7 @@ public:
 	int iterate_local_hillclimb_wmig(pair< set<int>, set<int> >);
 	int iterate_local_hillclimb_wmig_all();
 	void iterate_mig_hillclimb_and_optimweight(pair<int, int>, double);
+	void iterate_all_hillclimb();
 	int many_local_hillclimb_wmig(pair<set<int>, set<int> >);
 	int many_local_hillclimb_wmig_all();
 

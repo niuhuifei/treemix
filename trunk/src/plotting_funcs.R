@@ -140,7 +140,7 @@ set_x_coord = function(d, e, i){
 	return(d)
 }
 
-plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01){
+plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01, plotmig = T){
 	plot(d$x, d$y, axes = F, ylab = "", xlab = "Drift parameter", xlim = c(0, max(d$x)+plus), pch = "")
 	axis(1)
 	mcols = rev(heat.colors(150))
@@ -153,7 +153,9 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 		v1 = d[d[,1] == e[i,1],]
 		v2 = d[d[,1] == e[i,2],]
 		if (e[i,5] == "MIG"){
+			if (plotmig){
 			arrows( v1[1,]$x, v1[1,]$y, v2[1,]$x, v2[1,]$y, col = col, length = arrow)
+			}
 		}
 		else{
 			lines( c(v1[1,]$x, v2[1,]$x), c(v1[1,]$y, v2[1,]$y), col = col)
@@ -241,7 +243,7 @@ get_f = function(stem){
 
 }
 
-plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F){
+plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F, plotmig = T){
 	d = paste(stem, ".vertices.gz", sep = "")
 	e = paste(stem, ".edges.gz", sep = "")
 	se = paste(stem, ".covse.gz", sep = "")
@@ -272,7 +274,7 @@ plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = ve
 	d = set_x_coords(d, e)
 	print(d)
 	d = set_mig_coords(d, e)
-	plot_tree_internal(d, e, o = o, cex = cex, disp = disp, plus = plus, arrow = arrow, ybar = ybar, mbar = mbar, mse = m, scale = scale)
+	plot_tree_internal(d, e, o = o, cex = cex, disp = disp, plus = plus, arrow = arrow, ybar = ybar, mbar = mbar, mse = m, scale = scale, plotmig = plotmig)
 	return(list( d= d, e = e))
 }
 
