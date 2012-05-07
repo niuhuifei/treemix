@@ -74,6 +74,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-m"))	p.nmig = atoi(cmdline.GetArgument("-m", 0).c_str());
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
     if (cmdline.HasSwitch("-bootstrap"))	p.bootstrap = true;
+    if (cmdline.HasSwitch("-climb"))	p.climb = true;
     if (cmdline.HasSwitch("-hzy")){
     	p.hzyfile = cmdline.GetArgument("-hzy", 0);
     	p.read_hzy = true;
@@ -117,6 +118,12 @@ int main(int argc, char *argv[]){
     	p.read_migfracs(cmdline.GetArgument("-f2_cor", 1) );
     	p.f2_mixdist = atof(cmdline.GetArgument("-f2_cor", 2).c_str());
     }
+    if (cmdline.HasSwitch("-cor_mig")){
+    	//cout << "Here\n";
+     	p.cor_mig = true;
+     	p.corpop = cmdline.GetArgument("-cor_mig", 0);
+     	p.read_migfracs(cmdline.GetArgument("-cor_mig", 1) );
+     }
 
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
@@ -166,9 +173,10 @@ int main(int argc, char *argv[]){
     	else state.set_branches_ls();
     }
     if (p.set_root) state.place_root(p.root);
+
     likout << "Tree likelihood: "<< state.llik() << " \n";
     if (p.dotarget)	state.target_pop();
-
+    if (p.climb) state.iterate_all_hillclimb();
     for (int i = 0; i < p.nmig; i++){
     	state.current_llik = state.llik();
        	while (state.current_llik <= -DBL_MAX){

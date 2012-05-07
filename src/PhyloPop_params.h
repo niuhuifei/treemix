@@ -92,10 +92,15 @@ public:
 
 	//for correcting f2 stats
 	bool cor_f2;
-	map<string, float> f2_migfracs;
+	map<string, float> migfracs;
 	string f2_corpop;
 	double f2_mixdist;
 	void read_migfracs(string);
+
+	//same but for forcing migration during tree building
+	bool cor_mig;
+	string corpop;
+	bool climb; //do hill climbing
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

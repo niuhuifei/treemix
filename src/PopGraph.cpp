@@ -894,7 +894,7 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 	 *
 	 */
 	if (!g[v3].is_root){
-
+		//cout << "here\n"; cout.flush();
 		// set up descriptors and edge lengths
 		Graph::in_edge_iterator tmp = in_edges(v3, g).first;
 		Graph::edge_descriptor ed = *tmp;
@@ -959,7 +959,7 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 			g[e].is_mig = false;
 		}
 	}
-
+	//cout << "nothere\n\n";
 }
 
 void PopGraph::move_root(int i){
