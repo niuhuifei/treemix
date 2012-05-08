@@ -194,9 +194,9 @@ int main(int argc, char *argv[]){
     		state.iterate_mig_hillclimb_and_optimweight(add.second, current_nsum);
     	}
     	state.optimize_weights();
-
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls();
+        state.flip_mig();
     	p.smooth_scale = 1;
     	cout << "ln(likelihood):" << state.llik() << " \n";
     }
@@ -209,9 +209,9 @@ int main(int argc, char *argv[]){
     	state.add_mig(p.mig_index.first, p.mig_index.second);
         cout << "ln(likelihood):" << state.llik() << " \n";
     }
+    state.flip_mig();
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
-
     pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);
     Graph::edge_iterator it = eds.first;
     p.smooth_lik = false;

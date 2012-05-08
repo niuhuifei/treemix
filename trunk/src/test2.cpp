@@ -20,10 +20,8 @@ int main (void)
 	gsl_rng_set(r, seed);
 
 	PhyloPop_params p;
-	p.window_size = 100;
+	p.window_size = 500;
 	//p.smooth_scale = 0;
-	p.f2 = false;
-	p.alfreq_scaling = 0;
 
 	//CountData counts("/Users/pickrell/projects/treemix/hgdp_reich_asc/harvard_hgdp_yoruba_asc_noprimate_phylopop.gz", &p);
 	CountData counts("/Users/pickrell/projects/treemix/sims/test_4pop.gz", &p);
