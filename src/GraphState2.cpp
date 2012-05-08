@@ -4220,7 +4220,8 @@ void GraphState2::flip_mig(){
 				e = *it3;
 			}
 		}
-		if (w > 0.7 && tree->g[e].is_mig){
+		double treew = 1-w;
+		if (max > treew){
 			// t holds the target
 			// and s the source
 			Graph::vertex_descriptor t = target(e, tree->g);
@@ -4230,16 +4231,12 @@ void GraphState2::flip_mig(){
 				i++;
 				continue;
 			}
-			if ( tree->g[ tree->get_parent_node(t).first].index ==  tree->g[ tree->get_parent_node(s).first].index ) {
+			if ( tree->g[ tree->get_parent_node_wmig(t).first].is_mig ) {
 				i++;
 				continue;
 			}
 
 			//get remaining weight
-			double totalw = 0;
-			set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(t);
-			for( set<Graph::edge_descriptor>::iterator it2 = inm.begin(); it2 != inm.end(); it2++) totalw += tree->g[*it2].weight;
-			double left = 1-totalw;
 			Graph::edge_descriptor inc;
 			pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(t, tree->g);
 			while (ine.first != ine.second){
@@ -4248,12 +4245,8 @@ void GraphState2::flip_mig(){
 			}
 
 			Graph::vertex_descriptor newm = source(inc, tree->g);
-			if (tree->g[newm].is_mig) {
-				i++;
-				continue;
-			}
-			set<Graph::edge_descriptor> inm2 = tree->get_in_mig_edges(newm);
 
+			set<Graph::edge_descriptor> inm2 = tree->get_in_mig_edges(newm);
 			if (inm2.size() > 0 ) {
 				i++;
 				continue;
@@ -4265,10 +4258,8 @@ void GraphState2::flip_mig(){
 			tree->g[s].mig_frac = 0;
 
 			tree->g[inc].is_mig = true;
-			tree->g[inc].weight = left;
+			tree->g[inc].weight = treew;
 			tree->g[inc].len = 0;
-			//cout << "here?\n"; cout.flush();
-			tree->set_mig_frac(inc, 0.5);
 
 
 			tree->g[e].is_mig = false;
@@ -4283,9 +4274,8 @@ void GraphState2::flip_mig(){
 			//iterate_local_hillclimb_wmig(tree->g[t].index);
 			m = tree->get_mig_edges();
 			i = 0;
-			continue;
 		}
-		i++;
+		else i++;
 	}
 
 }
