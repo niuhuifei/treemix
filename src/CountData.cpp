@@ -551,7 +551,7 @@ void CountData::set_cov(){
 					double toadd = gsl_matrix_get(alfreqs, n, i) * gsl_matrix_get(alfreqs, n, j);
 					c+= toadd;
 				}
-				double cov = c/ ((double) params->window_size-1);
+				double cov = c/ ((double) params->window_size);
 				//cout << k << " "<< index << " "<< cov << "\n";
 				string p1 = id2pop[i];
 				string p2 = id2pop[j];

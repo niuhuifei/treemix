@@ -140,14 +140,14 @@ set_x_coord = function(d, e, i){
 	return(d)
 }
 
-plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01, plotmig = T){
+plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01, plotmig = T, plotnames = T){
 	plot(d$x, d$y, axes = F, ylab = "", xlab = "Drift parameter", xlim = c(0, max(d$x)+plus), pch = "")
 	axis(1)
 	mcols = rev(heat.colors(150))
 	for(i in 1:nrow(e)){
 		col = "black"
 		if (e[i,5] == "MIG"){
-			w = floor(e[i,4]*100)+50
+			w = floor(e[i,4]*200)+50
 			col = mcols[w]
 		}
 		v1 = d[d[,1] == e[i,1],]
@@ -167,11 +167,16 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 	if ( !is.na(o)){
 		for(i in 1:nrow(tmp)){
 			tcol = o[o[,1] == tmp[i,2],2]
-			text(tmp[i,]$x+disp, tmp[i,]$y, labels = tmp[i,2], adj = 0, cex = cex, col  = tcol)
+			if(plotnames){
+				#print(tmp[i,2])
+				text(tmp[i,]$x+disp, tmp[i,]$y, labels = tmp[i,2], adj = 0, cex = cex, col  = tcol)
+			}
 		}
 	}
 	else{
-	text(tmp$x+disp, tmp$y, labels = tmp[,2], adj = 0, cex = cex)
+		if (plotnames){
+		text(tmp$x+disp, tmp$y, labels = tmp[,2], adj = 0, cex = cex)
+		}
 	}
 	if (scale){
 	print (paste("mse", mse))
@@ -189,10 +194,10 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
                 w = l/100
                 xma = max(d$x/20)
                 rect( rep(0, 100), ymi+(0:99)*w, rep(xma, 100), ymi+(1:100)*w, col = mcols, border = mcols)
-                text(xma+disp, ymi, lab = "0", adj = 0, cex = 0.8)
-                text(xma+disp, yma, lab = "1", adj = 0, cex =0.8)
-		text(0, yma+0.06, lab = "Migration", adj = 0 , cex = 0.8)
-		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.8)
+                text(xma+disp, ymi, lab = "0", adj = 0, cex = 0.7)
+                text(xma+disp, yma, lab = "0.5", adj = 0, cex =0.7)
+		text(0, yma+0.06, lab = "Migration", adj = 0 , cex = 0.7)
+		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.7)
         }	
 }
 
@@ -243,7 +248,7 @@ get_f = function(stem){
 
 }
 
-plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F, plotmig = T){
+plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F, plotmig = T, plotnames = T){
 	d = paste(stem, ".vertices.gz", sep = "")
 	e = paste(stem, ".edges.gz", sep = "")
 	se = paste(stem, ".covse.gz", sep = "")
@@ -274,7 +279,7 @@ plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = ve
 	d = set_x_coords(d, e)
 	print(d)
 	d = set_mig_coords(d, e)
-	plot_tree_internal(d, e, o = o, cex = cex, disp = disp, plus = plus, arrow = arrow, ybar = ybar, mbar = mbar, mse = m, scale = scale, plotmig = plotmig)
+	plot_tree_internal(d, e, o = o, cex = cex, disp = disp, plus = plus, arrow = arrow, ybar = ybar, mbar = mbar, mse = m, scale = scale, plotmig = plotmig, plotnames = plotnames)
 	return(list( d= d, e = e))
 }
 

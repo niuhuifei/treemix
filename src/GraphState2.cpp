@@ -2423,33 +2423,37 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 void GraphState2::iterate_all_hillclimb(){
 	optimize_weights();
+
+	cout << "Trying all local rearrangements\n"; cout.flush();
+	int moving5 = iterate_local_hillclimb_wmig_all();
+	cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
+
 	int moving4 = all_try_movemig();
 	cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
 	//tree->print("after_move");
-	int moving3 = all_try_changedir();
-	cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
+//	int moving3 = all_try_changedir();
+	//cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
 
-	cout << "Trying all local rearrangements\n"; cout.flush();
-	int moving5 = iterate_local_hillclimb_wmig_all();
 
-	cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
-	int moving = moving3+moving4+moving5;
+
+
+	int moving = moving4+moving5;
 
 	while (moving > 0){
 
+		cout << "Trying all local rearrangements\n"; cout.flush();
+		moving5 = iterate_local_hillclimb_wmig_all();
+		cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
+			//moving3 = all_try_changedir();
+			//cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
-			moving3 = all_try_changedir();
-			cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
+		moving4 = all_try_movemig();
+		cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
-			moving4 = all_try_movemig();
-			cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
-			cout << "Trying all local rearrangements\n"; cout.flush();
-			moving5 = iterate_local_hillclimb_wmig_all();
-			cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
-			moving = moving3+moving4+moving5;
+		moving = moving4+moving5;
 	}
 }
 
