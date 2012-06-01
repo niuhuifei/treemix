@@ -101,6 +101,9 @@ public:
 	bool cor_mig;
 	string corpop;
 	bool climb; //do hill climbing
+
+	//microsats
+	bool micro;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */

@@ -18,12 +18,15 @@ public:
 	CountData(string, PhyloPop_params*);
 	CountData(string); //no rescaling (ie. just the allele frequencies)
 	void read_counts(string);
+	void read_micro_data(string);
 	map<string, int> pop2id;
 	map<int, string> id2pop;
 	map<int, double> mean_hzy;
 	map<int, double> mean_ninds;
+	map<int, double> mean_var; //for microsats
 	map<int, int> id2nsnp;
 	vector<vector<pair<int, int> > > allele_counts;
+	vector<vector<vector<float> > > micro_lens;
 	int npop, nsnp, ef_nsnp;
 	string get_pops(); //in Newick format
 	vector<string> list_pops(); //simple list
@@ -37,6 +40,7 @@ public:
 
 	gsl_matrix *cov_cov;
 	void set_alfreqs();
+	void set_alfreqs_micro();
 	void scale_alfreqs();
 	void set_scatter();
 	void set_cov();
