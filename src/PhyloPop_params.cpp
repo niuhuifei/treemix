@@ -55,6 +55,7 @@ PhyloPop_params::PhyloPop_params(){
 	cor_f2 = false;
 	cor_mig = false;
 	climb = false;
+	micro = false;
 }
 
 void PhyloPop_params::read_migfracs(string infile){

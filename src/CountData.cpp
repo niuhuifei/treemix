@@ -10,7 +10,8 @@
 
 CountData::CountData(string infile, PhyloPop_params* p){
 	params = p;
-	read_counts(infile);
+	if (p->micro) read_micro_data(infile);
+	else read_counts(infile);
 	if (p->restrict_pop) npop = p->pops2use;
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
 	alfreqs = gsl_matrix_alloc(nsnp, npop);
@@ -382,6 +383,101 @@ void CountData::read_counts(string infile){
     }
 }
 
+void CountData::read_micro_data(string infile){
+    micro_lens.clear();
+    pop2id.clear();
+    id2pop.clear();
+    npop = 0;
+    nsnp = 0;
+    rss.clear();
+    chr.clear();
+    pos.clear();
+    a1.clear();
+    a2.clear();
+    string ext = infile.substr(infile.size()-3, 3);
+    if (ext != ".gz"){
+    	std::cerr << infile << " is not gzipped (only .gz files accepted)\n";
+    	exit(1);
+    }
+	igzstream in(infile.c_str()); //only gzipped files
+    vector<string> line;
+    struct stat stFileInfo;
+    int intStat;
+    string st, buf;
+
+    intStat = stat(infile.c_str(), &stFileInfo);
+    if (intStat !=0){
+            std::cerr<< "ERROR: cannot open file " << infile << "\n";
+            exit(1);
+    }
+
+    /*
+     * header contains population names
+     */
+    getline(in, st);
+    stringstream ss(st);
+    line.clear();
+    while (ss>> buf){
+    	line.push_back(buf);
+     }
+    /*
+     * make map from header, number populations according to order
+     */
+    int start = 0;
+    if (params->snpinfo) start = 5;
+    for(int i = start; i < line.size(); i++) {
+    	pop2id.insert(make_pair(line[i], i-start));
+    	id2pop.insert(make_pair(i-start, line[i]));
+    	npop ++;
+    }
+    int headsize = line.size();
+    /*
+     * read counts, store in allele_counts
+     */
+    while(getline(in, st)){
+            buf.clear();
+            stringstream ss(st);
+            line.clear();
+            while (ss>> buf){
+                    line.push_back(buf);
+            }
+            vector< vector<float> > topush;
+
+            if (params->snpinfo){
+            	rss.push_back(line[0]);
+            	chr.push_back(line[1]);
+            	pos.push_back(line[2]);
+            	a1.push_back(line[3]);
+            	a2.push_back(line[4]);
+            }
+            if (line.size() != headsize){
+            	cerr << "ERROR: Line "<< nsnp <<" has "<< line.size() << " entries. Header has "<< headsize <<"\n";
+            	exit(1);
+            }
+            for ( int i = start; i < line.size(); i++){
+            	//cout <<  line[i] << "\n";
+                typedef boost::tokenizer<boost::char_separator<char> >
+                tokenizer;
+                boost::char_separator<char> sep(",");
+                tokenizer tokens(line[i], sep);
+                vector<float> tmpcounts;
+                for (tokenizer::iterator tok_iter = tokens.begin();  tok_iter != tokens.end(); ++tok_iter){
+                        int tmp = atof(tok_iter->c_str());
+                        tmpcounts.push_back(tmp);
+                }
+                if (tmpcounts.size() != 3){
+                	std::cerr << line[i] << " does not have three entries\n";
+                	exit(1);
+                }
+                vector<float> tmplen;
+                tmplen.push_back(tmpcounts[0]); tmplen.push_back(tmpcounts[1]); tmplen.push_back(tmpcounts[2]);
+                topush.push_back(tmplen);
+            }
+            micro_lens.push_back(topush);
+            nsnp++;
+    }
+}
+
 pair< vector<string>, vector<double> > CountData::get_freqs(int i){
 	pair<vector<string>, vector<double> > toreturn;
 	for (map<string, int>::iterator it = pop2id.begin(); it != pop2id.end(); it++){
@@ -414,6 +510,41 @@ pair< vector<string>, vector<double> > CountData::get_centered_freqs(int i){
 	}
 	return toreturn;
 }
+
+void CountData::set_alfreqs_micro(){
+	mean_ninds.clear();
+	mean_var.clear();
+	id2nsnp.clear();
+	for (int i = 0; i < npop; i++){
+		mean_ninds.insert(make_pair(i, 0.0));
+		mean_var.insert(make_pair(i, 0.0));
+		id2nsnp.insert(make_pair(i, 0.0));
+	}
+	for (int i = 0; i < nsnp; i++){
+		for (int j = 0; j < npop; j++){
+			double m = micro_lens[i][j].at(0);
+			double v = micro_lens[i][j].at(1);
+			double n = micro_lens[i][j].at(2);
+			if ( n < 1){
+				cerr << "Warning: no alleles at locus "<< i << " population "<< j <<"\n";
+				float h = 0.0;
+				m = 1/h;
+				gsl_matrix_set(alfreqs, i, j, m);
+				continue;
+			}
+			gsl_matrix_set(alfreqs, i, j, m);
+			mean_ninds[j] += n;
+			mean_var[j] += v;
+			id2nsnp[j]++;
+		}
+	}
+	for (int i = 0; i < npop; i++){
+		mean_ninds[i] = mean_ninds[i]/ id2nsnp[i];
+		mean_var[i] = mean_var[i]/ id2nsnp[i];
+		//cout << id2pop[i] << " "<< mean_hzy[i] << "\n";
+	}
+}
+
 
 void CountData::set_alfreqs(){
 	mean_ninds.clear();
@@ -456,6 +587,7 @@ void CountData::set_alfreqs(){
 	}
 }
 
+
 void CountData::scale_alfreqs(){
 	for (int i = 0; i < nsnp; i++){
 		double total = 0;
@@ -471,12 +603,16 @@ void CountData::scale_alfreqs(){
 		double m = total/ (double) npop;
 		for (int j = 0; j < npop; j++){
 			double f = gsl_matrix_get(alfreqs, i, j);
-			if (params->alfreq_scaling == 3) {
-				gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
-				if (m < 1e-8) gsl_matrix_set(alfreqs, i, j, 0);
+			if (params->micro) gsl_matrix_set(alfreqs, i, j, f-m);
+			else{
+				double f = gsl_matrix_get(alfreqs, i, j);
+				if (params->alfreq_scaling == 3) {
+					gsl_matrix_set(alfreqs, i, j, (f-m)/sqrt(m *(1-m)) );
+					if (m < 1e-8) gsl_matrix_set(alfreqs, i, j, 0);
+				}
+				else if (params->alfreq_scaling == 4) gsl_matrix_set(alfreqs, i, j, f);
+				else gsl_matrix_set(alfreqs, i, j, f-m);
 			}
-			else if (params->alfreq_scaling == 4) gsl_matrix_set(alfreqs, i, j, f);
-			else gsl_matrix_set(alfreqs, i, j, f-m);
 		}
 	}
 }
@@ -532,9 +668,16 @@ void CountData::set_cov(){
 	for ( map<string, int>::iterator it = pop2id.begin(); it!= pop2id.end(); it++){
 		int id = it->second;
 		string pop = it->first;
-		double meanhzy = mean_hzy.find(id)->second;
 		double mean_n = mean_ninds.find(id)->second;
-		double t = meanhzy / (4.0* mean_n);
+		double t;
+		if (!params->micro) {
+			double meanhzy = mean_hzy.find(id)->second;
+			t = meanhzy / (4.0* mean_n);
+		}
+		else{
+			double mvar = mean_var.find(id)->second;
+			t = mvar/ mean_n;
+		}
 		sumtrim+= t;
 		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
 		trim.insert(make_pair(pop, t));
@@ -591,8 +734,6 @@ void CountData::set_cov(){
 			gsl_matrix_set(cov_var, j, i, c);
 		}
 	}
-	//get the covariance in the estimates of the covariance matrix
-	//gsl_matrix_set_zero(cov_cov);
 
 }
 
