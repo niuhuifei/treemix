@@ -373,7 +373,7 @@ void CountData::read_counts(string infile){
                         tmpcounts.push_back(tmp);
                 }
                 if (tmpcounts.size() != 2){
-                	std::cerr << line[i] << " does not have two alleles\n";
+                	std::cerr << "ERROR: "<< line[i] << " does not have two alleles (expecting SNP data)\n";
                 	exit(1);
                 }
                 topush.push_back(make_pair(tmpcounts[0], tmpcounts[1]));
@@ -466,7 +466,7 @@ void CountData::read_micro_data(string infile){
                         tmpcounts.push_back(tmp);
                 }
                 if (tmpcounts.size() != 3){
-                	std::cerr << line[i] << " does not have three entries\n";
+                	std::cerr << "ERROR: "<< line[i] << " does not have three entries [expecting micosat data]\n";
                 	exit(1);
                 }
                 vector<float> tmplen;
