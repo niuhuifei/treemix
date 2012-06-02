@@ -26,6 +26,7 @@ void printopts(){
 	cout << "-root [string] comma-delimited list of populations to set on one side of the root (for migration)\n";
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
 	cout << "-se Calculate standard errors of migration weights (computationally expensive)\n";
+	cout << "-micro microsatellite data\n";
 	cout << "\n";
 }
 
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-nothing")) p.alfreq_scaling = 4;
     if (cmdline.HasSwitch("-quick")) p.quick = true;
     if (cmdline.HasSwitch("-global")) p.global = true;
+    if (cmdline.HasSwitch("-micro")) p.micro = true;
     if (cmdline.HasSwitch("-penalty")) p.neg_penalty = atof(cmdline.GetArgument("-penalty", 0).c_str());;
     if (cmdline.HasSwitch("-se")) p.calc_se = true;
     if (cmdline.HasSwitch("-emig")) p.end_mig = true;
