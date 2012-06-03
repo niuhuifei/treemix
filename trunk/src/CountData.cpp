@@ -10,7 +10,10 @@
 
 CountData::CountData(string infile, PhyloPop_params* p){
 	params = p;
-	if (p->micro) read_micro_data(infile);
+	if (p->micro) {
+		read_micro_data(infile);
+		//cout << "read\n"; cout.flush();
+	}
 	else read_counts(infile);
 	if (p->restrict_pop) npop = p->pops2use;
 	cout << "npop:"<< npop<< " nsnp:"<<nsnp<< "\n";
@@ -27,7 +30,8 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	//cov_samp = gsl_matrix_alloc(nblock, ncomp);
 	//gsl_matrix_set_zero(cov_samp);
 	cov_cov = gsl_matrix_alloc(ncomp, ncomp);
-	set_alfreqs();
+	if (p->micro) set_alfreqs_micro();
+	else set_alfreqs();
 	scale_alfreqs();
 	if (p->read_hzy) set_hzy_fromfile(p->hzyfile);
 	//set_scatter();
@@ -528,10 +532,12 @@ void CountData::set_alfreqs_micro(){
 			if ( n < 1){
 				cerr << "Warning: no alleles at locus "<< i << " population "<< j <<"\n";
 				float h = 0.0;
-				m = 1/h;
+				m = 0/0.0;
+				cout << m << "0 n \n"; cout.flush();
 				gsl_matrix_set(alfreqs, i, j, m);
 				continue;
 			}
+			cout << i << " "<< j << " "<< m << "\n";
 			gsl_matrix_set(alfreqs, i, j, m);
 			mean_ninds[j] += n;
 			mean_var[j] += v;
@@ -680,6 +686,7 @@ void CountData::set_cov(){
 		}
 		sumtrim+= t;
 		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
+		//cout << pop  << " "<< t << "\n";
 		trim.insert(make_pair(pop, t));
 	}
 	//calculate the covariance matrix in each block
@@ -690,8 +697,9 @@ void CountData::set_cov(){
 			for (int j = i; j < npop; j++){
 				double c = 0;
 				for (int n = k*params->window_size; n < (k+1)*params->window_size; n++){
-					if (isnan(gsl_matrix_get(alfreqs, n, i))) continue;
+					if (isnan(gsl_matrix_get(alfreqs, n, i)) || isnan(gsl_matrix_get(alfreqs, n, j))) continue;
 					double toadd = gsl_matrix_get(alfreqs, n, i) * gsl_matrix_get(alfreqs, n, j);
+					//cout << toadd << "\n"; cout.flush();
 					c+= toadd;
 				}
 				double cov = c/ ((double) params->window_size);
@@ -719,14 +727,18 @@ void CountData::set_cov(){
 		for (int j = i; j < npop; j++){
 			vector<double> all_covs = cov_block[i][j];
 			double sum = 0;
-			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= *it;
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) {
+				if (!isnan(*it)) sum+= *it;
+			}
 			double mean = sum/nblock;
 			gsl_matrix_set(cov, i, j, mean);
 			gsl_matrix_set(cov, j, i, mean);
 
 			// and standard error
 			sum = 0;
-			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) sum+= (*it-mean)*(*it-mean);
+			for (vector<double>::iterator it = all_covs.begin(); it != all_covs.end(); it++) {
+				if (!isnan(*it)) sum+= (*it-mean)*(*it-mean);
+			}
 			//double sd = sqrt(sum/ (double) nblock);
 			double c = sqrt(sum) /sqrt((double) (nblock-1) * (double)nblock);
 			//cout << i << " "<< j << " "<< sd << " "<< c << "\n";
