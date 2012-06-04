@@ -532,12 +532,12 @@ void CountData::set_alfreqs_micro(){
 			if ( n < 1){
 				cerr << "Warning: no alleles at locus "<< i << " population "<< j <<"\n";
 				float h = 0.0;
-				m = 0/0.0;
-				cout << m << "0 n \n"; cout.flush();
+				m = 0/h;
+				//cout << m << "0 n \n"; cout.flush();
 				gsl_matrix_set(alfreqs, i, j, m);
 				continue;
 			}
-			cout << i << " "<< j << " "<< m << "\n";
+			//cout << i << " "<< j << " "<< m << "\n";
 			gsl_matrix_set(alfreqs, i, j, m);
 			mean_ninds[j] += n;
 			mean_var[j] += v;
