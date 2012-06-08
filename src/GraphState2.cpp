@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1336157624;
+	//seed = 1339109729;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -2196,6 +2196,13 @@ int GraphState2::local_hillclimb(int inorder_index){
 	//
 
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
+	if (params->cor_mig){
+		Graph::vertex_descriptor v = inorder[inorder_index];
+		Graph::vertex_descriptor p = tree->get_parent_node(v).first;
+		if (tree->g[p].is_root || tree->g[v].is_root) {
+			return 0;
+		}
+	}
 	if ( tree->g[ inorder[inorder_index]].is_root) return local_hillclimb_root();
 
 	double llik1, llik2, llik3;
@@ -2889,10 +2896,16 @@ void GraphState2::add_pop(){
 	//If adding with a migration event
 	if (params->cor_mig && params->migfracs.find(toadd) != params->migfracs.end()){
 		//If this is the first time and the root isn't yet set, set it
+
 		if (params->migfracs.find(allpopnames[current_npops-1]) == params->migfracs.end() && params->set_root){
+			//tree->print("before");
 			place_root(params->root);
+			cout << "after3\n";
+			tree->print("after3");
 		}
+
 		add_pop(toadd, params->corpop, params->migfracs[toadd]);
+		//tree->print("after2");
 	}
 	else{
 		vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
@@ -2964,17 +2977,26 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 	int max_index;
 	double max_llik;
 	tree_bk->copy(tree);
-
+	int first = 0;
 	for (int i = 0; i < inorder.size(); i++){
-
+		if ( params->set_root && params->root ==tree->g[ inorder[i] ].name) { //
+			if (i == first) first++;
+			continue;
+		}
+		if ( params->set_root && tree->g[ inorder[i] ].is_root) { //
+			if (i == first) first++;
+			continue;
+		}
 		Graph::vertex_descriptor tmp = tree->add_tip(inorder[i], toadd);
 		map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 		Graph::vertex_descriptor sourcev = i2v[sourceindex];
 		if (tree->is_legal_migration(sourcev, tmp)){
+			//cout << "legal!\n";
 			Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
 			tree->g[e].weight = migfrac;
 		}
 		else {
+			if (i == first) first++;
 			tree->copy(tree_bk);
 			inorder = tree->get_inorder_traversal(current_npops);
 			continue;
@@ -2983,7 +3005,7 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 		if (params->f2) set_branches_ls_f2();
 		else set_branches_ls();
 		double llk = llik();
-		if (i == 0){
+		if (i == first){
 			max_index = i;
 			max_llik = llk;
 		}
@@ -2999,15 +3021,24 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 		cout << "RESCALING\n"; cout.flush();
 		params->smooth_scale = params->smooth_scale *2;
 		for (int i = 0; i < inorder.size(); i++){
-
+			if ( params->set_root && params->root ==tree->g[ inorder[i] ].name) { //
+				if (i == first) first++;
+				continue;
+			}
+			if ( params->set_root && tree->g[ inorder[i] ].is_root) { //
+				if (i == first) first++;
+				continue;
+			}
 			Graph::vertex_descriptor tmp = tree->add_tip(inorder[i], toadd);
 			map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 			Graph::vertex_descriptor sourcev = i2v[sourceindex];
 			if (tree->is_legal_migration(sourcev, tmp)){
+				//cout << "legal!\n";
 				Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
 				tree->g[e].weight = migfrac;
 			}
 			else {
+				if (i == first) first++;
 				tree->copy(tree_bk);
 				inorder = tree->get_inorder_traversal(current_npops);
 				continue;
@@ -3016,7 +3047,7 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 			if (params->f2) set_branches_ls_f2();
 			else set_branches_ls();
 			double llk = llik();
-			if (i == 0){
+			if (i == first){
 				max_index = i;
 				max_llik = llk;
 			}
@@ -3029,7 +3060,12 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 			inorder = tree->get_inorder_traversal(current_npops);
 		}
 	}
+	//cout << tree->g[inorder[max_index]].index << "\n";
 	Graph::vertex_descriptor tmp = tree->add_tip(inorder[max_index], toadd);
+	//if (name == "HADZA_Henn"){
+	//		cout << "after tip\n";
+			tree->print("after_tip");
+	//	}
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 	Graph::vertex_descriptor sourcev = i2v[sourceindex];
 	Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
@@ -3039,6 +3075,11 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 	if (params->f2) set_branches_ls_f2();
 	else set_branches_ls();
 	current_llik = max_llik;
+	//if (name == "HADZA_Henn"){
+	//	cout << "after add\n";
+	//	tree->print("after_add");
+	//}
+
 }
 
 

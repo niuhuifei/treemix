@@ -163,8 +163,11 @@ int main(int argc, char *argv[]){
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
+
     	state.add_pop();
+
     	state.iterate_hillclimb();
+
     	cout << "ln(likelihood): "<< state.current_llik << " \n";
     	cout << state.tree->get_newick_format() << "\n";
     }
