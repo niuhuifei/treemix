@@ -119,6 +119,7 @@ Graph::vertex_descriptor PopGraph::add_tip(Graph::vertex_descriptor v, string na
 	if (g[v].is_root == false){
 		// remove edge from parent to target
 		graph_traits<Graph>::in_edge_iterator init = in_edges(v, g).first;
+		while (g[*init].is_mig) init++;
 		len = g[*init].len;
 		newlen = len/2;
 		vparent = source(*init, g);
