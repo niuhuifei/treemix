@@ -149,6 +149,9 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
 		if (e[i,5] == "MIG"){
 			w = floor(e[i,4]*200)+50
 			col = mcols[w]
+			if (is.na(col)){
+				col = "blue"
+			}
 		}
 		v1 = d[d[,1] == e[i,1],]
 		v2 = d[d[,1] == e[i,2],]
