@@ -78,9 +78,18 @@ void PhyloPop_params::read_migfracs(string infile){
             while (ss>> buf){
                     line.push_back(buf);
             }
-            string p = line[0];
-            float f = atof(line[1].c_str());
-            migfracs.insert(make_pair(p, f));
+            string sourcep = line[0];
+            string p = line[1];
+            float f = atof(line[2].c_str());
+            if (migfracs.find(p) == migfracs.end()){
+            	map<string, double> tmpmap;
+            	tmpmap.insert(make_pair(sourcep, f));
+            	migfracs.insert(make_pair(p, tmpmap));
+            }
+            else{
+            	migfracs[p].insert(make_pair(sourcep, f));
+            	//migfracs.insert(make_pair(p, f));
+            }
             hold.insert(p);
     }
 }

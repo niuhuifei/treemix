@@ -2429,16 +2429,18 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 }
 
 void GraphState2::iterate_all_hillclimb(){
+
+	tree->print("start");
 	optimize_weights();
 
 	cout << "Trying all local rearrangements\n"; cout.flush();
 	int moving5 = iterate_local_hillclimb_wmig_all();
 	cout << "Local rearrangements: "<< moving5 << " ln(lk):" << current_llik << " \n";cout.flush();
 
-	int moving4 = all_try_movemig();
+	int moving4 = all_try_movemig_limit();
 	cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
-	//tree->print("after_move");
+	tree->print("after_move0");
 //	int moving3 = all_try_changedir();
 	//cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
@@ -2447,7 +2449,7 @@ void GraphState2::iterate_all_hillclimb(){
 
 
 	int moving = moving4+moving5;
-
+	int iter = 1;
 	while (moving > 0){
 
 		cout << "Trying all local rearrangements\n"; cout.flush();
@@ -2456,11 +2458,16 @@ void GraphState2::iterate_all_hillclimb(){
 			//moving3 = all_try_changedir();
 			//cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
-		moving4 = all_try_movemig();
+		moving4 = all_try_movemig_limit();
 		cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
-
-
+		stringstream ss;
+		ss << "after_move";
+		ss << iter;
+		string tmp;
+		tmp = ss.str();
+		tree->print(tmp);
 		moving = moving4+moving5;
+		iter++;
 	}
 }
 
@@ -2518,6 +2525,28 @@ int GraphState2::all_try_movemig(){
 	while (i < mig_edges.size() && toreturn < params->maxit2){
 		//cout << i << " " << current_llik << " "<< llik() << " "<< tree->g[source(mig_edges[i], tree->g)].index <<  "\n";
 		bool test = movemig(tree->g[source(mig_edges[i], tree->g)].index).first;
+		mig_edges = tree->get_mig_edges();
+		if (test) {
+			//tree->print("moved");
+			toreturn++;
+			i=0;
+		}
+		else i++;
+	}
+	if ( toreturn >= params->maxit2) return 0;
+	return toreturn;
+}
+
+
+int GraphState2::all_try_movemig_limit(){
+	int toreturn =0;
+	vector<Graph::edge_descriptor> mig_edges = tree->get_mig_edges();
+	vector<int> mig_index;
+
+	int i = 0;
+	while (i < mig_edges.size() && toreturn < params->maxit2){
+		//cout << i << " " << current_llik << " "<< llik() << " "<< tree->g[source(mig_edges[i], tree->g)].index <<  "\n";
+		bool test = movemig_limit(tree->g[source(mig_edges[i], tree->g)].index).first;
 		mig_edges = tree->get_mig_edges();
 		if (test) {
 			//tree->print("moved");
@@ -2900,11 +2929,9 @@ void GraphState2::add_pop(){
 		if (params->migfracs.find(allpopnames[current_npops-1]) == params->migfracs.end() && params->set_root){
 			//tree->print("before");
 			place_root(params->root);
-			cout << "after3\n";
-			tree->print("after3");
 		}
 
-		add_pop(toadd, params->corpop, params->migfracs[toadd]);
+		add_pop(toadd, params->migfracs[toadd]);
 		//tree->print("after2");
 	}
 	else{
@@ -2964,14 +2991,16 @@ void GraphState2::add_pop(){
 	}
 }
 
-void GraphState2::add_pop(string name, string sourcepop, double migfrac){
+void GraphState2::add_pop(string name, map<string, double> migfracs){
 	map<string, Graph::vertex_descriptor> tips = tree->get_tips(tree->root);
 
-	if (tips.find(sourcepop) == tips.end()){
-		cerr << "ERROR: cannot find population "<< sourcepop << "\n";
-		exit(1);
+	for (map<string, double>::iterator it = migfracs.begin(); it != migfracs.end(); it++){
+		if (tips.find(it->first) == tips.end()){
+			cerr << "ERROR: cannot find population "<< it->first << "\n";
+			exit(1);
+		}
 	}
-	int sourceindex = tree->g[tips[sourcepop]].index;
+
 	string toadd = name;
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
 	int max_index;
@@ -2979,6 +3008,7 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 	tree_bk->copy(tree);
 	int first = 0;
 	for (int i = 0; i < inorder.size(); i++){
+
 		if ( params->set_root && params->root ==tree->g[ inorder[i] ].name) { //
 			if (i == first) first++;
 			continue;
@@ -2989,18 +3019,30 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 		}
 		Graph::vertex_descriptor tmp = tree->add_tip(inorder[i], toadd);
 		map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
-		Graph::vertex_descriptor sourcev = i2v[sourceindex];
-		if (tree->is_legal_migration(sourcev, tmp)){
-			//cout << "legal!\n";
-			Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
-			tree->g[e].weight = migfrac;
+
+		bool stillok = true;
+		for (map<string, double>::iterator it = migfracs.begin(); it != migfracs.end(); it++){
+			int sourceindex = tree->g[tips[it->first]].index;
+			Graph::vertex_descriptor sourcev = i2v[sourceindex];
+
+			if (tree->is_legal_migration(sourcev, tmp)){
+				//cout << "legal!\n";
+				Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
+				tree->g[e].weight = it->second;
+			}
+			else {
+				//cout << "nope\n";
+				stillok = false;
+			}
 		}
-		else {
+		if (!stillok){
 			if (i == first) first++;
 			tree->copy(tree_bk);
 			inorder = tree->get_inorder_traversal(current_npops);
+			tips = tree->get_tips(tree->root);
 			continue;
 		}
+
 		current_npops++;
 		if (params->f2) set_branches_ls_f2();
 		else set_branches_ls();
@@ -3016,65 +3058,86 @@ void GraphState2::add_pop(string name, string sourcepop, double migfrac){
 		tree->copy(tree_bk);
 		current_npops--;
 		inorder = tree->get_inorder_traversal(current_npops);
+		tips = tree->get_tips(tree->root);
 	}
 	while (max_llik <= -DBL_MAX){
 		cout << "RESCALING\n"; cout.flush();
 		params->smooth_scale = params->smooth_scale *2;
 		for (int i = 0; i < inorder.size(); i++){
-			if ( params->set_root && params->root ==tree->g[ inorder[i] ].name) { //
-				if (i == first) first++;
-				continue;
-			}
-			if ( params->set_root && tree->g[ inorder[i] ].is_root) { //
-				if (i == first) first++;
-				continue;
-			}
-			Graph::vertex_descriptor tmp = tree->add_tip(inorder[i], toadd);
-			map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
-			Graph::vertex_descriptor sourcev = i2v[sourceindex];
-			if (tree->is_legal_migration(sourcev, tmp)){
-				//cout << "legal!\n";
-				Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
-				tree->g[e].weight = migfrac;
-			}
-			else {
-				if (i == first) first++;
+
+				if ( params->set_root && params->root ==tree->g[ inorder[i] ].name) { //
+					if (i == first) first++;
+					continue;
+				}
+				if ( params->set_root && tree->g[ inorder[i] ].is_root) { //
+					if (i == first) first++;
+					continue;
+				}
+				Graph::vertex_descriptor tmp = tree->add_tip(inorder[i], toadd);
+				map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
+
+				bool stillok = true;
+				for (map<string, double>::iterator it = migfracs.begin(); it != migfracs.end(); it++){
+					int sourceindex = tree->g[tips[it->first]].index;
+					Graph::vertex_descriptor sourcev = i2v[sourceindex];
+
+					if (tree->is_legal_migration(sourcev, tmp)){
+						//cout << "legal!\n";
+						Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
+						tree->g[e].weight = it->second;
+					}
+					else {
+						//cout << "nope\n";
+						stillok = false;
+					}
+				}
+				if (!stillok){
+					if (i == first) first++;
+					tree->copy(tree_bk);
+					inorder = tree->get_inorder_traversal(current_npops);
+					tips = tree->get_tips(tree->root);
+					continue;
+				}
+
+				current_npops++;
+				if (params->f2) set_branches_ls_f2();
+				else set_branches_ls();
+				double llk = llik();
+				if (i == first){
+					max_index = i;
+					max_llik = llk;
+				}
+				else if (llk > max_llik){
+					max_index = i;
+					max_llik = llk;
+				}
 				tree->copy(tree_bk);
+				current_npops--;
 				inorder = tree->get_inorder_traversal(current_npops);
-				continue;
-			}
-			current_npops++;
-			if (params->f2) set_branches_ls_f2();
-			else set_branches_ls();
-			double llk = llik();
-			if (i == first){
-				max_index = i;
-				max_llik = llk;
-			}
-			else if (llk > max_llik){
-				max_index = i;
-				max_llik = llk;
-			}
-			tree->copy(tree_bk);
-			current_npops--;
-			inorder = tree->get_inorder_traversal(current_npops);
+				tips = tree->get_tips(tree->root);
 		}
 	}
 	//cout << tree->g[inorder[max_index]].index << "\n";
 	Graph::vertex_descriptor tmp = tree->add_tip(inorder[max_index], toadd);
 	//if (name == "HADZA_Henn"){
 	//		cout << "after tip\n";
-			tree->print("after_tip");
+	//		tree->print("after_tip");
 	//	}
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
-	Graph::vertex_descriptor sourcev = i2v[sourceindex];
-	Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
-	tree->g[e].weight = migfrac;
+	for (map<string, double>::iterator it = migfracs.begin(); it != migfracs.end(); it++){
+		int sourceindex = tree->g[tips[it->first]].index;
+		Graph::vertex_descriptor sourcev = i2v[sourceindex];
+		Graph::edge_descriptor e = tree->add_mig_edge(sourcev, tmp);
+		tree->g[e].weight = it->second;
+	}
 	current_npops++;
 
 	if (params->f2) set_branches_ls_f2();
 	else set_branches_ls();
 	current_llik = max_llik;
+
+	//cout << "not here " << name << "\n"; cout.flush();
+
 	//if (name == "HADZA_Henn"){
 	//	cout << "after add\n";
 	//	tree->print("after_add");
@@ -4524,6 +4587,187 @@ pair<bool, int> GraphState2::movemig( int index ){
 			}
 			tree->copy(tree_bk);
 		}
+		else if ( i == 3){
+			if (tree->g[p].is_root){
+				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch3 = tree->get_child_nodes(p);
+				if ( tree->g[ch3.first].index == tree->g[ch].index )	 p = ch3.second;
+				else p = ch3.first;
+				ch3 = tree->get_child_nodes(p);
+				p = ch3.second;
+				//cout << tree->g[p].index << "\n";
+			}
+			else{
+				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch3 = tree->get_child_nodes(p);
+				if ( tree->g[ch3.first].index == tree->g[ch].index )	 p = ch3.second;
+				else p = ch3.first;
+			}
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(p, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(p, t);
+
+				if (params->f2){
+				initialize_migupdate();
+				optimize_weight_quick(e2);
+				}
+				else optimize_weight(e2);
+
+
+				//tree->print("test3");
+				//cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max +params->epsilon){
+					max = current_llik;
+					//cout << "move3 "<< current_llik << " "<< llik() << "\n";
+					max_negsum = negsum;
+					tree->g[source(e2, tree->g)].index = index;
+					tree_bk2->copy(tree);
+
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+		else if (i == 1){
+			if (tree->g[ch].is_tip) continue;
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(ch2.first, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(ch2.first, t);
+				if (params->f2){
+				initialize_migupdate();
+				optimize_weight_quick(e2);
+				}
+				else optimize_weight(e2);
+				//tree->print("test1");
+				//cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max +params->epsilon){
+					max = current_llik;
+					//cout << "move1 "<< current_llik << " "<< llik() << "\n";
+					max_negsum = negsum;
+					tree->g[source(e2, tree->g)].index = index;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+		else if (i == 2){
+			if (tree->g[ch].is_tip) continue;
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(ch2.second, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(ch2.second, t);
+				//initialize_migupdate();
+				if (params->f2){
+					initialize_migupdate();
+					optimize_weight_quick(e2);
+				}
+				else optimize_weight(e2);
+				//tree->print("test2");
+				//cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max +params->epsilon){
+
+					max = current_llik;
+					//cout << "move2 "<< current_llik << " "<< llik() << "\n";
+					max_negsum = negsum;
+					tree->g[source(e2, tree->g)].index = index;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+
+
+	}
+	if (toreturn.first){
+		tree->copy(tree_bk2);
+		gsl_matrix_memcpy( sigma_cor, tmpfitted2);
+		current_llik = max;
+		negsum = max_negsum;
+		//tree->print("m0_2");
+	}
+	else{
+		gsl_matrix_memcpy( sigma_cor, tmpfitted);
+		current_llik = lik_bk;
+		negsum = negsum_bk;
+		tree->copy(tree_bk);
+	}
+	gsl_matrix_free(tmpfitted);
+	gsl_matrix_free(tmpfitted2);
+	return toreturn;
+}
+
+pair<bool, int> GraphState2::movemig_limit( int index ){
+
+	pair<bool, int> toreturn = make_pair(false, 0);
+	double max = current_llik;
+	double lik_bk = current_llik;
+	double max_negsum = negsum;
+	double negsum_bk = negsum;
+	tree_bk->copy(tree);
+	tree_bk2->copy(tree);
+	gsl_matrix *tmpfitted = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted, sigma_cor);
+	gsl_matrix *tmpfitted2 = gsl_matrix_alloc(current_npops, current_npops);
+	gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+	//tree->print("test");
+	for (int i = 0; i < 4 ; i++){
+		//cout << "moving "<< i <<"\n";
+		map<int, Graph::vertex_descriptor> vindex = tree->index2vertex();
+		Graph::vertex_descriptor s = vindex[index];
+		Graph::vertex_descriptor p = tree->get_parent_node(s).first;
+		Graph::vertex_descriptor ch = tree->get_child_node_mig(s);
+		Graph::edge_descriptor e = tree->get_out_mig_edge(s);
+		Graph::vertex_descriptor t = target(e, tree->g);
+		Graph::vertex_descriptor tp = tree->get_parent_node(t).first;
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> t_ch = tree->get_child_nodes(t);
+		pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch2 = tree->get_child_nodes(ch);
+		//tree->print("test");
+		if ( i == 0){
+			if (tree->g[p].is_root){
+				continue;
+				//cout << "here\n";
+				//pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch3 = tree->get_child_nodes(p);
+				//if ( tree->g[ch3.first].index == tree->g[ch].index )	 p = ch3.second;
+				//else p = ch3.first;
+				//ch3 = tree->get_child_nodes(p);
+				//p = ch3.first;
+				//cout.flush();
+				//cout << tree->g[p].index << "\n";
+			}
+
+			tree->remove_mig_edge(e);
+			if (tree->is_legal_migration(p, t)){
+				Graph::edge_descriptor e2 = tree->add_mig_edge(p, t);
+				if (params->f2){
+					initialize_migupdate();
+					optimize_weight_quick(e2);
+				}
+				else optimize_weight(e2);
+				//tree->print("test0");
+				//cout << i << " "<< current_llik << " "<< max << "\n";
+				if ( current_llik > max+params->epsilon){
+					max = current_llik;
+					max_negsum = negsum;
+					tree->g[source(e2, tree->g)].index = index;
+					tree_bk2->copy(tree);
+					gsl_matrix_memcpy( tmpfitted2, sigma_cor);
+					toreturn.first = true;
+					toreturn.second = tree->g[source(e2, tree->g)].index;
+
+
+				}
+			}
+			tree->copy(tree_bk);
+		}
+
 		else if ( i == 3){
 			if (tree->g[p].is_root){
 				pair<Graph::vertex_descriptor, Graph::vertex_descriptor> ch3 = tree->get_child_nodes(p);

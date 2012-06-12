@@ -123,8 +123,8 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-cor_mig")){
     	//cout << "Here\n";
      	p.cor_mig = true;
-     	p.corpop = cmdline.GetArgument("-cor_mig", 0);
-     	p.read_migfracs(cmdline.GetArgument("-cor_mig", 1) );
+     	//p.corpop = cmdline.GetArgument("-cor_mig", 0);
+     	p.read_migfracs(cmdline.GetArgument("-cor_mig", 0) );
      }
 
     string treefile = outstem+".treeout.gz";

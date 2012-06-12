@@ -1983,7 +1983,9 @@ bool PopGraph::does_mig_exist(Graph::vertex_descriptor st, Graph::vertex_descrip
 }
 
 bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_descriptor sp){
+
 	if (g[st].is_mig || g[sp].is_mig) return false;
+
 	if (st == sp) 	return false;
 
 	if (g[st].is_root || g[sp].is_root) return false;
@@ -1995,7 +1997,7 @@ bool PopGraph::is_legal_migration(Graph::vertex_descriptor st, Graph::vertex_des
 	}
 
 	//if ( st == get_parent_node(sp).first || sp == get_parent_node(st).first )return false;
-
+	//cout << "problem here0?\n"; cout.flush();
 	if ( does_mig_exist( st, sp)) return false;
 
 	//cout << "problem here?\n"; cout.flush();

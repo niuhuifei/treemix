@@ -90,16 +90,16 @@ public:
 	bool read_hzy;
 	string hzyfile;
 
-	//for correcting f2 stats
+	//for correcting f2 stats [IGNORE]
 	bool cor_f2;
-	map<string, float> migfracs;
+	map<string, map<string, double> > migfracs;
 	string f2_corpop;
 	double f2_mixdist;
 	void read_migfracs(string);
 
 	//same but for forcing migration during tree building
 	bool cor_mig;
-	string corpop;
+	//string corpop;
 	bool climb; //do hill climbing
 
 	//microsats

@@ -38,9 +38,9 @@ CountData::CountData(string infile, PhyloPop_params* p){
 	//process_scatter();
 	if (p->f2) {
 		set_cov_f2();
-		if (p->cor_f2){
-			correct_f2s(p->f2_corpop, p->migfracs, p->f2_mixdist);
-		}
+		////if (p->cor_f2){
+		//	correct_f2s(p->f2_corpop, p->migfracs, p->f2_mixdist);
+		//}
 	}
 	else set_cov();
 	///set_cov2();

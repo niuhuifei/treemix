@@ -74,7 +74,7 @@ public:
 
 	//add a new population
 	void add_pop();
-	void add_pop(string, string, double);
+	void add_pop(string, map<string, double>);
 	void add_pop(string, string);
 	void process_scatter();
 
@@ -160,7 +160,9 @@ public:
 	string get_trimmed_newick();
 	int iterate_movemig(int);
 	pair<bool, int> movemig(int);
+	pair<bool, int> movemig_limit(int);
 	int all_try_movemig();
+	int all_try_movemig_limit();
 	pair<double, double> calculate_se(Graph::edge_descriptor); //get the SE of the weight on an edge (jackknife on blocks)
 	pair<double, double> calculate_se_fromsamp(Graph::edge_descriptor); //get the SE of the weight on an edge (from each block)
 	pair<double, double> calculate_se_bootstrap(gsl_rng *, Graph::edge_descriptor); //bootstrap
