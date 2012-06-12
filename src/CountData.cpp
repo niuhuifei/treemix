@@ -1624,19 +1624,66 @@ void CountData::set_cov_jackknife(int which){
 
 
 void CountData::set_cov_bootstrap(gsl_rng *r){
-gsl_matrix_set_zero(cov);
+	gsl_matrix_set_zero(cov);
+	gsl_matrix_set_zero(cov_var);
+	map<string, map<string, vector<double> > > samples;
+
+	//initialize
+	for (int i = 0; i < npop; i++){
+		string p1 = id2pop[i];
+		map<string, vector<double> > tmp;
+		for (int j = i; j < npop; j++){
+			string p2 = id2pop[j];
+			vector<double> tmp2;
+			tmp.insert(make_pair(p2, tmp2 ));
+		}
+		samples.insert(make_pair(p1, tmp));
+	}
+
+	//sample
+	for (int i = 0; i < nblock; i++){
+		int rint = gsl_rng_uniform_int(r, nblock);
+		for (int j = 0; j < npop; j++){
+			for (int k = j; k < npop; k++){
+				string p1 = id2pop[j];
+				string p2 = id2pop[k];
+				samples[p1][p2].push_back( cov_samp[p1][p2].at(rint) );
+			}
+		}
+	}
+
+	// get mean
 	for(int i = 0; i < npop; i++){
 		for (int j = i; j < npop; j++){
 			string p1 = id2pop[i];
 			string p2 = id2pop[j];
 			double m = 0;
 			for (int k = 0; k < nblock; k++){
-				int rint = gsl_rng_uniform_int(r, nblock);
-				m+= cov_samp[p1][p2].at(rint);
+				if (!isnan(samples[p1][p2].at(k))) m+= samples[p1][p2].at(k);
 			}
 			m = m / (double) nblock;
 			gsl_matrix_set(cov, i, j, m);
 			gsl_matrix_set(cov, j, i, m);
+		}
+	}
+
+	// and s.e.
+	for(int i = 0; i < npop; i++){
+		for (int j = i; j < npop; j++){
+			string p1 = id2pop[i];
+			string p2 = id2pop[j];
+			double m = gsl_matrix_get(cov, i, j);
+			double s = 0;
+			for (int k = 0; k < nblock; k++){
+
+				double samp = samples[p1][p2].at(k);
+				if (!isnan(samp)) s += (samp-m)*(samp-m);
+
+
+			}
+			double c = sqrt(s) /sqrt((double) (nblock-1) * (double)nblock);
+			gsl_matrix_set(cov_var, i, j, c);
+			gsl_matrix_set(cov_var, j, i, c);
 		}
 	}
 }
