@@ -3000,11 +3000,7 @@ void GraphState2::add_pop(string name, map<string, double> migfracs){
 			exit(1);
 		}
 	}
-	if(name == "Kua") {
-		cout << "printing\n";
-		tree->print("before_add");
-		cout << "done\n";
-	}
+
 	string toadd = name;
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
 	int max_index;
@@ -3140,12 +3136,6 @@ void GraphState2::add_pop(string name, map<string, double> migfracs){
 	else set_branches_ls();
 	current_llik = max_llik;
 
-
-	if(name == "Kua") {
-		cout << "printing\n";
-		tree->print("after_add");
-		cout << "done\n";
-	}
 }
 
 
