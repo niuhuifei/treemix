@@ -99,6 +99,7 @@ public:
 
 	//same but for forcing migration during tree building
 	bool cor_mig;
+	bool fitmig;
 	//string corpop;
 	bool climb; //do hill climbing
 

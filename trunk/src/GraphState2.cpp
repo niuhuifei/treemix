@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	//seed = 1339109729;
+	seed = 1339621547;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -2704,7 +2704,7 @@ int GraphState2::local_hillclimb_wmig_all(int index){
 				}
 				else{
 					set_branches_ls();
-					optimize_weights(ne.second);
+					if (params->fitmig) optimize_weights(ne.second);
 				}
 				//tree->print("test0");
 				double lk = llik();
@@ -2736,7 +2736,7 @@ int GraphState2::local_hillclimb_wmig_all(int index){
 				}
 				else{
 					set_branches_ls();
-					optimize_weights(ne.second);
+					if (params->fitmig) optimize_weights(ne.second);
 				}
 
 				double lk = llik();
@@ -3000,7 +3000,11 @@ void GraphState2::add_pop(string name, map<string, double> migfracs){
 			exit(1);
 		}
 	}
-
+	if(name == "Kua") {
+		cout << "printing\n";
+		tree->print("before_add");
+		cout << "done\n";
+	}
 	string toadd = name;
 	vector<Graph::vertex_descriptor> inorder = tree->get_inorder_traversal(current_npops);
 	int max_index;
@@ -3136,13 +3140,12 @@ void GraphState2::add_pop(string name, map<string, double> migfracs){
 	else set_branches_ls();
 	current_llik = max_llik;
 
-	//cout << "not here " << name << "\n"; cout.flush();
 
-	//if (name == "HADZA_Henn"){
-	//	cout << "after add\n";
-	//	tree->print("after_add");
-	//}
-
+	if(name == "Kua") {
+		cout << "printing\n";
+		tree->print("after_add");
+		cout << "done\n";
+	}
 }
 
 

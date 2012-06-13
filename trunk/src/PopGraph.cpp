@@ -898,6 +898,7 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 		//cout << "here\n"; cout.flush();
 		// set up descriptors and edge lengths
 		Graph::in_edge_iterator tmp = in_edges(v3, g).first;
+		while (g[*tmp].is_mig) tmp++;
 		Graph::edge_descriptor ed = *tmp;
 		Graph::vertex_descriptor v1, v2, v4, v5;
 		double d12, d13, d34, d35;
@@ -913,7 +914,7 @@ void PopGraph::local_rearrange(Graph::vertex_descriptor v3, int i){
 		d35 = g[*out3].len;
 
 		Graph::out_edge_iterator out1 = out_edges(v1, g).first;
-		if (target(*out1, g) == v3) {
+		if (target(*out1, g) == v3 ) {
 			out1++;
 			v2 = target(*out1, g);
 			d12 = g[*out1].len;
