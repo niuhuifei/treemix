@@ -165,8 +165,13 @@ int main(int argc, char *argv[]){
     while (!p.readtree && counts.npop > state.current_npops){
 
     	state.add_pop();
-
-    	state.iterate_hillclimb();
+    	//state.iterate_hillclimb();
+    	if (p.cor_mig) {
+    		p.fitmig = false;
+    		state.iterate_local_hillclimb_wmig_all();
+    		p.fitmig = true;
+    	}
+    	else state.iterate_hillclimb();
 
     	cout << "ln(likelihood): "<< state.current_llik << " \n";
     	cout << state.tree->get_newick_format() << "\n";
