@@ -199,8 +199,8 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
                 rect( rep(0, 100), ymi+(0:99)*w, rep(xma, 100), ymi+(1:100)*w, col = mcols, border = mcols)
                 text(xma+disp, ymi, lab = "0", adj = 0, cex = 0.7)
                 text(xma+disp, yma, lab = "0.5", adj = 0, cex =0.7)
-		text(0, yma+0.06, lab = "Migration", adj = 0 , cex = 0.7)
-		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.7)
+		text(0, yma+0.06, lab = "Migration", adj = 0 , cex = 0.6)
+		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.6)
         }	
 }
 

@@ -19,7 +19,7 @@ void printopts(){
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
-	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (2)\n";
+	cout << "-k [int] number of SNPs per block for estimation of covariance matrix (1)\n";
 	cout << "-global Do a round of global rearrangements after adding all populations\n";
 	cout << "-tf [file name] Read the tree topology from a file, rather than estimating it\n";
 	cout << "-m [int] number of migration edges to add (0)\n";
