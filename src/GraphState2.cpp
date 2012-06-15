@@ -15,7 +15,7 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	countdata = counts;
 	allpopnames = counts->list_pops();
 	unsigned int seed = unsigned( time(NULL));
-	seed = 1339621547;
+	//seed = 1339621547;
 	cout << "SEED: "<< seed << "\n";
 	srand ( seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
@@ -2430,7 +2430,7 @@ void GraphState2::iterate_mig_hillclimb_and_optimweight(pair<int, int> indices, 
 
 void GraphState2::iterate_all_hillclimb(){
 
-	tree->print("start");
+	//tree->print("start");
 	optimize_weights();
 
 	cout << "Trying all local rearrangements\n"; cout.flush();
@@ -2440,7 +2440,7 @@ void GraphState2::iterate_all_hillclimb(){
 	int moving4 = all_try_movemig_limit();
 	cout << "Updates in migration position: "<< moving4 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
-	tree->print("after_move0");
+	//tree->print("after_move0");
 //	int moving3 = all_try_changedir();
 	//cout << "Switches in migration direction: "<< moving3 <<  " ln(lk):"<< current_llik << " \n"; cout.flush();
 
@@ -2465,7 +2465,7 @@ void GraphState2::iterate_all_hillclimb(){
 		ss << iter;
 		string tmp;
 		tmp = ss.str();
-		tree->print(tmp);
+		//tree->print(tmp);
 		moving = moving4+moving5;
 		iter++;
 	}
