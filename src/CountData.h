@@ -71,6 +71,7 @@ public:
 	pair< vector<string>, vector<double> > get_centered_freqs(int);
 	set<pair<string, pair<double, double> > > calculate_f4(int, int, int, int);
 	set<pair<string, pair<double, double> > > calculate_f3(int, int, int);
+	pair<double, double> f4ratio(string, string, string, string, string);
 	map< string, map< string, map<string, double> > > calculate_f3s();
 	double calculate_f2(int, int);
 	double scatter_det, scatter_gamma;
