@@ -683,6 +683,7 @@ void CountData::set_cov(){
 		else{
 			double mvar = mean_var.find(id)->second;
 			t = mvar/ mean_n;
+			//cout << pop << " "<< mvar << " "<< mean_n << "\n";
 		}
 		sumtrim+= t;
 		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
@@ -1323,6 +1324,87 @@ void CountData::set_ncomp_ef(){
 }
 */
 
+pair <double, double> CountData::f4ratio(string pop1, string pop2, string pop3, string pop4, string pop5){
+	pair<double, double> toreturn;
+	double mean, se;
+	vector<double> ratios_block;
+
+	int index1, index2, index3, index4, index5;
+	if (pop2id.find(pop1) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop1 << "\n";
+		exit(1);
+	}
+	index1 = pop2id[pop1];
+	if (pop2id.find(pop2) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop2 << "\n";
+		exit(1);
+	}
+	index2 = pop2id[pop2];
+	if (pop2id.find(pop3) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop3 << "\n";
+		exit(1);
+	}
+	index3 = pop2id[pop3];
+	if (pop2id.find(pop4) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop4 << "\n";
+		exit(1);
+	}
+	index4 = pop2id[pop4];
+
+	if (pop2id.find(pop5) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop5 << "\n";
+		exit(1);
+	}
+	index5 = pop2id[pop5];
+
+	for (int i = 0; i < nblock ; i++){
+		double c1 = 0;
+		double c2 = 0;
+		int tmp_nsnp = 0;
+		for (int n = 0; n < nsnp; n++){
+
+			if (isnan(gsl_matrix_get(alfreqs, n, index1))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index2))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index3))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index4))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index5))) continue;
+			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
+
+			double toadd = (gsl_matrix_get(alfreqs, n, index1) - gsl_matrix_get(alfreqs, n, index2))*(gsl_matrix_get(alfreqs, n, index3) - gsl_matrix_get(alfreqs, n, index4) );
+			c1 += toadd;
+
+			toadd = (gsl_matrix_get(alfreqs, n, index1) - gsl_matrix_get(alfreqs, n, index2))*(gsl_matrix_get(alfreqs, n, index5) - gsl_matrix_get(alfreqs, n, index4) );
+			c2 += toadd;
+
+			tmp_nsnp++;
+		}
+		double cov1 = c1/ (double) tmp_nsnp;
+		double cov2 = c2/ (double) tmp_nsnp;
+
+		double ratio = cov2/cov1;
+		ratios_block.push_back(ratio);
+
+	}
+
+	// and standard error
+	double sum = 0;
+
+	for (vector<double>::iterator it = ratios_block.begin(); it != ratios_block.end(); it++) sum  += *it;
+	mean = sum/ (double) nblock;
+
+
+	sum = 0;
+	for (vector<double>::iterator it = ratios_block.begin(); it != ratios_block.end(); it++) {
+		sum+= (*it-mean)*(*it-mean);
+	}
+	se = ( (double) nblock- 1.0) / (double) nblock  * sum;
+	se= sqrt(se);
+
+
+	toreturn = make_pair(mean, se);
+
+	return toreturn;
+}
 set<pair<string, pair<double, double> > > CountData::calculate_f4(int i0, int i1, int i2, int i3){
 	set<pair<string, pair<double, double> > > toreturn;
 	double mean1, se1, mean2, se2, mean3, se3;
