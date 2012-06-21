@@ -77,6 +77,10 @@ int main(int argc, char *argv[]){
     if (cmdline.HasSwitch("-r"))	p.nrand = atoi(cmdline.GetArgument("-r", 0).c_str());
     if (cmdline.HasSwitch("-bootstrap"))	p.bootstrap = true;
     if (cmdline.HasSwitch("-climb"))	p.climb = true;
+    if (cmdline.HasSwitch("-flip"))	{
+    	p.flip = true;
+    	p.flipstring = cmdline.GetArgument("-flip", 0);
+    }
     if (cmdline.HasSwitch("-hzy")){
     	p.hzyfile = cmdline.GetArgument("-hzy", 0);
     	p.read_hzy = true;
@@ -219,7 +223,8 @@ int main(int argc, char *argv[]){
     	state.add_mig(p.mig_index.first, p.mig_index.second);
         cout << "ln(likelihood):" << state.llik() << " \n";
     }
-    if (!p.cor_mig) state.flip_mig();
+    if (!p.cor_mig && !p.flip) state.flip_mig();
+    if (p.flip) state.flip_mig(p.flipstring);
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
     pair<Graph::edge_iterator, Graph::edge_iterator> eds = edges(state.tree->g);

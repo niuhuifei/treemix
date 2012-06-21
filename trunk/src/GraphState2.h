@@ -155,6 +155,7 @@ public:
 	int all_try_changedir();
 
 	void flip_mig();
+	void flip_mig(string);
 	void trim_mig();
 	//get newick string with trimmed terminal branch lengths
 	string get_trimmed_newick();

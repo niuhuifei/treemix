@@ -3521,8 +3521,6 @@ Graph::edge_descriptor GraphState2::add_mig_noopt(int index1, int index2){
 		cerr << "ERROR: not a legal migration between index " << index1 << " and "<< index2 << "\n";
 		exit(1);
 	}
-	compute_sigma();
-	set_sigmacor_from_sigma();
 	current_llik = llik();
 	return(e);
 }
@@ -4375,6 +4373,92 @@ void GraphState2::flip_mig(){
 			//iterate_local_hillclimb_wmig(tree->g[t].index);
 			m = tree->get_mig_edges();
 			i = 0;
+		}
+		else i++;
+	}
+
+}
+
+
+void GraphState2::flip_mig(string pop){
+	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
+
+	int i = 0;
+	while (i < m.size()){
+
+		Graph::vertex_descriptor v = target(m[i], tree->g);
+		set<Graph::edge_descriptor> inm = tree->get_in_mig_edges(v);
+		double w = 0;
+		double max = 0;
+		Graph::edge_descriptor e;
+		for (set<Graph::edge_descriptor>::iterator it3 = inm.begin(); it3!= inm.end(); it3++ ){
+			w += tree->g[*it3].weight;
+			if (tree->g[*it3].weight > max){
+				max = tree->g[*it3].weight;
+				e = *it3;
+			}
+		}
+		double treew = 1-w;
+		//cout << tree->g[target(m[i], tree->g)].name << " "<< pop << "\n";
+		if (tree->g[target(m[i], tree->g)].name == pop){
+			// t holds the target
+			// and s the source
+			Graph::vertex_descriptor t = target(e, tree->g);
+			Graph::vertex_descriptor s = source(e, tree->g);
+			cout << "Flipping migration edge\n"; cout.flush();
+			if ( tree->g[tree->get_parent_node(t).first].is_root) {
+				i++;
+				continue;
+			}
+			while ( tree->g[ tree->get_parent_node_wmig(t).first].is_mig ) {
+				Graph::vertex_descriptor mn = tree->get_parent_node_wmig(t).first;
+				pair<Graph::out_edge_iterator, Graph::out_edge_iterator> oute = out_edges(mn, tree->g);
+				Graph::out_edge_iterator ei = oute.first;
+				while (!tree->g[*ei].is_mig) ei++;
+				Graph::vertex_descriptor pt = target(*ei, tree->g);
+				Graph::vertex_descriptor p = tree->get_parent_node(t).first;
+				tree->remove_mig_edge(*ei);
+				add_mig(tree->g[p].index, tree->g[pt].index);
+			}
+			//cout << "Still good\n";
+			//get remaining weight
+			Graph::edge_descriptor inc;
+			pair<Graph::in_edge_iterator, Graph::in_edge_iterator> ine = in_edges(t, tree->g);
+			while (ine.first != ine.second){
+				if (tree->g[*ine.first].is_mig == false) inc = *ine.first;
+					ine.first++;
+			}
+
+			Graph::vertex_descriptor newm = source(inc, tree->g);
+
+			set<Graph::edge_descriptor> inm2 = tree->get_in_mig_edges(newm);
+			if (inm2.size() > 0 ) {
+				i++;
+				continue;
+			}
+			tree->g[newm].is_mig = true;
+			tree->g[newm].mig_frac = 0.5;
+
+			tree->g[s].is_mig = false;
+			tree->g[s].mig_frac = 0;
+
+			tree->g[inc].is_mig = true;
+			tree->g[inc].weight = treew;
+			tree->g[inc].len = 0;
+
+
+			tree->g[e].is_mig = false;
+			tree->g[e].len = 1;
+
+			if (params->f2) set_branches_ls_f2();
+			else set_branches_ls();
+
+			optimize_weight(inc);
+			current_llik = llik();
+			//iterate_movemig( tree->g[newm].index);
+			//iterate_local_hillclimb_wmig(tree->g[t].index);
+			m = tree->get_mig_edges();
+			i = m.size();
 		}
 		else i++;
 	}

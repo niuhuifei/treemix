@@ -57,6 +57,7 @@ PhyloPop_params::PhyloPop_params(){
 	climb = false;
 	micro = false;
 	fitmig = true;
+	flip = false;
 }
 
 void PhyloPop_params::read_migfracs(string infile){
