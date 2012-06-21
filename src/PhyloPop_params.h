@@ -105,6 +105,9 @@ public:
 
 	//microsats
 	bool micro;
+
+	bool flip;
+	string flipstring;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
