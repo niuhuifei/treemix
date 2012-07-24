@@ -1685,6 +1685,72 @@ double CountData::calculate_f2(int p1, int p2){
 	toreturn = toreturn/ (double) nsnp;
 	return toreturn;
 }
+
+pair<double, double> CountData::calculate_drift(int p1, int p2){
+	pair<double, double> toreturn;
+	string pop1 = id2pop[p1];
+	double meanhzy1 = mean_hzy.find(p1)->second;
+	double mean_n1 = mean_ninds.find(p1)->second;
+	double t1 = meanhzy1 / (4.0* mean_n1);
+
+	vector<double> blocks;
+	for (int i = 0; i < nblock ; i++){
+		int tmp_nsnp = 0;
+		double tmpnum = 0;
+		double tmpdenom = 0;
+		for (int n = 0; n < nsnp; n++){
+			if (isnan(gsl_matrix_get(alfreqs, n, p1))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, p2))) continue;
+			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
+			double f1 = gsl_matrix_get(alfreqs, n, p1);
+			double f2 = gsl_matrix_get(alfreqs, n, p2);
+			tmpnum += f1*(1-f1);
+			tmpdenom += f1*(1-f2);
+			tmp_nsnp++;
+		}
+		tmpnum = tmpnum/ (double) tmp_nsnp;
+		tmpdenom = tmpdenom/ (double) tmp_nsnp;
+		tmpnum += t1;
+		//cout << tmpnum << " "<< tmpdenom << "\n";
+		double tmpc = tmpnum/tmpdenom;
+		blocks.push_back(tmpc);
+	}
+
+	/*
+	double num =0;
+	double denom = 0;
+	for (int i = 0; i < nsnp; i++){
+		if (isnan(gsl_matrix_get(alfreqs, i, p1))) continue;
+		if (isnan(gsl_matrix_get(alfreqs, i, p2))) continue;
+		double f1 = gsl_matrix_get(alfreqs, i, p1);
+		double f2 = gsl_matrix_get(alfreqs, i, p2);
+		num += f1*(1-f1);
+		denom += f1*(1-f2);
+		//cout << f1 << " "<< f2 << "\n";
+	}/
+	num /= (double) nsnp;
+	denom /= (double) nsnp;
+	num += t1;
+	//cout << num << " "<< denom << " "<< t1 << "\n";
+	toreturn = num/denom;
+	*/
+
+	double mean = 0;
+	for (vector<double>::iterator it = blocks.begin(); it != blocks.end(); it++) mean += *it;
+	mean = mean/ (double) nblock;
+	toreturn.first = mean;
+
+	double se_sum = 0;
+	for (vector<double>::iterator it = blocks.begin(); it != blocks.end(); it++) {
+		se_sum+= (*it-mean)*(*it-mean);
+	}
+
+	double se1 = ( (double) nblock- 1.0) / (double) nblock * se_sum;
+	se1= sqrt(se1);
+	toreturn.second = se1;
+	return toreturn;
+}
+
 void CountData::set_cov_jackknife(int which){
 	gsl_matrix_set_zero(cov);
 	for(int i = 0; i < npop; i++){
@@ -1701,7 +1767,6 @@ void CountData::set_cov_jackknife(int which){
 			gsl_matrix_set(cov, j, i, m);
 		}
 	}
-
 }
 
 

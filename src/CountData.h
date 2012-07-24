@@ -74,6 +74,7 @@ public:
 	pair<double, double> f4ratio(string, string, string, string, string);
 	map< string, map< string, map<string, double> > > calculate_f3s();
 	double calculate_f2(int, int);
+	pair<double, double> calculate_drift(int, int);
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;
