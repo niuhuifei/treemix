@@ -678,6 +678,7 @@ void CountData::set_cov(){
 		double t;
 		if (!params->micro) {
 			double meanhzy = mean_hzy.find(id)->second;
+			if (params->print_hzy) cout << pop << " "<< meanhzy << "\n";
 			t = meanhzy / (4.0* mean_n);
 		}
 		else{
@@ -688,8 +689,12 @@ void CountData::set_cov(){
 		sumtrim+= t;
 		//cout << pop  << " "<< t << " "<< meanhzy << " "<< mean_n << "\n";
 		//cout << pop  << " "<< t << "\n";
-		trim.insert(make_pair(pop, t));
+		if (!params->sample_size_correct){
+			trim.insert(make_pair(pop, 0));
+		}
+		else trim.insert(make_pair(pop, t));
 	}
+	if (!params->sample_size_correct) sumtrim = 0;
 	//calculate the covariance matrix in each block
 	cout << "Estimating covariance matrix in "<< nblock << " blocks of size "<< params->window_size <<"\n"; cout.flush();
 	for (int k = 0; k < nblock ; k++){
