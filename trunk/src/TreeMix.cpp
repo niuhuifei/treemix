@@ -27,6 +27,10 @@ void printopts(){
 	cout << "-g [vertices file name] [edges file name] read the graph from a previous TreeMix run\n";
 	cout << "-se Calculate standard errors of migration weights (computationally expensive)\n";
 	cout << "-micro microsatellite data\n";
+	cout << "-bootstrap Perform a single bootstrap replicate\n";
+	cout << "-cor_mig [file] list of known migration events to include (also use -climb)\n";
+	cout << "-noss Turn off sample size correction\n";
+
 	cout << "\n";
 }
 
@@ -62,6 +66,8 @@ int main(int argc, char *argv[]){
       	p.efile = cmdline.GetArgument("-g", 1);
       	p.read_graph = true;
       }
+    if (cmdline.HasSwitch("-noss")) p.sample_size_correct = false;
+    if (cmdline.HasSwitch("-printhzy")) p.print_hzy = true;
     if (cmdline.HasSwitch("-arcsin")) p.alfreq_scaling = 1;
     if (cmdline.HasSwitch("-nofrac")) p.nofrac = true;
     if (cmdline.HasSwitch("-scale")) p.alfreq_scaling = 3;
