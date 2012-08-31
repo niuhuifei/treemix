@@ -48,7 +48,7 @@ public:
 
 	int nrand;
 
-
+	bool print_hzy;
 	//only use a certain number of populations
 	bool restrict_pop;
 	int pops2use;
