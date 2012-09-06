@@ -229,7 +229,7 @@ int main(int argc, char *argv[]){
     	state.add_mig(p.mig_index.first, p.mig_index.second);
         cout << "ln(likelihood):" << state.llik() << " \n";
     }
-    if (!p.cor_mig && !p.flip) state.flip_mig();
+    if (!p.cor_mig && !p.flip && p.nmig > 0) state.flip_mig();
     if (p.flip) state.flip_mig(p.flipstring);
     treeout << state.tree->get_newick_format() << "\n";
     if (p.sample_size_correct == false) treeout << state.get_trimmed_newick() << "\n";
@@ -274,7 +274,8 @@ int main(int argc, char *argv[]){
     	}
 		it++;
     }
-    if (p.sample_size_correct == true) state.tree->print(outstem);
+    map<Graph::edge_descriptor, double> maxw = state.get_edge_maxw();
+    if (p.sample_size_correct == true) state.tree->print(outstem, maxw);
     else state.print_trimmed(outstem);
     state.print_sigma_cor(modelcovfile);
 

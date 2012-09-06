@@ -71,6 +71,7 @@ public:
 	set<Graph::edge_descriptor> get_root_adj_edge();
 	void print();
 	void print(string);
+	void print(string, map<Graph::edge_descriptor, double>);
 	void print(string, map<string, double>*);
 	map<string, Graph::vertex_descriptor> get_tips( Graph::vertex_descriptor);
 	map<string, Graph::vertex_descriptor> get_tips_nomig( Graph::vertex_descriptor);
