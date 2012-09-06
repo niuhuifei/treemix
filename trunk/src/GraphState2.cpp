@@ -1101,6 +1101,52 @@ void GraphState2::set_branch_coefs_nnls(double * A, double * b, int n, int p, ma
 }
 
 
+map<Graph::edge_descriptor, double> GraphState2::get_edge_maxw(){
+	map<Graph::edge_descriptor, double> toreturn;
+
+	map<string, Graph::vertex_descriptor> popname2tip = tree->get_tips(tree->root);
+	map<string, set<pair<double, set<Graph::edge_descriptor> > > > name2paths;
+	for( map<string, Graph::vertex_descriptor>::iterator it = popname2tip.begin(); it != popname2tip.end(); it++){
+		set<pair<double, set<Graph::edge_descriptor> > > tmpset = tree->get_paths_to_root_edge(it->second);
+		name2paths.insert(make_pair(it->first, tmpset));
+	}
+	// trying to speed up by calculating all covariances once
+	//
+	//
+	//
+
+
+	for (int i = 0; i < current_npops; i++){
+		for (int j = i; j < current_npops; j++){
+			string p1 = allpopnames[i];
+			string p2 = allpopnames[j];
+
+			set<pair<double, set<Graph::edge_descriptor> > > paths_1 = name2paths[p1];
+			set<pair<double, set<Graph::edge_descriptor> > > paths_2 = name2paths[p2];
+
+
+			for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it1 = paths_1.begin(); it1 != paths_1.end(); it1++){
+				for(set<pair<double, set<Graph::edge_descriptor> > >::iterator it2 = paths_2.begin(); it2 != paths_2.end(); it2++){
+					for( set<Graph::edge_descriptor>::iterator it3 = it1->second.begin(); it3 != it1->second.end(); it3++){
+						if ( tree->g[*it3].is_mig) continue;
+						if (it2->second.find(*it3) != it2->second.end()){
+							double add = it1->first * it2->first;
+							if (toreturn.find(*it3) == toreturn.end()){
+								toreturn.insert(make_pair(*it3, add));
+							}
+							else if (toreturn[*it3]< add) toreturn[*it3] = add;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	return toreturn;
+}
+
+
 void GraphState2::optimize_weights(){
 	/*
 	 *  Go through each migration edge, optimize (restricting to be in range [0,1]) by normal optimization using logistic function

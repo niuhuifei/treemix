@@ -1697,7 +1697,6 @@ pair<double, double> CountData::calculate_drift(int p1, int p2){
 	double meanhzy1 = mean_hzy.find(p1)->second;
 	double mean_n1 = mean_ninds.find(p1)->second;
 	double t1 = meanhzy1 / (4.0* mean_n1);
-
 	vector<double> blocks;
 	for (int i = 0; i < nblock ; i++){
 		int tmp_nsnp = 0;
@@ -1716,7 +1715,7 @@ pair<double, double> CountData::calculate_drift(int p1, int p2){
 		tmpnum = tmpnum/ (double) tmp_nsnp;
 		tmpdenom = tmpdenom/ (double) tmp_nsnp;
 		tmpnum += t1;
-		//cout << tmpnum << " "<< tmpdenom << "\n";
+		//cout << pop1 << " "<< meanhzy1 << " "<< mean_n1 << " "<< t1 << " "<< tmpnum << " "<< tmpdenom << "\n";
 		double tmpc = tmpnum/tmpdenom;
 		blocks.push_back(tmpc);
 	}

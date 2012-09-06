@@ -192,6 +192,9 @@ public:
 	//targeting population
 	void target_pop();
 
+	//
+	map<Graph::edge_descriptor, double> get_edge_maxw();
+
 };
 
 #endif /* GRAPHSTATE2_H_ */
