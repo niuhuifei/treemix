@@ -260,8 +260,8 @@ plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = ve
 	if (!is.na(o)){
 		o = read.table(o, as.is = T, comment.char = "", quote = "")
 	}
-	#e[,3] = e[,3]*e[,4]
-	e[,3] = e[,3]*e[,7]
+	e[,3] = e[,3]*e[,4]
+	#e[,3] = e[,3]*e[,7]
 	
 	se = read.table(gzfile(se), as.is = T, comment.char = "", quote = "")
 	m1 = apply(se, 1, mean)

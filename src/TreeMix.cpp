@@ -14,7 +14,7 @@ string infile;
 string outstem = "TreeMix";
 
 void printopts(){
-	cout << "\nTreeMix v. 1.0\n";
+	cout << "\nTreeMix v. 1.1\n";
 	cout << "$Revision$\n\n";
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
@@ -173,7 +173,6 @@ int main(int argc, char *argv[]){
     }
 
     while (!p.readtree && counts.npop > state.current_npops){
-
     	state.add_pop();
     	//state.iterate_hillclimb();
     	if (p.cor_mig) {
