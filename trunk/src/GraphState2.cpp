@@ -2961,9 +2961,11 @@ void GraphState2::add_pop(){
 	sigma_cor = gsl_matrix_alloc(current_npops+1, current_npops+1);
 	gsl_matrix_set_zero(sigma_cor);
 
-	current_npops++;
-	process_scatter();
-	current_npops--;
+	//cout << "here?\n"; cout.flush();
+	//current_npops++;
+	//process_scatter();
+	//current_npops--;
+	//cout << "not here?\n"; cout.flush();
 
 	string toadd = allpopnames[current_npops];
 	cout << "Adding "<< toadd << " ["<< current_npops+1 << "/" << allpopnames.size() <<"]\n";
