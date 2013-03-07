@@ -1373,6 +1373,7 @@ pair <double, double> CountData::f4ratio(string pop1, string pop2, string pop3, 
 			if (isnan(gsl_matrix_get(alfreqs, n, index3))) continue;
 			if (isnan(gsl_matrix_get(alfreqs, n, index4))) continue;
 			if (isnan(gsl_matrix_get(alfreqs, n, index5))) continue;
+			//cout << gsl_matrix_get(alfreqs, n, index1) <<"\n";
 			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
 
 			double toadd = (gsl_matrix_get(alfreqs, n, index1) - gsl_matrix_get(alfreqs, n, index2))*(gsl_matrix_get(alfreqs, n, index3) - gsl_matrix_get(alfreqs, n, index4) );
@@ -1410,6 +1411,122 @@ pair <double, double> CountData::f4ratio(string pop1, string pop2, string pop3, 
 
 	return toreturn;
 }
+
+
+pair <double, double> CountData::f4ratio_sub(string pop1, string pop2, string pop3, string pop4, string pop5){
+	pair<double, double> toreturn;
+	double mean, se;
+	vector<double> ratios_block;
+
+	int index1, index2, index3, index4, index5, index6;
+	if (pop2id.find(pop1) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop1 << "\n";
+		exit(1);
+	}
+	index1 = pop2id[pop1];
+	if (pop2id.find(pop2) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop2 << "\n";
+		exit(1);
+	}
+	index2 = pop2id[pop2];
+	if (pop2id.find(pop3) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop3 << "\n";
+		exit(1);
+	}
+	index3 = pop2id[pop3];
+	if (pop2id.find(pop4) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop4 << "\n";
+		exit(1);
+	}
+	index4 = pop2id[pop4];
+
+	if (pop2id.find(pop5) == pop2id.end()){
+		cout << "ERROR: Cannot find population "<< pop5 << "\n";
+		exit(1);
+	}
+	index5 = pop2id[pop5];
+
+	//if (pop2id.find(pop6) == pop2id.end()){
+	//	cout << "ERROR: Cannot find population "<< pop6 << "\n";
+	//	exit(1);
+	//}
+	//index6 = pop2id[pop6];
+
+	for (int i = 0; i < nblock ; i++){
+		//double f4_x = 0;
+		//double f4_y = 0;
+		//double f4_2 = 0;
+		//double f4_3 = 0;
+		double f4_num =0;
+		double f4_denom = 0;
+		int tmp_nsnp = 0;
+		for (int n = 0; n < nsnp; n++){
+
+			if (isnan(gsl_matrix_get(alfreqs, n, index1))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index2))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index3))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index4))) continue;
+			if (isnan(gsl_matrix_get(alfreqs, n, index5))) continue;
+			//if (isnan(gsl_matrix_get(alfreqs, n, index6))) continue;
+			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
+
+			double f1 = gsl_matrix_get(alfreqs, n, index1);
+			double f2 = gsl_matrix_get(alfreqs, n, index2);
+			double f3 = gsl_matrix_get(alfreqs, n, index3);
+			double f4 = gsl_matrix_get(alfreqs, n, index4);
+			double f5 = gsl_matrix_get(alfreqs, n, index5);
+			//double f6 = gsl_matrix_get(alfreqs, n, index6);
+			//cout << f1 << " "<< f2 << " " << f3 << " "<< f4 << " "<< f5 <<  " "<< f6 << "\n";
+
+			double toadd = (f2 - f4)*(f5 - f3);
+			//f4_x += toadd;
+			f4_num += toadd;
+			//cout <<"add1 "<< toadd << " ";
+			toadd = (f1 - f4)*(f2 -f3);
+			f4_denom += toadd;
+			//toadd = (f1 - f5)*(f2 -f3 );
+			//f4_2 += toadd;
+
+			//toadd = (f1 - f5)*(f3 -f4 );
+			//f4_3 += toadd;
+			//cout << "add2 "<< toadd << "\n";
+
+			tmp_nsnp++;
+		}
+		//f4_x = f4_x / (double) tmp_nsnp;
+		//f4_y = f4_y / (double) tmp_nsnp;
+		//f4_2 = f4_2 / (double) tmp_nsnp;
+		//f4_3 = f4_3 / (double) tmp_nsnp;
+
+		f4_num =f4_num / (double) tmp_nsnp;
+		f4_denom = f4_denom/ (double) tmp_nsnp;
+		//cout << f4_num << " "<< f4_denom << "\n";
+		double ratio= (f4_num/f4_denom);
+		ratios_block.push_back(ratio);
+
+	}
+
+	// and standard error
+	double sum = 0;
+
+	for (vector<double>::iterator it = ratios_block.begin(); it != ratios_block.end(); it++) sum  += *it;
+	mean = sum/ (double) nblock;
+
+
+	sum = 0;
+	for (vector<double>::iterator it = ratios_block.begin(); it != ratios_block.end(); it++) {
+		sum+= (*it-mean)*(*it-mean);
+	}
+	se = ( (double) nblock- 1.0) / (double) nblock  * sum;
+	se= sqrt(se);
+
+
+	toreturn = make_pair(mean, se);
+
+	return toreturn;
+}
+
+
 set<pair<string, pair<double, double> > > CountData::calculate_f4(int i0, int i1, int i2, int i3){
 	set<pair<string, pair<double, double> > > toreturn;
 	double mean1, se1, mean2, se2, mean3, se3;
@@ -1738,6 +1855,52 @@ pair<double, double> CountData::calculate_drift(int p1, int p2){
 	//cout << num << " "<< denom << " "<< t1 << "\n";
 	toreturn = num/denom;
 	*/
+
+	double mean = 0;
+	for (vector<double>::iterator it = blocks.begin(); it != blocks.end(); it++) mean += *it;
+	mean = mean/ (double) nblock;
+	toreturn.first = mean;
+
+	double se_sum = 0;
+	for (vector<double>::iterator it = blocks.begin(); it != blocks.end(); it++) {
+		se_sum+= (*it-mean)*(*it-mean);
+	}
+
+	double se1 = ( (double) nblock- 1.0) / (double) nblock * se_sum;
+	se1= sqrt(se1);
+	toreturn.second = se1;
+	return toreturn;
+}
+
+
+pair<double, double> CountData::calculate_mean(int p1){
+	pair<double, double> toreturn;
+	string pop1 = id2pop[p1];
+	double meanhzy1 = mean_hzy.find(p1)->second;
+	double mean_n1 = mean_ninds.find(p1)->second;
+	//double t1 = meanhzy1 / (4.0* mean_n1);
+	vector<double> blocks;
+	for (int i = 0; i < nblock ; i++){
+		int tmp_nsnp = 0;
+		double tmpnum = 0;
+		double tmpdenom = 0;
+		for (int n = 0; n < nsnp; n++){
+			if (isnan(gsl_matrix_get(alfreqs, n, p1))) continue;
+			//if (isnan(gsl_matrix_get(alfreqs, n, p2))) continue;
+			if ( n >= i*params->window_size && n < (i+1)*params->window_size) continue;
+			double f1 = gsl_matrix_get(alfreqs, n, p1);
+			//double f2 = gsl_matrix_get(alfreqs, n, p2);
+			tmpnum += f1;
+			tmp_nsnp++;
+		}
+		tmpnum = tmpnum/ (double) tmp_nsnp;
+		//tmpdenom = tmpdenom/ (double) tmp_nsnp;
+		//tmpnum += t1;
+		//cout << pop1 << " "<< meanhzy1 << " "<< mean_n1 << " "<< t1 << " "<< tmpnum << " "<< tmpdenom << "\n";
+		//double tmpc = tmpnum/tmpdenom;
+		blocks.push_back(tmpnum);
+	}
+
 
 	double mean = 0;
 	for (vector<double>::iterator it = blocks.begin(); it != blocks.end(); it++) mean += *it;

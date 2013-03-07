@@ -31,13 +31,14 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = treemix$(EXEEXT) threepop$(EXEEXT) fourpop$(EXEEXT)
+bin_PROGRAMS = treemix$(EXEEXT) threepop$(EXEEXT) fourpop$(EXEEXT) \
+	f4ratio$(EXEEXT) f4ratio_sub$(EXEEXT)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4_ax_boost_base.m4.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/boost.m4.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -46,6 +47,16 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_f4ratio_OBJECTS = f4_ratio.$(OBJEXT) gzstream.$(OBJEXT) \
+	PopGraph.$(OBJEXT) nnls.$(OBJEXT) PhyloPop_params.$(OBJEXT) \
+	CountData.$(OBJEXT) CmdLine.$(OBJEXT) GraphState2.$(OBJEXT)
+f4ratio_OBJECTS = $(am_f4ratio_OBJECTS)
+f4ratio_LDADD = $(LDADD)
+am_f4ratio_sub_OBJECTS = f4_subtract.$(OBJEXT) gzstream.$(OBJEXT) \
+	PopGraph.$(OBJEXT) nnls.$(OBJEXT) PhyloPop_params.$(OBJEXT) \
+	CountData.$(OBJEXT) CmdLine.$(OBJEXT) GraphState2.$(OBJEXT)
+f4ratio_sub_OBJECTS = $(am_f4ratio_sub_OBJECTS)
+f4ratio_sub_LDADD = $(LDADD)
 am_fourpop_OBJECTS = four_pop.$(OBJEXT) gzstream.$(OBJEXT) \
 	PopGraph.$(OBJEXT) nnls.$(OBJEXT) PhyloPop_params.$(OBJEXT) \
 	CountData.$(OBJEXT) CmdLine.$(OBJEXT) GraphState2.$(OBJEXT)
@@ -69,9 +80,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(fourpop_SOURCES) $(threepop_SOURCES) $(treemix_SOURCES)
-DIST_SOURCES = $(fourpop_SOURCES) $(threepop_SOURCES) \
-	$(treemix_SOURCES)
+SOURCES = $(f4ratio_SOURCES) $(f4ratio_sub_SOURCES) $(fourpop_SOURCES) \
+	$(threepop_SOURCES) $(treemix_SOURCES)
+DIST_SOURCES = $(f4ratio_SOURCES) $(f4ratio_sub_SOURCES) \
+	$(fourpop_SOURCES) $(threepop_SOURCES) $(treemix_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -83,21 +95,26 @@ AUTOHEADER = ${SHELL} /Users/pickrell/Documents/workspace/PhyloPop/missing --run
 AUTOMAKE = ${SHELL} /Users/pickrell/Documents/workspace/PhyloPop/missing --run automake-1.10
 AWK = awk
 BOOST_CPPFLAGS = -I/opt/local/include
-BOOST_LDFLAGS = -L/opt/local/lib
+BOOST_ROOT = 
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
-CPPFLAGS = -I/opt/local/include
+CPP = gcc -E
+CPPFLAGS =  -I/opt/local/include
 CXX = g++
+CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
+DISTCHECK_CONFIGURE_FLAGS = LDFLAGS=-L/opt/local/lib CXXFLAGS=-I/opt/local/include
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
+EGREP = /usr/bin/grep -E
 EXEEXT = 
+GREP = /usr/bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -113,14 +130,15 @@ OBJEXT = o
 PACKAGE = treemix
 PACKAGE_BUGREPORT = joepickrell@gmail.com
 PACKAGE_NAME = TreeMix
-PACKAGE_STRING = TreeMix 1.04
+PACKAGE_STRING = TreeMix 1.11
 PACKAGE_TARNAME = treemix
-PACKAGE_VERSION = 1.04
+PACKAGE_VERSION = 1.11
 PATH_SEPARATOR = :
+SED = /opt/local/bin/gsed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
-VERSION = 1.04
+VERSION = 1.11
 abs_builddir = /Users/pickrell/Documents/workspace/PhyloPop/src
 abs_srcdir = /Users/pickrell/Documents/workspace/PhyloPop/src
 abs_top_builddir = /Users/pickrell/Documents/workspace/PhyloPop
@@ -163,10 +181,11 @@ sysconfdir = ${prefix}/etc
 target_alias = 
 top_builddir = ..
 top_srcdir = ..
-DISTCHECK_CONFIGURE_FLAGS = LDFLAGS=-L/opt/local/lib CXXFLAGS=-I/opt/local/include
 treemix_SOURCES = TreeMix.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp
 threepop_SOURCES = three_pop.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp
 fourpop_SOURCES = four_pop.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp
+f4ratio_SOURCES = f4_ratio.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp
+f4ratio_sub_SOURCES = f4_subtract.cpp gzstream.cpp PopGraph.cpp nnls.cpp PhyloPop_params.cpp CountData.cpp CmdLine.cpp GraphState2.cpp
 noinst_HEADERS = plink2treemix.py gzstream.h PopGraph.h nnls.h Settings.hpp PhyloPop_params.h CountData.h CmdLine.h GraphState2.h plotting_funcs.R 
 all: all-am
 
@@ -224,6 +243,12 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+f4ratio$(EXEEXT): $(f4ratio_OBJECTS) $(f4ratio_DEPENDENCIES) 
+	@rm -f f4ratio$(EXEEXT)
+	$(CXXLINK) $(f4ratio_OBJECTS) $(f4ratio_LDADD) $(LIBS)
+f4ratio_sub$(EXEEXT): $(f4ratio_sub_OBJECTS) $(f4ratio_sub_DEPENDENCIES) 
+	@rm -f f4ratio_sub$(EXEEXT)
+	$(CXXLINK) $(f4ratio_sub_OBJECTS) $(f4ratio_sub_LDADD) $(LIBS)
 fourpop$(EXEEXT): $(fourpop_OBJECTS) $(fourpop_DEPENDENCIES) 
 	@rm -f fourpop$(EXEEXT)
 	$(CXXLINK) $(fourpop_OBJECTS) $(fourpop_LDADD) $(LIBS)
@@ -246,6 +271,8 @@ include ./$(DEPDIR)/GraphState2.Po
 include ./$(DEPDIR)/PhyloPop_params.Po
 include ./$(DEPDIR)/PopGraph.Po
 include ./$(DEPDIR)/TreeMix.Po
+include ./$(DEPDIR)/f4_ratio.Po
+include ./$(DEPDIR)/f4_subtract.Po
 include ./$(DEPDIR)/four_pop.Po
 include ./$(DEPDIR)/gzstream.Po
 include ./$(DEPDIR)/nnls.Po

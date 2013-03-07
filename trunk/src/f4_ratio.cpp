@@ -28,6 +28,7 @@ string numfile;
 int main(int argc, char *argv[])
 {
 	PhyloPop_params p;
+	p.alfreq_scaling = 4;
     CCmdLine cmdline;
 	if (cmdline.SplitLine(argc, argv) < 1){
 		printopts();
