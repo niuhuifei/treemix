@@ -44,7 +44,9 @@ int main(int argc, char *argv[])
 		for (int j = 0; j < counts.npop; j++){
 			if (i == j) continue;
 			pair<double, double> drift = counts.calculate_drift(i, j);
-			cout << counts.id2pop[i] << " "<< counts.id2pop[j] << " " << drift.first << " "<< drift.second << "\n";
+			pair<double, double> m1 = counts.calculate_mean(i);
+			pair<double, double> m2 = counts.calculate_mean(j);
+			cout << counts.id2pop[i] << " "<< counts.id2pop[j] << " " << drift.first << " "<< drift.second << " "<< m1.first << " "<< m1.second << " "<< m2.first << " "<< m2.second << "\n";
 		}
 	}
 	return 0;

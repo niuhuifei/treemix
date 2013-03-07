@@ -72,9 +72,11 @@ public:
 	set<pair<string, pair<double, double> > > calculate_f4(int, int, int, int);
 	set<pair<string, pair<double, double> > > calculate_f3(int, int, int);
 	pair<double, double> f4ratio(string, string, string, string, string);
+	pair<double, double> f4ratio_sub(string, string, string, string, string);
 	map< string, map< string, map<string, double> > > calculate_f3s();
 	double calculate_f2(int, int);
 	pair<double, double> calculate_drift(int, int);
+	pair<double, double> calculate_mean(int);
 	double scatter_det, scatter_gamma;
 	PhyloPop_params* params;
 	gsl_matrix *U, *scatter_prime;
