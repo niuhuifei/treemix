@@ -126,6 +126,7 @@ public:
 	//likelihoods
 	double llik(bool w = false);
 	double llik_normal();
+
 	double llik_wishart();
 	double llik_mvn();
 
@@ -197,4 +198,5 @@ public:
 
 };
 
+double lndgauss(double, double);
 #endif /* GRAPHSTATE2_H_ */

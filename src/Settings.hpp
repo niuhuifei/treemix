@@ -7,7 +7,7 @@
 
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
-
+#define _USE_MATH_DEFINES
 #include <string>
 #include <list>
 #include <vector>

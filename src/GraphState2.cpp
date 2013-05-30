@@ -2225,11 +2225,11 @@ double GraphState2::llik_normal(){
 			double se = countdata->get_cov_var(p1, p2);
 
 			double dif = obs-pred;
-			double scale = params->smooth_scale;
-			double toadd = gsl_ran_gaussian_pdf(dif, se * scale);
-			//cout << p1 << " "<< p2 << pred << " "<< obs << " "<< se << " "<< toadd << " "<< log(toadd) << "\n";
-			//cout << p1<< " "<< p2 << " "<< toadd << " "<< log(toadd) << "\n";
-			toreturn+= log(toadd);
+			//double scale = params->smooth_scale;
+			double toadd = lndgauss(dif, se);
+			toreturn += toadd;
+			//double toadd = gsl_ran_gaussian_pdf(dif, se * scale);
+			//toreturn+= log(toadd);
 
 			//}
 		}
@@ -2237,6 +2237,12 @@ double GraphState2::llik_normal(){
 	return toreturn;
 }
 
+double lndgauss(double dif, double se){
+	double toreturn = 0;
+	toreturn += -log (se * sqrt(2.0*M_PI));
+	toreturn += -(dif*dif) /(2*se*se);
+	return toreturn;
+}
 int GraphState2::local_hillclimb(int inorder_index){
 	// if there was a rearrangement, return 1. otw 0.
 	//
