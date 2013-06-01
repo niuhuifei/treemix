@@ -3013,7 +3013,11 @@ void GraphState2::add_pop(){
 			current_npops--;
 			inorder = tree->get_inorder_traversal(current_npops);
 		}
-		while (max_llik <= -DBL_MAX){
+		if (max_llik <= -DBL_MAX){
+			cerr <<"ERROR: numerical problem in likelihood [ln(lk) = "<< max_llik << "]\n";
+			cerr <<"Please report this bug.\n";
+			exit(1);
+			/*
 			cout << "RESCALING\n"; cout.flush();
 			params->smooth_scale = params->smooth_scale *2;
 			for (int i = 0; i < inorder.size(); i++){
@@ -3035,6 +3039,7 @@ void GraphState2::add_pop(){
 				current_npops--;
 				inorder = tree->get_inorder_traversal(current_npops);
 			}
+			*/
 		}
 		Graph::vertex_descriptor tmp = tree->add_tip(inorder[max_index], toadd);
 		current_npops++;
@@ -3114,7 +3119,11 @@ void GraphState2::add_pop(string name, map<string, double> migfracs){
 		inorder = tree->get_inorder_traversal(current_npops);
 		tips = tree->get_tips(tree->root);
 	}
-	while (max_llik <= -DBL_MAX){
+	if (max_llik <= -DBL_MAX){
+		cerr <<"ERROR: numerical problem in likelihood [ln(lk) = "<< max_llik << "]\n";
+		cerr <<"Please report this bug.\n";
+		exit(1);
+		/*
 		cout << "RESCALING\n"; cout.flush();
 		params->smooth_scale = params->smooth_scale *2;
 		for (int i = 0; i < inorder.size(); i++){
@@ -3170,13 +3179,11 @@ void GraphState2::add_pop(string name, map<string, double> migfracs){
 				inorder = tree->get_inorder_traversal(current_npops);
 				tips = tree->get_tips(tree->root);
 		}
+		*/
 	}
 	//cout << tree->g[inorder[max_index]].index << "\n";
 	Graph::vertex_descriptor tmp = tree->add_tip(inorder[max_index], toadd);
-	//if (name == "HADZA_Henn"){
-	//		cout << "after tip\n";
-	//		tree->print("after_tip");
-	//	}
+
 	map<int, Graph::vertex_descriptor> i2v = tree->index2vertex();
 	for (map<string, double>::iterator it = migfracs.begin(); it != migfracs.end(); it++){
 		int sourceindex = tree->g[tips[it->first]].index;
