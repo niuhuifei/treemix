@@ -196,6 +196,8 @@ public:
 	//
 	map<Graph::edge_descriptor, double> get_edge_maxw();
 
+	//get the number of migration edges
+	int get_nmig();
 };
 
 double lndgauss(double, double);
