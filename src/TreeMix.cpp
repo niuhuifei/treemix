@@ -165,22 +165,19 @@ int main(int argc, char *argv[]){
     GraphState2 state(&counts, &p);
 
     cout.precision(8);
-    if (p.readtree) {
-    	state.set_graph_from_file(p.treefile);
-
-    	//state.iterate_hillclimb();
-    }
+    if (p.readtree) state.set_graph_from_file(p.treefile);
     else if (p.read_graph){
     	state.set_graph(p.vfile, p.efile);
     	cout << "Set tree to: "<< state.tree->get_newick_format() << "\n";
-    	while (state.current_llik <= -DBL_MAX){
-    		cout << "RESCALING\n"; cout.flush();
-    		p.smooth_scale = p.smooth_scale *2;
-    		state.current_llik = state.llik();
-    	}
+    	//while (state.current_llik <= -DBL_MAX){
+    	//	cout << "RESCALING\n"; cout.flush();
+    	//	p.smooth_scale = p.smooth_scale *2;
+    	//	state.current_llik = state.llik();
+    	//}
     	cout << "ln(lk) = " << state.current_llik << " \n";
     }
 
+    // add all populations
     while (!p.readtree && counts.npop > state.current_npops){
     	state.add_pop();
     	//state.iterate_hillclimb();
@@ -190,19 +187,23 @@ int main(int argc, char *argv[]){
     		p.fitmig = true;
     	}
     	else state.iterate_hillclimb();
-
     	cout << "ln(likelihood): "<< state.current_llik << " \n";
     	cout << state.tree->get_newick_format() << "\n";
     }
+
+    //do global rearrangements
     if (p.global){
     	cout << "Testing global rearrangements\n"; cout.flush();
     	state.iterate_global_hillclimb();
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls();
     }
+
+    //place the root
     if (p.set_root) state.place_root(p.root);
 
-    likout << "Tree likelihood: "<< state.llik() << " \n";
+    //print the starting likelihood (after tree building)
+    likout << "Starting ln(likelihood) with "<< state.get_nmig() <<" migration events: "<< state.llik() << " \n";
     if (p.dotarget)	state.target_pop();
     if (p.climb) state.iterate_all_hillclimb();
     for (int i = 0; i < p.nmig; i++){
@@ -225,8 +226,8 @@ int main(int argc, char *argv[]){
     	if (p.f2) state.set_branches_ls_f2();
     	else state.set_branches_ls();
         state.flip_mig();
-    	p.smooth_scale = 1;
     	cout << "ln(likelihood):" << state.llik() << " \n";
+
     }
     if (p.end_mig) state.optimize_weights();
     if (p.forcemig) {
@@ -287,6 +288,7 @@ int main(int argc, char *argv[]){
     else state.print_trimmed(outstem);
     state.print_sigma_cor(modelcovfile);
 
-
+    //print the likelihood and number of migration events begin exiting
+    likout << "Exiting ln(likelihood) with "<< state.get_nmig() <<" migration events: "<< state.llik() << " \n";
 	return 0;
 }

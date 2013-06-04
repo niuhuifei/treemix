@@ -4361,6 +4361,10 @@ void GraphState2::place_root(string r){
 	//cout << "ln(lk) = "<< current_llik << "\n";
 }
 
+int GraphState2::get_nmig(){
+	return tree->get_mig_edges().size();
+}
+
 void GraphState2::flip_mig(){
 	vector<Graph::edge_descriptor> m = tree->get_mig_edges();
 
