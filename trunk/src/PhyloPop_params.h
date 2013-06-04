@@ -108,6 +108,8 @@ public:
 
 	bool flip;
 	string flipstring;
+	// seed random number generator
+	unsigned int seed;
 };
 
 #endif /* PHYLOPOP_PARAMS_H_ */
