@@ -13,9 +13,11 @@
 string infile;
 string outstem = "TreeMix";
 
-void printopts(){
+void printv(){
 	cout << "\nTreeMix v. 1.12\n";
 	cout << "$Revision$\n\n";
+}
+void printopts(){
 	cout << "Options:\n";
 	cout << "-i [file name] input file\n";
 	cout << "-o [stem] output stem (will be [stem].treeout.gz, [stem].cov.gz, [stem].modelcov.gz)\n";
@@ -36,14 +38,7 @@ void printopts(){
 
 
 int main(int argc, char *argv[]){
-
-	const gsl_rng_type * T;
-	gsl_rng * r;
-	gsl_rng_env_setup();
-	T = gsl_rng_ranlxs2;
-	r = gsl_rng_alloc(T);
-	int seed = (int) time(0);
-	gsl_rng_set(r, seed);
+	printv();
 
     CCmdLine cmdline;
     PhyloPop_params p;
@@ -136,6 +131,19 @@ int main(int argc, char *argv[]){
      	//p.corpop = cmdline.GetArgument("-cor_mig", 0);
      	p.read_migfracs(cmdline.GetArgument("-cor_mig", 0) );
      }
+    if (cmdline.HasSwitch("-seed")){
+    	p.seed = atoi(cmdline.GetArgument("-seed", 0).c_str());
+    }
+    else p.seed = unsigned( time(NULL));
+
+    //random number generator
+    const gsl_rng_type * T;
+    gsl_rng * r;
+    gsl_rng_env_setup();
+    T = gsl_rng_ranlxs2;
+    r = gsl_rng_alloc(T);
+    int seed = (int) time(0);
+    gsl_rng_set(r, p.seed);
 
     string treefile = outstem+".treeout.gz";
     string covfile = outstem+".cov.gz";
