@@ -32,6 +32,7 @@ void printopts(){
 	cout << "-bootstrap Perform a single bootstrap replicate\n";
 	cout << "-cor_mig [file] list of known migration events to include (also use -climb)\n";
 	cout << "-noss Turn off sample size correction\n";
+	cout << "-seed [int] Set the seed for random number generation\n";
 
 	cout << "\n";
 }
