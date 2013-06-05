@@ -14,7 +14,6 @@ GraphState2::GraphState2(CountData* counts, PhyloPop_params* pa){
 	params = pa;
 	countdata = counts;
 	allpopnames = counts->list_pops();
-	//seed = 1339621547;
 	cout << "SEED: "<< pa->seed << "\n";
 	srand ( pa->seed );
 	random_shuffle(allpopnames.begin(), allpopnames.end() );
