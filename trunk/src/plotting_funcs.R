@@ -140,14 +140,18 @@ set_x_coord = function(d, e, i){
 	return(d)
 }
 
-plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = F, mse = 0.01, plotmig = T, plotnames = T, xmin = 0, lwd = 1, font = 1){
+plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005, arrow = 0.05, ybar = 0.01, scale = T, mbar = T, mse = 0.01, plotmig = T, plotnames = T, xmin = 0, lwd = 1, font = 1){
 	plot(d$x, d$y, axes = F, ylab = "", xlab = "Drift parameter", xlim = c(xmin, max(d$x)+plus), pch = "")
 	axis(1)
+	mw = max(e[e[,5]=="MIG",4])
 	mcols = rev(heat.colors(150))
 	for(i in 1:nrow(e)){
 		col = "black"
 		if (e[i,5] == "MIG"){
 			w = floor(e[i,4]*200)+50
+			if (mw > 0.5){
+				w = floor(e[i,4]*100)+50
+			}
 			col = mcols[w]
 			if (is.na(col)){
 				col = "blue"
@@ -198,7 +202,10 @@ plot_tree_internal = function(d, e, o = NA, cex = 1, disp = 0.005, plus = 0.005,
                 xma = max(d$x/20)
                 rect( rep(0, 100), ymi+(0:99)*w, rep(xma, 100), ymi+(1:100)*w, col = mcols, border = mcols)
                 text(xma+disp, ymi, lab = "0", adj = 0, cex = 0.7)
-                text(xma+disp, yma, lab = "0.5", adj = 0, cex =0.7)
+		if ( mw >0.5){ text(xma+disp, yma, lab = "1", adj = 0, cex = 0.7)}
+                else{
+			text(xma+disp, yma, lab = "0.5", adj = 0, cex =0.7)
+		}
 		text(0, yma+0.06, lab = "Migration", adj = 0 , cex = 0.6)
 		text(0, yma+0.03, lab = "weight", adj = 0 , cex = 0.6)
         }	
@@ -251,7 +258,7 @@ get_f = function(stem){
 
 }
 
-plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = F, plotmig = T, plotnames = T, xmin = 0, lwd = 1, font = 1){
+plot_tree = function(stem, o = NA, cex = 1, disp = 0.003, plus = 0.01, flip = vector(), arrow = 0.05, scale = T, ybar = 0.1, mbar = T, plotmig = T, plotnames = T, xmin = 0, lwd = 1, font = 1){
 	d = paste(stem, ".vertices.gz", sep = "")
 	e = paste(stem, ".edges.gz", sep = "")
 	se = paste(stem, ".covse.gz", sep = "")
