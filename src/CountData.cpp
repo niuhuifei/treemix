@@ -470,7 +470,7 @@ void CountData::read_micro_data(string infile){
                         tmpcounts.push_back(tmp);
                 }
                 if (tmpcounts.size() != 3){
-                	std::cerr << "ERROR: "<< line[i] << " does not have three entries [expecting micosat data]\n";
+                	std::cerr << "ERROR: "<< line[i] << " does not have three entries [expecting microsat data]\n";
                 	exit(1);
                 }
                 vector<float> tmplen;
